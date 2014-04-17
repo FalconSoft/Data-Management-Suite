@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1FB17202-DE2B-4DBE-8E48-C3776F86EFF3}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>FalconSoft.ReactiveWorksheets.Common</RootNamespace>
+    <AssemblyName>FalconSoft.ReactiveWorksheets.Common</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AttInterfaces\ICustomComboSourceAtt.cs" />
+    <Compile Include="AttInterfaces\IExternalProviderAtt.cs" />
+    <Compile Include="AttInterfaces\IImportDataProviderAtt.cs" />
+    <Compile Include="AttInterfaces\IValueConverterAtt.cs" />
+    <Compile Include="Attributes\CustomComboSourceAtt.cs" />
+    <Compile Include="Attributes\ExternalProviderAtt.cs" />
+    <Compile Include="Attributes\ImportDataInfoAtt.cs" />
+    <Compile Include="Attributes\ValueConverterAtt.cs" />
+    <Compile Include="DataHelper.cs" />
+    <Compile Include="Facade\ICommandFacade.cs" />
+    <Compile Include="Facade\IMetaDataAdminFacade.cs" />
+    <Compile Include="Facade\IMetaDataFacade.cs" />
+    <Compile Include="Facade\IReactiveDataQueryFacade.cs" />
+    <Compile Include="Facade\ISearchFacade.cs" />
+    <Compile Include="Facade\ISecurityFacade.cs" />
+    <Compile Include="Facade\ITemporalDataQueryFacade.cs" />
+    <Compile Include="HistoryStorageType.cs" />
+    <Compile Include="IMetaDataProvider.cs" />
+    <Compile Include="FilterRule.cs" />
+    <Compile Include="IBaseProvider.cs" />
+    <Compile Include="ICustomComboSource.cs" />
+    <Compile Include="IDataProvider.cs" />
+    <Compile Include="IDataProvidersCatalog.cs" />
+    <Compile Include="ILogger.cs" />
+    <Compile Include="IServiceDataProvider.cs" />
+    <Compile Include="Metadata\AggregatedWorksheetInfo.cs" />
+    <Compile Include="Metadata\AnalyticsSourceInfo.cs" />
+    <Compile Include="Metadata\BaseSourceInfo.cs" />
+    <Compile Include="Metadata\ColumnInfo.cs" />
+    <Compile Include="Metadata\DataSourceInfo.cs" />
+    <Compile Include="Metadata\FieldInfo.cs" />
+    <Compile Include="Metadata\HeaderInfo.cs" />
+    <Compile Include="Metadata\ImportIOInfo.cs" />
+    <Compile Include="Metadata\MetaDataExtensions.cs" />
+    <Compile Include="Metadata\RelationshipInfo.cs" />
+    <Compile Include="Metadata\SearchData.cs" />
+    <Compile Include="Metadata\ServiceRelationElement.cs" />
+    <Compile Include="Metadata\ServiceSourceRelationship.cs" />
+    <Compile Include="Metadata\WorksheetInfo.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RecordChangedParam.cs" />
+    <Compile Include="Security\AccessLevel.cs" />
+    <Compile Include="Security\User.cs" />
+    <Compile Include="Metadata\TagInfo.cs" />
+    <Compile Include="ValueChangedEventArgs.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
