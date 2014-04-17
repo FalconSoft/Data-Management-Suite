@@ -56,10 +56,6 @@
   <ItemGroup>
     <Compile Include="DataProvider.cs" />
     <Compile Include="DataProvidersCatalog.cs" />
-    <Compile Include="ImportIO\IImportIOMetaDataProvider.cs" />
-    <Compile Include="ImportIO\ImportIODataProvider.cs" />
-    <Compile Include="ImportIO\ImportIOExtractor.cs" />
-    <Compile Include="ImportIO\ImportIOMetaDataProvider.cs" />
     <Compile Include="MetaDataProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServiceSourceDataProvider.cs" />
