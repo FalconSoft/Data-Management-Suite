@@ -37,9 +37,7 @@ namespace ReactiveWorksheets.Client.SignalR
         //********************************
 
         // For GetDataChanges method
-        private Action<RecordChangedParam> _getDataChangesOnNextAction;
-        private Action _getDataChangesOnCompleteAction;
-        private Action<Exception> _getDataChangesOnErrorAction; 
+        private readonly Subject<RecordChangedParam> _getDataChangesSubject; 
         //********************************
 
         // For ResolveRecordbyForeignKey method
@@ -50,7 +48,7 @@ namespace ReactiveWorksheets.Client.SignalR
         {
             _connection = new HubConnection(connectionString);
             _proxy = _connection.CreateHubProxy("IReactiveDataQueryFacade");
-           
+           _getDataChangesSubject = new Subject<RecordChangedParam>();
             // For  method GetAggregatedData
             _proxy.On<Dictionary<string, object>>("GetAggregatedDataOnNext", data =>
             {
@@ -127,21 +125,18 @@ namespace ReactiveWorksheets.Client.SignalR
             _proxy.On<RecordChangedParam>("GetDataChangesOnNext", data =>
             {
                 //Trace.WriteLine(" ********* GetDataChangesOnNext " + datasourceProviderString);
-                if (_getDataChangesOnNextAction != null)
-                    _getDataChangesOnNextAction(data);
+                _getDataChangesSubject.OnNext(data);
             });
 
             _proxy.On("GetDataChangesOnComplete", () =>
             {
                 //Trace.WriteLine("   *********** GetDataChangesOnComplete " + datasourceProviderString);
-                if (_getDataChangesOnCompleteAction != null)
-                    _getDataChangesOnCompleteAction();
+                _getDataChangesSubject.OnCompleted();
             });
 
             _proxy.On<Exception>("GetDataChangesOnError", ex =>
             {
-                if (_getDataChangesOnErrorAction != null)
-                    _getDataChangesOnErrorAction(ex);
+                _getDataChangesSubject.OnError(ex);
             });
             // *********************************
 
@@ -246,15 +241,16 @@ namespace ReactiveWorksheets.Client.SignalR
         public IObservable<RecordChangedParam> GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null)
         {
             var subject = new Subject<RecordChangedParam>();
-            _getDataChangesOnNextAction = data => subject.OnNext(data);
-            _getDataChangesOnCompleteAction = () => subject.OnCompleted();
-            _getDataChangesOnErrorAction = ex => subject.OnError(ex);
+           _getDataChangesSubject.Where(r => r.ProviderString == dataSourcePath)
+                .Subscribe( data => subject.OnNext(data), 
+                            ex => subject.OnError(ex), 
+                            () => subject.OnCompleted());
 
             if (!_startConnectionTask.IsCompleted)
                 _startConnectionTask.Wait();
             
             _proxy.Invoke("GetDataChanges", dataSourcePath, filterRules ?? new FilterRule[0]);
-              
+
             return subject.AsObservable();
         }
         // ***************************************************************************************
