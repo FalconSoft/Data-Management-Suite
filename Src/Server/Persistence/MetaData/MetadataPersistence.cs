@@ -12,27 +12,22 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.MetaData
     {
         readonly string _connectionString;
 
-        readonly string _dbName;
-
         private MongoDatabase _mongoDatabase;
 
         private const string DataSourceCollectionName = "MetaData_DataSourceInfo";
 
         private const string ServiceSourceCollectionName = "MetaData_ServiceSourceInfo";
 
-        public MetaDataPersistence(string connectionString, string dbname)
+        public MetaDataPersistence(string connectionString)
         {
             _connectionString = connectionString;
-            _dbName = dbname;
         }
 
         private void ConnectToDb()
         {
             if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
             {
-                var client = new MongoClient(_connectionString);
-                var mongoServer = client.GetServer();
-                _mongoDatabase = mongoServer.GetDatabase(_dbName);
+                _mongoDatabase = MongoDatabase.Create(_connectionString);
             }
         }
 

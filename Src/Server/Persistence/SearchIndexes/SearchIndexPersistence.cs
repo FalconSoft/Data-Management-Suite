@@ -8,34 +8,38 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.SearchIndexes
 {
     public class SearchIndexPersistence : ISearchIndexPersistence
     {
-        private readonly string _connectionString;
-        private readonly string _dbName;
+        private readonly string _dataConnectionString;
+        private readonly string _metadataConnectionString;
         private const string SearchCollectionName = "SearchIndexCollection";
         private const string DataSourceCollectionName = "MetaData_DataSourceInfo";
-        private const string MetadbName = "rw_metadata";
         private const string WorksheetInfoCollectionName = "WorksheetInfo";
+        private MongoDatabase _mongoDatabase;
 
-        public SearchIndexPersistence(string connectionString, string dbName)
+        public SearchIndexPersistence(string dataConnectionString, string metadataConnectionString)
         {
-            _connectionString = connectionString;
-            _dbName = dbName;
+            _dataConnectionString = dataConnectionString;
+            _metadataConnectionString = metadataConnectionString;
+        }
+
+        private void ConnectToDb()
+        {
+            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
+            {
+                _mongoDatabase = MongoDatabase.Create(_dataConnectionString);
+            }
         }
 
         public SearchData[] Search(string searchString)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            return db.GetCollection<SearchData>(SearchCollectionName).Find(Query.And(Query.Matches("Key", searchString),
+            ConnectToDb();
+            return _mongoDatabase.GetCollection<SearchData>(SearchCollectionName).Find(Query.And(Query.Matches("Key", searchString),
                 Query.EQ("IsSearchable", true))).SetFields(Fields.Exclude("_id")).ToArray();
         }
 
         public HeaderInfo[] GetSearchableWorksheets(SearchData searchData)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            var metadb = mongoServer.GetDatabase(MetadbName);
+            ConnectToDb();
+            var metadb = MongoDatabase.Create(_metadataConnectionString);
 
             var dataSources = searchData.DataSourceUrn.GetChildDataSources(metadb.GetCollection<DataSourceInfo>(DataSourceCollectionName).FindAll().ToArray());
             var worksheets = metadb.GetCollection<WorksheetInfo>(WorksheetInfoCollectionName)
@@ -53,49 +57,39 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.SearchIndexes
 
         public void AddSearchData(SearchData searchData)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            db.GetCollection(SearchCollectionName).Remove(Query.And
+            ConnectToDb();
+            _mongoDatabase.GetCollection(SearchCollectionName).Remove(Query.And
                 (Query.EQ("RecordKey", searchData.RecordKey),
                  Query.EQ("DataSourceUrn", searchData.DataSourceUrn),
                  Query.EQ("FieldName", searchData.FieldName)));
-            db.GetCollection<SearchData>(SearchCollectionName).Insert(searchData);
+            _mongoDatabase.GetCollection<SearchData>(SearchCollectionName).Insert(searchData);
         }
 
         public void RemoveSearchData(string recordKey, string dataSourceUrn)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            db.GetCollection(SearchCollectionName).Remove(Query.And
+            ConnectToDb();
+            _mongoDatabase.GetCollection(SearchCollectionName).Remove(Query.And
                 (Query.EQ("RecordKey", recordKey), Query.EQ("DataSourceUrn", dataSourceUrn)));
         }
 
         public void UpdateUrn(string oldUrn, string newUrn)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            db.GetCollection(SearchCollectionName).Update(Query.EQ("DataSourceUrn", oldUrn), Update.Set("DataSourceUrn", newUrn), UpdateFlags.Multi);
+            ConnectToDb();
+            _mongoDatabase.GetCollection(SearchCollectionName).Update(Query.EQ("DataSourceUrn", oldUrn), Update.Set("DataSourceUrn", newUrn), UpdateFlags.Multi);
         }
 
         public void UpdateIsSearchableProperty(string dataSourceUrn, string fieldName, bool value)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            ConnectToDb();
             var query = Query.And(Query.EQ("DataSourceUrn", dataSourceUrn), Query.EQ("FieldName", fieldName));
             var update = Update.Set("IsSearchable", value);
-            db.GetCollection(SearchCollectionName).Update(query, update, UpdateFlags.Multi);
+            _mongoDatabase.GetCollection(SearchCollectionName).Update(query, update, UpdateFlags.Multi);
         }
 
         public void RemoveFields(string dataSourceUrn, string fieldName)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            db.GetCollection(SearchCollectionName).Remove(Query.And
+            ConnectToDb();
+            _mongoDatabase.GetCollection(SearchCollectionName).Remove(Query.And
                 (Query.EQ("FieldName", fieldName), Query.EQ("DataSourceUrn", dataSourceUrn)));
         }
     }
