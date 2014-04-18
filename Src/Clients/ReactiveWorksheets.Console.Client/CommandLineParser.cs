@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace Console.Client
+namespace ReactiveWorksheets.ConsoleClient
 {
     public class CommandLineParser
     {
