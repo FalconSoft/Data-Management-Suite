@@ -105,8 +105,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null)
         {
-            var connectionId = Context.ConnectionId;
-            Trace.WriteLine("   ***** GetDataChanges ConnectionId " + connectionId);
             _reactiveDataQueryFacade.GetDataChanges(dataSourcePath, filterRules.Any() ? filterRules : null)
                 .Subscribe(r => Clients.Caller.GetDataChangesOnNext(r));
         }
