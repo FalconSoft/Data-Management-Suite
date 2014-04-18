@@ -20,11 +20,13 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ILogger _logger;
         private readonly Dictionary<string, IDisposable> _getDataChangesDisposables;
-        private readonly Dictionary<string, string> _dataSourcePathDictionary; 
+        private readonly Dictionary<string, string> _dataSourcePathDictionary;
+
         public override Task OnConnected()
         {
             //Groups.Add(Context.ConnectionId, Context.QueryString["providerString"]);
-            _logger.InfoFormat("Time {0} | Connected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId, Context.User !=null ? Context.User.Identity.Name:null);
+            _logger.InfoFormat("Time {0} | Connected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId,
+                Context.User != null ? Context.User.Identity.Name : null);
             return base.OnConnected();
         }
 
@@ -39,7 +41,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 _logger.Info("remove subscribe for " + Context.ConnectionId);
             }
             //Groups.Remove(Context.ConnectionId, Context.QueryString["providerString"]);
-            _logger.InfoFormat("Time {0} | Disconnected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId, Context.User != null ? Context.User.Identity.Name : null);
+            _logger.InfoFormat("Time {0} | Disconnected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId,
+                Context.User != null ? Context.User.Identity.Name : null);
             return base.OnDisconnected();
         }
 
@@ -51,7 +54,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _logger = logger;
         }
 
-        public void GetAggregatedData(string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)
+        public void GetAggregatedData(string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
+            FilterRule[] filterRules = null)
         {
             try
             {
@@ -77,7 +81,9 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             {
                 var mi = typeof (IReactiveDataQueryFacade).GetMethod("GetData");
                 var miConstructed = mi.MakeGenericMethod(type);
-                var result = miConstructed.Invoke(_reactiveDataQueryFacade, new object[] {dataSourcePath, filterRules.Any() ? filterRules : null}) as IEnumerable;
+                var result =
+                    miConstructed.Invoke(_reactiveDataQueryFacade,
+                        new object[] {dataSourcePath, filterRules.Any() ? filterRules : null}) as IEnumerable;
 
                 foreach (var obj in result)
                 {
@@ -99,7 +105,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             try
             {
                 var data = _reactiveDataQueryFacade.GetData(dataSourcePath, filterRules.Any() ? filterRules : null);
-                
+
                 foreach (var d in data)
                 {
                     Clients.Caller.GetDataOnNext(d);
@@ -132,14 +138,10 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void ResolveRecordbyForeignKey(RecordChangedParam changedRecord)
         {
-            _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecord, 
-                (str,rcp) => Clients.Caller.ResolveRecordbyForeignKeySuccess(str,rcp), 
-                (str,ex) => Clients.Caller.ResolveRecordbyForeignKeyFailed(str,ex));
+            _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecord,
+                (str, rcp) => Clients.Caller.ResolveRecordbyForeignKeySuccess(str, rcp),
+                (str, ex) => Clients.Caller.ResolveRecordbyForeignKeyFailed(str, ex));
         }
 
-        public void GetDataChangesDispose()
-        {
-            
-        }
     }
 }
