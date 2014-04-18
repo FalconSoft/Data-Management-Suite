@@ -7,7 +7,7 @@ using FalconSoft.ReactiveWorksheets.Common.Security;
 
 namespace FalconSoft.ReactiveWorksheets.Common.Facade
 {
-    public interface ISecurityFacade
+    public interface ISecurityFacade : IDisposable
     {
         List<User> GetUsers();
 

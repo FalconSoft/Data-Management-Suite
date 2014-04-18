@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace ReactiveWorksheets.Client.SignalR
 {
-    public class MetaDataFacade : IMetaDataAdminFacade, IDisposable
+    internal class MetaDataFacade : IMetaDataAdminFacade
     {
         private readonly HubConnection _connection;
         private readonly IHubProxy _proxy;

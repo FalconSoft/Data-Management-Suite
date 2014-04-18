@@ -11,7 +11,7 @@ using Microsoft.AspNet.SignalR.Client;
 
 namespace ReactiveWorksheets.Client.SignalR
 {
-    public class ReactiveDataQueryFacade : IReactiveDataQueryFacade,IDisposable
+    internal class ReactiveDataQueryFacade : IReactiveDataQueryFacade
     {
         private readonly HubConnection _connection;
         private readonly IHubProxy _proxy;

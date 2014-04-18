@@ -6,7 +6,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
     /// <summary>
     /// Commands Facade defines methods what are changing Reactive Worksheets server's state.
     /// </summary>
-    public interface ICommandFacade
+    public interface ICommandFacade : IDisposable
     {
         /// <summary>
         /// Submit changed records to ReactiveWorksheets server, which will update original source as well as Data Repository

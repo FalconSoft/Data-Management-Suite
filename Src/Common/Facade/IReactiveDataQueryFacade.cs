@@ -17,7 +17,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
     /// <summary>
     /// main data query facade to query Live Data from Reactive Worksheets Data Repository 
     /// </summary>
-    public interface IReactiveDataQueryFacade
+    public interface IReactiveDataQueryFacade : IDisposable
     {
         /// <summary>
         /// Get Aggregated Data Source

@@ -1,41 +1,71 @@
-﻿namespace ReactiveWorksheets.Client.SignalR
+﻿using System;
+using FalconSoft.ReactiveWorksheets.Common.Facade;
+
+namespace ReactiveWorksheets.Client.SignalR
 {
-    public static class FacadeFactory
+    public static class FacadesFactory
     {
-        private static CommandFacade _commandFacade;
-        public static CommandFacade CreateReactiveDataCommandFacade(string connectionString)
+        private static string _serverUrl;
+
+        public static void SetServerUrl(string serverUrl)
         {
-            return _commandFacade ?? (_commandFacade = new CommandFacade(connectionString));
+            _serverUrl = serverUrl;
         }
 
-        private static ReactiveDataQueryFacade _reactiveDataQueryFacade;
-        public static ReactiveDataQueryFacade CreateReactiveDataQueryFacade(string connectionString)
+        public static ICommandFacade CreateCommandFacade()
         {
-            return _reactiveDataQueryFacade ?? (_reactiveDataQueryFacade = new ReactiveDataQueryFacade(connectionString));
+            if(string.IsNullOrWhiteSpace(_serverUrl))
+                throw new ApplicationException("Server Url is not initialized in bootstrapper");
+
+            return new CommandFacade(_serverUrl);
         }
 
-        private static TemporalDataQueryFacade _temporalDataQueryFacade;
-        public static TemporalDataQueryFacade CreateTemporalDataQueryFacade(string connectionString)
+        public static IReactiveDataQueryFacade CreateReactiveDataQueryFacade()
         {
-            return _temporalDataQueryFacade ?? (_temporalDataQueryFacade = new TemporalDataQueryFacade(connectionString));
+            if (string.IsNullOrWhiteSpace(_serverUrl))
+                throw new ApplicationException("Server Url is not initialized in bootstrapper");
+
+            return new ReactiveDataQueryFacade(_serverUrl);
         }
 
-        private static MetaDataFacade _metaDataFacade;
-        public static MetaDataFacade CreateMetaDataFacade(string connectionSring)
+        public static ITemporalDataQueryFacade CreateTemporalDataQueryFacade()
         {
-            return _metaDataFacade ?? (_metaDataFacade = new MetaDataFacade(connectionSring));
+            if (string.IsNullOrWhiteSpace(_serverUrl))
+                throw new ApplicationException("Server Url is not initialized in bootstrapper");
+
+            return new TemporalDataQueryFacade(_serverUrl);
         }
 
-        private static SearchFacade _searchFacade;
-        public static SearchFacade CreateSearchFacade(string connectionString)
+        public static IMetaDataAdminFacade CreateMetaDataAdminFacade()
         {
-            return _searchFacade ?? (_searchFacade = new SearchFacade(connectionString));
+            if (string.IsNullOrWhiteSpace(_serverUrl))
+                throw new ApplicationException("Server Url is not initialized in bootstrapper");
+
+            return new MetaDataFacade(_serverUrl);
         }
 
-        private static SecurityFacade _securityFacade;
-        public static SecurityFacade CreateSecurityFacade(string connectionString)
+        public static IMetaDataFacade CreateMetaDataFacade()
         {
-            return _securityFacade ?? (_securityFacade = new SecurityFacade(connectionString));
+            if (string.IsNullOrWhiteSpace(_serverUrl))
+                throw new ApplicationException("Server Url is not initialized in bootstrapper");
+
+            return new MetaDataFacade(_serverUrl);
+        }
+
+        public static ISearchFacade CreateSearchFacade()
+        {
+            if (string.IsNullOrWhiteSpace(_serverUrl))
+                throw new ApplicationException("Server Url is not initialized in bootstrapper");
+
+            return new SearchFacade(_serverUrl);
+        }
+
+        public static ISecurityFacade CreateSecurityFacade()
+        {
+            if (string.IsNullOrWhiteSpace(_serverUrl))
+                throw new ApplicationException("Server Url is not initialized in bootstrapper");
+
+            return new SecurityFacade(_serverUrl);
         }
     }
 }
