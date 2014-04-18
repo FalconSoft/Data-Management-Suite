@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FalconSoft.ReactiveWorksheets.Core;
@@ -17,16 +16,13 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
     {
         private readonly MongoCollection<BsonDocument> _collection;
 
-        public LiveDataPersistence(string connectionString, string dbName, string collectionName)
+        public LiveDataPersistence(string connectionString, string collectionName)
         {
-            var client = new MongoClient(connectionString);
-            MongoServer server = client.GetServer();
-            var database = server.GetDatabase(dbName);
+            var database = MongoDatabase.Create(connectionString);
             if (database.CollectionExists(collectionName))
             {
                _collection = database.GetCollection(collectionName);
             }
-               
             else
             {
                 database.CreateCollection(collectionName);

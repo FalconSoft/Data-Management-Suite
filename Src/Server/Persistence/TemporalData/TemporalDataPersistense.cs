@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FalconSoft.ReactiveWorksheets.Core;
@@ -15,29 +13,33 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
     public class TemporalDataPersistence : ITemporalDataPersistense
     {
         private readonly string _connectionString;
-        private readonly string _dbName;
         private readonly string _dataSourceProviderString;
         private readonly string _userId;
         private readonly string[] _dbfields = {"RecordKey", "ValidFrom", "ValidTo", "UserId", "_id" };
         private readonly DataSourceInfo _dataSourceInfo;
+        private MongoDatabase _mongoDatabase;
 
-        public TemporalDataPersistence(string connectionString, string dbName, DataSourceInfo dataSourceInfo, string userId)
+        public TemporalDataPersistence(string connectionString, DataSourceInfo dataSourceInfo, string userId)
         {
             _connectionString = connectionString;
-            _dbName = dbName;
             _dataSourceProviderString = dataSourceInfo.DataSourcePath;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
         }
 
+        private void ConnectToDb()
+        {
+            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
+            {
+                _mongoDatabase = MongoDatabase.Create(_connectionString);
+            }
+        }
+
         public IEnumerable<Dictionary<string, object>> GetTemporalData(string recordKey)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-
-            var collection = db.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
-            var users = db.GetCollection<BsonDocument>("Users");
+            ConnectToDb();
+            var collection = _mongoDatabase.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
+            var users = _mongoDatabase.GetCollection<BsonDocument>("Users");
             var cursorData = collection.FindAllAs<BsonDocument>();
             var cursorUser = users.FindAllAs<BsonDocument>();
 
@@ -63,12 +65,9 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(DateTime timeStamp)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-
-            var collection = db.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
-            var users = db.GetCollection<BsonDocument>("Users");
+            ConnectToDb();
+            var collection = _mongoDatabase.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
+            var users = _mongoDatabase.GetCollection<BsonDocument>("Users");
             var cursorData = collection.FindAllAs<BsonDocument>();
             var cursorUser = users.FindAllAs<BsonDocument>();
             var list = new List<Dictionary<string, object>>();
@@ -94,10 +93,8 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalDataByTag(TagInfo tagInfo)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            var collection = db.GetCollection<BsonDocument>(tagInfo.DataSourceProviderString.ToValidDbString() + "_History");
+            ConnectToDb();
+            var collection = _mongoDatabase.GetCollection<BsonDocument>(tagInfo.DataSourceProviderString.ToValidDbString() + "_History");
             var cursorData = collection.FindAllAs<BsonDocument>();
             string[] exceptfields = { "ValidFrom", "ValidTo", "UserId", "_id" };
             var list = new List<Dictionary<string, object>>();
@@ -117,10 +114,8 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         public void SaveTempotalData(RecordChangedParam recordChangedParam)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            var collection = db.GetCollection<BsonDocument>(recordChangedParam.ProviderString.ToValidDbString() + "_History");
+            ConnectToDb();
+            var collection = _mongoDatabase.GetCollection<BsonDocument>(recordChangedParam.ProviderString.ToValidDbString() + "_History");
             switch (recordChangedParam.ChangedAction)
             {
                 case RecordChangedAction.AddedOrUpdated:
@@ -156,32 +151,26 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         public void SaveTagInfo(TagInfo tagInfo)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            var recordsHistory = db.GetCollection<BsonDocument>(tagInfo.DataSourceProviderString.ToValidDbString() + "_History");
+            ConnectToDb();
+            var recordsHistory = _mongoDatabase.GetCollection<BsonDocument>(tagInfo.DataSourceProviderString.ToValidDbString() + "_History");
             var query = Query.EQ("ValidTo", BsonNull.Value);
             tagInfo.Revisions = recordsHistory.Find(query).AsQueryable().Select(s => s["_id"].ToString()).ToList();
-            var collection = db.GetCollection<TagInfo>("TagInfo");
+            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
             collection.Insert(tagInfo);
         }
 
         public void RemoveTagInfo(TagInfo tagInfo)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            var collection = db.GetCollection<TagInfo>("TagInfo");
+            ConnectToDb();
+            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
             var query = Query<TagInfo>.EQ(t => t.TagName, tagInfo.TagName);
             collection.Remove(query);
         }
 
         public IEnumerable<TagInfo> GeTagInfos()
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            var collection = db.GetCollection<TagInfo>("TagInfo");
+            ConnectToDb();
+            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
             return collection.FindAll().SetFields(Fields.Exclude("_id")).ToList();
         }
 

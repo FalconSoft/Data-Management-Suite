@@ -42,9 +42,15 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
                     throw new ArgumentOutOfRangeException("function");
             }
         }
+
         private static BsonElement ConvertGroupId(IEnumerable<string> fieldNames)
         {
             return new BsonElement("_id", new BsonDocument(fieldNames.Select(x => new BsonElement(x, string.Format("$RecordValues.{0}", x)))));
+        }
+
+        private static BsonDocument CreateSortStatement(IEnumerable<string> fieldNames) // TODO POSIBLY WE DONT NEED THIS
+        {
+            return new BsonDocument(fieldNames.Select(x => new BsonElement(x, 1)));
         }
 
         public static BsonDocument[] GetPipeline(this AggregatedWorksheetInfo aggregatedWorksheet)
@@ -60,8 +66,14 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
                     "$group", agregations
                 }
             };
-            var pipelane = new[] {group};
-            return pipelane;
+            var sort = new BsonDocument // TODO POSIBLY WE DONT NEED THIS
+            {
+                {
+                    "$sort", CreateSortStatement(aggregatedWorksheet.GroupByColumns.Select(x => x.Header))
+                }
+            };
+            var pipeline = new[] {group, sort};
+            return pipeline;
         }
     }
 }
