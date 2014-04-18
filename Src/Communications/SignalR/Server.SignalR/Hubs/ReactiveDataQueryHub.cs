@@ -19,7 +19,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
     {
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ILogger _logger;
-
+        private readonly Dictionary<string, IDisposable> _getDataChangesDisposables;
+        private readonly Dictionary<string, string> _dataSourcePathDictionary; 
         public override Task OnConnected()
         {
             //Groups.Add(Context.ConnectionId, Context.QueryString["providerString"]);
@@ -29,6 +30,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public override Task OnDisconnected()
         {
+            if (_getDataChangesDisposables.ContainsKey(Context.ConnectionId))
+            {
+                Groups.Remove(Context.ConnectionId, _dataSourcePathDictionary[Context.ConnectionId]);
+                _dataSourcePathDictionary.Remove(Context.ConnectionId);
+                _getDataChangesDisposables[Context.ConnectionId].Dispose();
+                _getDataChangesDisposables.Remove(Context.ConnectionId);
+                _logger.Info("remove subscribe for " + Context.ConnectionId);
+            }
             //Groups.Remove(Context.ConnectionId, Context.QueryString["providerString"]);
             _logger.InfoFormat("Time {0} | Disconnected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId, Context.User != null ? Context.User.Identity.Name : null);
             return base.OnDisconnected();
@@ -36,6 +45,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public ReactiveDataQueryHub(IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger)
         {
+            _getDataChangesDisposables = new Dictionary<string, IDisposable>();
+            _dataSourcePathDictionary = new Dictionary<string, string>();
             _reactiveDataQueryFacade = reactiveDataQueryFacade;
             _logger = logger;
         }
@@ -105,8 +116,18 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null)
         {
-            _reactiveDataQueryFacade.GetDataChanges(dataSourcePath, filterRules.Any() ? filterRules : null)
-                .Subscribe(r => Clients.Caller.GetDataChangesOnNext(r));
+
+            if (!_getDataChangesDisposables.ContainsKey(Context.ConnectionId))
+            {
+                Groups.Add(Context.ConnectionId, dataSourcePath);
+
+                var disposable = _reactiveDataQueryFacade.GetDataChanges(dataSourcePath,
+                    filterRules.Any() ? filterRules : null)
+                    .Subscribe(r => Clients.Group(dataSourcePath).GetDataChangesOnNext(r),
+                        () => Groups.Remove(Context.ConnectionId, dataSourcePath));
+                _getDataChangesDisposables.Add(Context.ConnectionId, disposable);
+                _dataSourcePathDictionary.Add(Context.ConnectionId, dataSourcePath);
+            }
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam changedRecord)
@@ -116,6 +137,9 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 (str,ex) => Clients.Caller.ResolveRecordbyForeignKeyFailed(str,ex));
         }
 
-      
+        public void GetDataChangesDispose()
+        {
+            
+        }
     }
 }

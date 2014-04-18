@@ -159,6 +159,7 @@ namespace ReactiveWorksheets.Client.SignalR
         
         public void Dispose()
         {
+            _proxy.Invoke("GetDataChangesDispose");
             _connection.Stop();
         }
 
@@ -171,24 +172,12 @@ namespace ReactiveWorksheets.Client.SignalR
             _getAggregatedDataOnCompletetAction = subject.OnCompleted;
             _getAggregatedDataOnErrorAction = subject.OnError;
 
-            if (_startConnectionTask.IsCompleted)
-            {
-                GetAggregatedDataHelper(dataSourcePath, aggregatedWorksheet, filterRules);
-                return subject.ToEnumerable();
-            }
-            _startConnectionTask.Wait();
-            GetAggregatedDataHelper(dataSourcePath, aggregatedWorksheet, filterRules);
+            if (!_startConnectionTask.IsCompleted)
+                _startConnectionTask.Wait();
+            _proxy.Invoke("GetAggregatedData", dataSourcePath, aggregatedWorksheet, filterRules ?? new FilterRule[0]);
             return subject.ToEnumerable();
         }
-
-        private void GetAggregatedDataHelper(string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)
-        {
-            _proxy.Invoke("GetAggregatedData", dataSourcePath, aggregatedWorksheet, filterRules ?? new FilterRule[0]);
-        }
-
-        // ***************************************************************************************
-
-        // ***************************************************************************************
+        
         public IEnumerable<T> GetData<T>(string dataSourcePath, FilterRule[] filterRules = null)
         {
             var subject = new Subject<object>();
@@ -198,19 +187,11 @@ namespace ReactiveWorksheets.Client.SignalR
             _getGenericDataOnErrorAction = ex => subject.OnError(ex);
 
             if (_startConnectionTask.IsCompleted)
-            {
-                _proxy.Invoke("GetGenericData", dataSourcePath, typeof (T), filterRules ?? new FilterRule[0]);
-                return subject.ToEnumerable() as IEnumerable<T>;
-            }
-            _startConnectionTask.Wait();
+                _startConnectionTask.Wait();
             _proxy.Invoke("GetGenericData", dataSourcePath, typeof (T), filterRules ?? new FilterRule[0]);
             return subject.ToEnumerable() as IEnumerable<T>;
         }
-
-        // ***************************************************************************************
-
-        // ***************************************************************************************
-
+        
         public IEnumerable<Dictionary<string, object>> GetData(string dataSourcePath, FilterRule[] filterRules = null)
         {
             var subject = new Subject<Dictionary<string,object>>();
@@ -233,11 +214,9 @@ namespace ReactiveWorksheets.Client.SignalR
         {
             _proxy.Invoke("GetData", dataSourcePath, filterRules ?? new FilterRule[0]);
         }
-
         // ***************************************************************************************
 
         // ***************************************************************************************
-
         public IObservable<RecordChangedParam> GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null)
         {
             var subject = new Subject<RecordChangedParam>();
@@ -256,7 +235,6 @@ namespace ReactiveWorksheets.Client.SignalR
         // ***************************************************************************************
 
         // ***************************************************************************************
-
         public void ResolveRecordbyForeignKey(RecordChangedParam changedRecord, Action<string, RecordChangedParam> onSuccess, Action<string, Exception> onFail)
         {
             _resolveRecordbyForeignKeySuccessAction = onSuccess;

@@ -64,7 +64,6 @@ namespace ReactiveWorksheets.ConsoleClient
             _reactiveDataProvider2 = FacadeFactory.CreateReactiveDataQueryFacade(ConnectionString);
 
             _reactiveDataProvider2.GetDataChanges(subscribeArguments.DataSourceUrn)
-                        //.Where(r => r.ProviderString == subscribeArguments.DataSourceUrn)
                         .Buffer(TimeSpan.FromMilliseconds(1000))
                         .Subscribe(s =>
                         {
