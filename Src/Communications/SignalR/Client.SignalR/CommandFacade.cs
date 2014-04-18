@@ -8,12 +8,11 @@ using Microsoft.AspNet.SignalR.Client;
 
 namespace ReactiveWorksheets.Client.SignalR
 {
-    public class CommandFacade : ICommandFacade,IDisposable
+    internal class CommandFacade : ICommandFacade
     {
         private readonly HubConnection _connection;
         private readonly IHubProxy _proxy;
         private readonly Task _startConnectionTask;
-
         private Action<RevisionInfo> _onSuccessAction;
         private Action<Exception> _onFailedAction; 
 
