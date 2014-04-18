@@ -94,8 +94,8 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 Id = aggregatedWorksheet.Id,
                 Name = aggregatedWorksheet.Name,
                 Category = aggregatedWorksheet.Category,
-                Columns = GetColumnsFromAgrWs(aggregatedWorksheet),
-                DataSourceInfo = aggregatedWorksheet.DataSourceInfo
+                Columns = aggregatedWorksheet.GetColumnsFromAgrWs(),
+                DataSourceInfo = aggregatedWorksheet.MakeAggregatedDataSourceInfo()
             };
         }
 
@@ -103,8 +103,31 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         {
             var columns = new List<ColumnInfo>();
             columns.AddRange(aggregatedWorksheet.GroupByColumns);
+            columns.ForEach(x=> { x.SortIndex = columns.IndexOf(x); x.SortOrder = ColumnSortOrder.Ascending; } ); // TODO POSSIBLY WE DONT NEED THIS
             columns.AddRange(aggregatedWorksheet.Columns.Select(x => x.Value));
+            columns.ForEach(x=>x.ColumnIndex = columns.IndexOf(x));
             return columns;
+        }
+
+        public static DataSourceInfo MakeAggregatedDataSourceInfo(this AggregatedWorksheetInfo aggregatedWorksheet)
+        {
+            return new DataSourceInfo
+            {
+                Category = aggregatedWorksheet.DataSourceInfo.Category,
+                Description = aggregatedWorksheet.DataSourceInfo.Description,
+                Id = aggregatedWorksheet.DataSourceInfo.Id,
+                Name = aggregatedWorksheet.DataSourceInfo.Name,
+                Fields = aggregatedWorksheet.GetColumnsFromAgrWs().ToDictionary(x=>x.Header, x=>new FieldInfo
+                {
+                    DataSourceProviderString = aggregatedWorksheet.DataSourceInfo.ParentProviderString,
+                    IsKey = x.FieldName == x.Header,
+                    IsNullable = x.FieldName!=x.Header,
+                    DataType = aggregatedWorksheet.DataSourceInfo.Fields[x.FieldName].DataType,
+                    Name = x.Header,
+                    IsParentField = false,
+                    IsReadOnly = true
+                })
+            };
         }
     }
 }

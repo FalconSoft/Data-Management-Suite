@@ -1,8 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
+using FalconSoft.ReactiveWorksheets.Common;
+using FalconSoft.ReactiveWorksheets.Common.Facade;
 using ReactiveWorksheets.Client.SignalR;
+using ReactiveWorksheets.Console.Client;
 
-namespace ReactiveWorksheets.Console.Client
+namespace ReactiveWorksheets.ConsoleClient
 {
     class Program
     {
@@ -53,9 +58,24 @@ namespace ReactiveWorksheets.Console.Client
             System.Console.WriteLine(help);
         }
 
+        private static IReactiveDataQueryFacade _reactiveDataProvider2;
         private static void Subscribe(CommandLineParser.SubscribeParams subscribeArguments)
         {
-            System.Console.WriteLine("sorry but this command doesnot support yet");
+            _reactiveDataProvider2 = FacadeFactory.CreateReactiveDataQueryFacade(ConnectionString);
+
+            _reactiveDataProvider2.GetDataChanges(subscribeArguments.DataSourceUrn)
+                        //.Where(r => r.ProviderString == subscribeArguments.DataSourceUrn)
+                        .Buffer(TimeSpan.FromMilliseconds(1000))
+                        .Subscribe(s =>
+                        {
+                            if (s.Any())
+                                DumpRecords(s, subscribeArguments);
+                        });
+        }
+
+        private static void DumpRecords(IEnumerable<RecordChangedParam> recordChangedParams, CommandLineParser.SubscribeParams subscribeArguments)
+        {
+            CSVHelper.WriteRecords(recordChangedParams.Select(r => r.RecordValues) , subscribeArguments.FileName, subscribeArguments.Separator);
         }
 
         private static void Get(CommandLineParser.GetParams getArguments)

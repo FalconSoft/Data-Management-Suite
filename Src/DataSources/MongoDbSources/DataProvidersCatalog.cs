@@ -14,37 +14,34 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         private const string DataSourceCollectionName = "DataSourceInfo";
         private const string ServiceSourceCollectionName = "ServiceSourceInfo";
         private readonly string _connectionString;
-        private readonly string _dbName;
+        private MongoDatabase _mongoDatabase;
 
-        public DataProvidersCatalog(string connectionString, string dbName)
+        public DataProvidersCatalog(string connectionString)
         {
             _connectionString = connectionString;
-            _dbName = dbName;
         }
 
         public IEnumerable<DataProvidersContext> GetProviders()
         {
-            var client = new MongoClient(_connectionString);
-            MongoServer mongoServer = client.GetServer();
-            MongoDatabase db = mongoServer.GetDatabase(_dbName);
-            MongoCursor<DataSourceInfo> collectionDs = db.GetCollection<DataSourceInfo>(DataSourceCollectionName)
+            ConnectToDb();
+            var collectionDs = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName)
                                                          .FindAll();
-            MongoCursor<ServiceSourceInfo> collectionSs =
-                db.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName).FindAll();
+            var collectionSs =
+                _mongoDatabase.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName).FindAll();
             var listDataProviders = new List<DataProvidersContext>();
 
-            foreach (DataSourceInfo dataSource in collectionDs)
+            foreach (var dataSource in collectionDs)
             {
                 var dataProviderContext = new DataProvidersContext
                     {
                         Urn = dataSource.DataSourcePath,
-                        DataProvider = new DataProvider(_connectionString, _dbName) { DataSourceInfo = dataSource.ResolveDataSourceParents(collectionDs.ToArray()) },
+                        DataProvider = new DataProvider(_connectionString) { DataSourceInfo = dataSource.ResolveDataSourceParents(collectionDs.ToArray()) },
                         ProviderInfo = dataSource.ResolveDataSourceParents(collectionDs.ToArray()),
-                        MetaDataProvider = new MetaDataProvider(_connectionString, _dbName)
+                        MetaDataProvider = new MetaDataProvider(_connectionString)
                     };
                 listDataProviders.Add(dataProviderContext);
             }
-            foreach (ServiceSourceInfo serviceSourceInfo in collectionSs)
+            foreach (var serviceSourceInfo in collectionSs)
             {
                 var dataProviderContext = new DataProvidersContext
                     {
@@ -63,25 +60,23 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
         public DataSourceInfo CreateDataSource(DataSourceInfo dataSource, string userId)
         {
-            var client = new MongoClient(_connectionString);
-            MongoServer mongoServer = client.GetServer();
-            MongoDatabase db = mongoServer.GetDatabase(_dbName);
-            MongoCollection<DataSourceInfo> collection = db.GetCollection<DataSourceInfo>(DataSourceCollectionName);
+            ConnectToDb();
+            var collection = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName);
             dataSource.Id = ObjectId.GenerateNewId().ToString();
             collection.Insert(dataSource);
 
-            string dataCollectionName = dataSource.DataSourcePath.ToValidDbString() + "_Data";
-            if (!db.CollectionExists(dataCollectionName))
-                db.CreateCollection(dataCollectionName);
+            var dataCollectionName = dataSource.DataSourcePath.ToValidDbString() + "_Data";
+            if (!_mongoDatabase.CollectionExists(dataCollectionName))
+                _mongoDatabase.CreateCollection(dataCollectionName);
 
-            string historyCollectionName = dataSource.DataSourcePath.ToValidDbString() + "_History";
-            if (!db.CollectionExists(historyCollectionName))
-                db.CreateCollection(historyCollectionName);
+            var historyCollectionName = dataSource.DataSourcePath.ToValidDbString() + "_History";
+            if (!_mongoDatabase.CollectionExists(historyCollectionName))
+                _mongoDatabase.CreateCollection(historyCollectionName);
 
             var dataProviderContext = new DataProvidersContext
                 {
                     Urn = dataSource.DataSourcePath,
-                    DataProvider = new DataProvider(_connectionString, _dbName) {DataSourceInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray())},
+                    DataProvider = new DataProvider(_connectionString) {DataSourceInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray())},
                     ProviderInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray())
                 };
             DataProviderAdded(this, dataProviderContext);
@@ -92,14 +87,12 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
         public void RemoveDataSource(string providerString)
         {
-            var client = new MongoClient(_connectionString);
-            MongoServer mongoServer = client.GetServer();
-            MongoDatabase db = mongoServer.GetDatabase(_dbName);
-            db.GetCollection(providerString.ToValidDbString() + "_Data")
+            ConnectToDb();
+            _mongoDatabase.GetCollection(providerString.ToValidDbString() + "_Data")
               .Drop();
-            db.GetCollection(providerString.ToValidDbString() + "_History")
+            _mongoDatabase.GetCollection(providerString.ToValidDbString() + "_History")
               .Drop();
-            db.GetCollection(DataSourceCollectionName)
+            _mongoDatabase.GetCollection(DataSourceCollectionName)
               .Remove(Query.And(Query.EQ("Name", providerString.GetName()),
                                 Query.EQ("Category", providerString.GetCategory())));
             DataProviderRemoved(this, providerString);
@@ -107,23 +100,21 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
         public ServiceSourceInfo CreateServiceSource(ServiceSourceInfo servicesource, string userId)
         {
-            var client = new MongoClient(_connectionString);
-            MongoServer mongoServer = client.GetServer();
-            MongoDatabase db = mongoServer.GetDatabase(_dbName);
-            MongoCollection<ServiceSourceInfo> collection =
-                db.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName);
+            ConnectToDb();
+            var collection =
+                _mongoDatabase.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName);
             servicesource.Id = ObjectId.GenerateNewId()
                                        .ToString();
             collection.Save(servicesource);
             var dataProviderContext = new DataProvidersContext
                 {
                     Urn = servicesource.DataSourcePath,
-                    DataProvider = new DataProvider(_connectionString, _dbName),
+                    DataProvider = new DataProvider(_connectionString),
                     ProviderInfo = servicesource
                 };
             DataProviderAdded(this, dataProviderContext);
 
-            new MetaDataProvider(_connectionString, _dbName).CreateServiceSourceInfo(servicesource, userId);
+            new MetaDataProvider(_connectionString).CreateServiceSourceInfo(servicesource, userId);
             return
                 collection.FindOneAs<ServiceSourceInfo>(
                     Query.And(Query.EQ("Name", servicesource.DataSourcePath.GetName()),
@@ -132,13 +123,19 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
         public void RemoveServiceSource(string providerString)
         {
-            var client = new MongoClient(_connectionString);
-            MongoServer mongoServer = client.GetServer();
-            MongoDatabase db = mongoServer.GetDatabase(_dbName);
-            db.GetCollection(ServiceSourceCollectionName)
+            ConnectToDb();
+            _mongoDatabase.GetCollection(ServiceSourceCollectionName)
               .Remove(Query.And(Query.EQ("Name", providerString.GetName()),
                                 Query.EQ("Category", providerString.GetCategory())));
             DataProviderRemoved(this, providerString);
+        }
+
+        private void ConnectToDb()
+        {
+            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
+            {
+                _mongoDatabase = MongoDatabase.Create(_connectionString);
+            }
         }
     }
 }

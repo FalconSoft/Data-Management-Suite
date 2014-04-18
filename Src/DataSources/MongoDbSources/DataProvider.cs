@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,22 +13,20 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 {
     public class DataProvider : IDataProvider
     {
-        private readonly string _dbName;
         private readonly string _connectionString;
 
-        public DataProvider(string dataConnectionString, string dbName)
+        public DataProvider(string dataConnectionString)
         {
             _connectionString = dataConnectionString;
-            _dbName = dbName;
         }
 
         public DataSourceInfo DataSourceInfo { get; set; }
 
         public List<Dictionary<string, object>> GetData(string[] fields = null, IList<FilterRule> whereCondition = null)
         {
-            MongoCollection<BsonDocument> collection = GetCollection(DataSourceInfo.DataSourcePath.ToValidDbString() + "_Data");
+            var collection = GetCollection(DataSourceInfo.DataSourcePath.ToValidDbString() + "_Data");
             MongoCursor<BsonDocument> cursor;
-            string query = CreateFilterRuleQuery(whereCondition);
+            var query = CreateFilterRuleQuery(whereCondition);
             if (string.IsNullOrEmpty(query))
             {
                 cursor = collection.FindAll();
@@ -40,7 +37,7 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 cursor = collection.FindAs<BsonDocument>(qwraper);
             }
             var data = cursor.SetFields(Fields.Exclude("_id"));
-            List<Dictionary<string, object>> listOfRecords = data.Select( bsdocumnet =>
+            var listOfRecords = data.Select( bsdocumnet =>
                     bsdocumnet.ToDictionary(doc => doc.Name, doc => ToStrongTypedObject(doc.Value, doc.Name)))
                     .ToList();
             return listOfRecords;
@@ -63,16 +60,15 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         /// <summary>
         ///     Submit changes into original data solection by provider string
         /// </summary>
-        /// <param name="recordsToInsert">Data to insert</param>
-        /// <param name="recordsToUpdate">Data to update</param>
+        /// <param name="recordsToChange">Data to change</param>
         /// <param name="recordsToDelete">Data to delete</param>
         /// <param name="providerString">DataSource provider string</param>
         /// <param name="comment">Some Nice Comment :-)</param>
         /// <returns></returns>
         private RevisionInfo SubmitChangesHelper(IEnumerable<Dictionary<string, object>> recordsToChange,
-            List<string> recordsToDelete,string providerString, string comment = null)
+            IEnumerable<string> recordsToDelete,string providerString, string comment = null)
         {
-            MongoCollection<BsonDocument> collection = GetCollection(providerString.ToValidDbString() + "_Data");
+            var collection = GetCollection(providerString.ToValidDbString() + "_Data");
             UpdateRecords(recordsToChange, collection);
             DeleteRecords(recordsToDelete, collection);
             return  new RevisionInfo();
@@ -102,8 +98,8 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         private string CreateFilterRuleQuery(IList<FilterRule> whereCondition)
         {
             if (whereCondition == null || !whereCondition.Any()) return string.Empty;
-            string query = "{";
-            foreach (FilterRule condition in whereCondition)
+            var query = "{";
+            foreach (var condition in whereCondition)
             {
                 switch (condition.Combine)
                 {
@@ -203,11 +199,10 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
         private MongoCollection<BsonDocument> GetCollection(string name)
         {
-            MongoServer server = MongoServer.Create(_connectionString);
-            MongoDatabase db = server.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             if (!db.CollectionExists(name))
                 throw new InvalidDataException("No collection with such name exists!!!");
-            MongoCollection<BsonDocument> collection = db.GetCollection(name);
+            var collection = db.GetCollection(name);
             return collection;
         }
     }
