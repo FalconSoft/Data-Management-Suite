@@ -24,10 +24,8 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         public IEnumerable<DataProvidersContext> GetProviders()
         {
             ConnectToDb();
-            var collectionDs = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName)
-                                                         .FindAll();
-            var collectionSs =
-                _mongoDatabase.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName).FindAll();
+            var collectionDs = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName).FindAll();
+            var collectionSs = _mongoDatabase.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName).FindAll();
             var listDataProviders = new List<DataProvidersContext>();
 
             foreach (var dataSource in collectionDs)
@@ -77,7 +75,8 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 {
                     Urn = dataSource.DataSourcePath,
                     DataProvider = new DataProvider(_connectionString) {DataSourceInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray())},
-                    ProviderInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray())
+                    ProviderInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray()),
+                    MetaDataProvider = new MetaDataProvider(_connectionString)
                 };
             DataProviderAdded(this, dataProviderContext);
              var ds = collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
