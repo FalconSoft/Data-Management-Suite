@@ -7,8 +7,8 @@
     <ProjectGuid>{281627BC-5964-4B2F-A491-61EE77BE27AB}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ReactiveWorksheets.ConsoleClient</RootNamespace>
-    <AssemblyName>ReactiveWorksheets.ConsoleClient</AssemblyName>
+    <RootNamespace>ReactiveWorksheets.Console.Client</RootNamespace>
+    <AssemblyName>ReactiveWorksheets.Console.Client</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\..\ReactiveWorksheets-Private\Src\</SolutionDir>
