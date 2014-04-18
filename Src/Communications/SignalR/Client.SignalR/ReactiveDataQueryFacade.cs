@@ -255,7 +255,7 @@ namespace ReactiveWorksheets.Client.SignalR
             
             _proxy.Invoke("GetDataChanges", dataSourcePath, filterRules ?? new FilterRule[0]);
               
-            return subject.Where(r=>r.ProviderString.Equals(dataSourcePath.Clone())).AsObservable();
+            return subject.AsObservable();
         }
         // ***************************************************************************************
 
