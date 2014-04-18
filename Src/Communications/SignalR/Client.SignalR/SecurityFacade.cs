@@ -8,7 +8,7 @@ using Microsoft.AspNet.SignalR.Client;
 
 namespace ReactiveWorksheets.Client.SignalR
 {
-    public class SecurityFacade:ISecurityFacade,IDisposable
+    internal class SecurityFacade : ISecurityFacade
     {
 
          private readonly HubConnection _connection;

@@ -4,7 +4,7 @@ using FalconSoft.ReactiveWorksheets.Common.Security;
 
 namespace FalconSoft.ReactiveWorksheets.Common.Facade
 {
-    public interface IMetaDataFacade
+    public interface IMetaDataFacade : IDisposable
     {
         /// <summary>
         ///     Get all available for user designated by id with such permission datasources 

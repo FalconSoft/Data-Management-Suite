@@ -1,33 +1,34 @@
 ﻿using System;
 using System.Text;
 
-namespace ReactiveWorksheets.Console.Client
+namespace Console.Client
 {
     public class CommandLineParser
     {
-        public struct GetParams
+        public class GetParams
         {
+           
             public string DataSourceUrn;
             public string FilterRules;
             public string FileName;
-            public string Separator;
+            public string Separator = "\t";
         }
 
-        public struct SubmitParams
+        public class SubmitParams
         {
             public string DataSourceUrn;
             public string UpdateFileName;
             public string DeleteFileName;
-            public string Separator;
+            public string Separator = "\t";
             public string Comment;
         }
 
-        public struct SubscribeParams
+        public class SubscribeParams
         {
             public string DataSourceUrn;
             public string FilterRules;
             public string FileName;
-            public string Separator;
+            public string Separator = "\t";
         }
 
         public enum CommandType

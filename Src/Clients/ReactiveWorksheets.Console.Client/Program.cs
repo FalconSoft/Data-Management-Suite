@@ -1,15 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
+using FalconSoft.ReactiveWorksheets.Common;
+using FalconSoft.ReactiveWorksheets.Common.Facade;
 using ReactiveWorksheets.Client.SignalR;
 
-namespace ReactiveWorksheets.Console.Client
+namespace Console.Client
 {
     class Program
     {
         const string ConnectionString = @"http://localhost:8081";
+        
 
         static void Main(string[] args)
         {
+            FacadesFactory.SetServerUrl(ConnectionString);
+
             while (true)
             {
                 System.Console.Write(">");
@@ -53,14 +60,29 @@ namespace ReactiveWorksheets.Console.Client
             System.Console.WriteLine(help);
         }
 
+        private static IReactiveDataQueryFacade _reactiveDataProvider2;
         private static void Subscribe(CommandLineParser.SubscribeParams subscribeArguments)
         {
-            System.Console.WriteLine("sorry but this command doesnot support yet");
+            _reactiveDataProvider2 = FacadesFactory.CreateReactiveDataQueryFacade();
+
+            _reactiveDataProvider2.GetDataChanges(subscribeArguments.DataSourceUrn)
+                        //.Where(r => r.ProviderString == subscribeArguments.DataSourceUrn)
+                        .Buffer(TimeSpan.FromMilliseconds(1000))
+                        .Subscribe(s =>
+                        {
+                            if (s.Any())
+                                DumpRecords(s, subscribeArguments);
+                        });
+        }
+
+        private static void DumpRecords(IEnumerable<RecordChangedParam> recordChangedParams, CommandLineParser.SubscribeParams subscribeArguments)
+        {
+            CSVHelper.WriteRecords(recordChangedParams.Select(r => r.RecordValues) , subscribeArguments.FileName, subscribeArguments.Separator);
         }
 
         private static void Get(CommandLineParser.GetParams getArguments)
         {
-            var reactiveDataQueryFacade = FacadeFactory.CreateReactiveDataQueryFacade(ConnectionString);
+            var reactiveDataQueryFacade = FacadesFactory.CreateReactiveDataQueryFacade();
             
             var startTime = DateTime.Now;
 
@@ -77,13 +99,13 @@ namespace ReactiveWorksheets.Console.Client
         private static void Submit(CommandLineParser.SubmitParams submitParams)
         {
             //get datasourceinfo 
-            var metaDataFacade = FacadeFactory.CreateMetaDataFacade(ConnectionString);
+            var metaDataFacade = FacadesFactory.CreateMetaDataFacade();
             var dsInfo = metaDataFacade.GetDataSourceInfo(submitParams.DataSourceUrn);
 
             var recordsToUpdate = CSVHelper.ReadRecords(dsInfo, submitParams.UpdateFileName, submitParams.Separator);
             var recordsToDelete = CSVHelper.ReadRecordsToDelete(submitParams.DeleteFileName);
-            
-            var commandFacade = FacadeFactory.CreateReactiveDataCommandFacade(ConnectionString);
+
+            var commandFacade = FacadesFactory.CreateCommandFacade();
             commandFacade.SubmitChanges(submitParams.DataSourceUrn, "console", recordsToUpdate);
         }
     }

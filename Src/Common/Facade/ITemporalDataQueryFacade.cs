@@ -9,7 +9,7 @@ using FalconSoft.ReactiveWorksheets.Common.Metadata;
 
 namespace FalconSoft.ReactiveWorksheets.Common.Facade
 {
-    public interface ITemporalDataQueryFacade
+    public interface ITemporalDataQueryFacade : IDisposable
     {
         IEnumerable<Dictionary<string,object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey);
 

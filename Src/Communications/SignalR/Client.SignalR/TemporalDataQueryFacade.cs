@@ -9,7 +9,7 @@ using Microsoft.AspNet.SignalR.Client;
 
 namespace ReactiveWorksheets.Client.SignalR
 {
-    public class TemporalDataQueryFacade : ITemporalDataQueryFacade, IDisposable
+    internal class TemporalDataQueryFacade : ITemporalDataQueryFacade
     {
         private readonly HubConnection _connection;
         private readonly IHubProxy _proxy;

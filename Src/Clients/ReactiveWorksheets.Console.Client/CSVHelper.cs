@@ -6,7 +6,7 @@ using System.Text;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using Microsoft.VisualBasic.FileIO;
 
-namespace ReactiveWorksheets.Console.Client
+namespace Console.Client
 {
     public static class CSVHelper
     {
@@ -35,7 +35,7 @@ namespace ReactiveWorksheets.Console.Client
             return result;
         }
 
-        public static bool WriteRecords(IEnumerable<Dictionary<string, object>> data, string fileName, string separator)
+        public static bool WriteRecords(IEnumerable<IDictionary<string, object>> data, string fileName, string separator, bool append = false)
         {
             var recordsSb = new StringBuilder();
             recordsSb.AppendLine(string.Join(separator, data.First().Keys));
@@ -45,7 +45,7 @@ namespace ReactiveWorksheets.Console.Client
                 recordsSb.AppendLine(string.Join(separator, record.Values));
             }
 
-            using (var streamWriter = new StreamWriter(fileName, true))
+            using (var streamWriter = new StreamWriter(fileName, append))
             {
                 streamWriter.Write(recordsSb);    
             }
