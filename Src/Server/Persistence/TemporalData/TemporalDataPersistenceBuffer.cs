@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
@@ -23,7 +22,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
         //BUFFER
         private int _buffer = 100 - 1;
 
-        public TemporalDataPersistenceBuffer(string connectionString, string dbName, DataSourceInfo dataSourceInfo, string userId,int buffer)
+        public TemporalDataPersistenceBuffer(string connectionString, string dbName, DataSourceInfo dataSourceInfo, string userId, int buffer)
         {
             _connectionString = connectionString;
             _dbName = dbName;
@@ -117,7 +116,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
             {
                 cursor["Data"].AsBsonArray.Where(w => w.ToString() != "{ }").Join(tagInfo.Revisions, j1 => j1["_id"].ToString(), j2 => j2, (j1, j2) =>
                 {
-                    var dict = new Dictionary<string, object> {{"RecordKey", cursor["RecordKey"].ToString()}};
+                    var dict = new Dictionary<string, object> { { "RecordKey", cursor["RecordKey"].ToString() } };
                     foreach (var data in j1.ToBsonDocument())
                     {
                         if (exceptfields.All(a => a != data.Name))
@@ -143,10 +142,10 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                 var update = Update.Set("RecordKey", recordChangedParam.RecordKey);
                 collection.Update(query, update, UpdateFlags.Multi);
             }
-            var cursor = collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LT("Current", _buffer)));
+            var cursor = collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LTE("Current", _buffer)));
             if (cursor == null)
             {
-                CreateNewDoucument(collection,recordChangedParam);
+                CreateNewDoucument(collection, recordChangedParam);
             }
             else
             {
@@ -169,14 +168,19 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                             var index = cursor["Data"].AsBsonArray.IndexOf(element);
                             element["TimeStamp"] = DateTime.Now;
                             collection.Update(query, Update.Set(string.Format("Data.{0}", index), element));
+                            if (num == _buffer + 1)
+                            {
+                                CreateNewDoucument(collection, recordChangedParam);
+                                break;
+                            }
                             collection.Update(query, update);
                             break;
                         }
-                    //TODO w8ing engine
                     case RecordChangedAction.Removed:
                         {
-                            var query = Query.And(Query.EQ("_id", cursor["_id"]), Query.EQ("RecordKey", recordChangedParam.RecordKey));
-                            collection.Update(query, Update.Set("Data.TimeStamp", DateTime.Now),UpdateFlags.Multi);
+                            var query = Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.ElemMatch("Data", Query.EQ("TimeStamp", BsonNull.Value)));
+                            var index = collection.Find(query).First()["Current"].ToString();
+                            collection.Update(query, Update.Set("Data." + index + ".TimeStamp", DateTime.Now), UpdateFlags.Multi);
                         }
                         break;
                 }
@@ -192,8 +196,8 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
             var query = Query.EQ("Data.$.TimeStamp", BsonNull.Value);
             tagInfo.Revisions =
                 recordsHistory.Find(query)
-                    .Select(s =>s["Data"].AsBsonArray.First(w => w.ToString() != "{ }" && w["TimeStamp"] == BsonNull.Value))
-                    .Select(s => s.ToBsonDocument()["_id"].ToString()).ToList();        
+                    .Select(s => s["Data"].AsBsonArray.First(w => w.ToString() != "{ }" && w["TimeStamp"] == BsonNull.Value))
+                    .Select(s => s.ToBsonDocument()["_id"].ToString()).ToList();
             var collection = db.GetCollection<TagInfo>("TagInfo");
             collection.Insert(tagInfo);
         }
