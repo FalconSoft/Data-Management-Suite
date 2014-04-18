@@ -24,7 +24,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         public override Task OnConnected()
         {
             //Groups.Add(Context.ConnectionId, Context.QueryString["providerString"]);
-            _logger.InfoFormat("Time {0} | Connected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId, Context.User !=null ? Context.User.Identity.Name:null);
+            //_logger.InfoFormat("Time {0} | Connected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId, Context.User !=null ? Context.User.Identity.Name:null);
             return base.OnConnected();
         }
 
@@ -39,7 +39,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 _logger.Info("remove subscribe for " + Context.ConnectionId);
             }
             //Groups.Remove(Context.ConnectionId, Context.QueryString["providerString"]);
-            _logger.InfoFormat("Time {0} | Disconnected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId, Context.User != null ? Context.User.Identity.Name : null);
+            //_logger.InfoFormat("Time {0} | Disconnected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId, Context.User != null ? Context.User.Identity.Name : null);
             return base.OnDisconnected();
         }
 
