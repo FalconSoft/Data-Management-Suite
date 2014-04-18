@@ -66,7 +66,7 @@ namespace ReactiveWorksheets.Client.SignalR
                 
             });
 
-            _proxy.On<Exception>("GetAggregatedDataFailed", ex =>
+            _proxy.On<Exception>("GetAggregatedDataOnError", ex =>
             {
                 //Trace.WriteLine("   *********** GetAggregatedDataFailed " + datasourceProviderString);
                 if (_getAggregatedDataOnErrorAction != null)

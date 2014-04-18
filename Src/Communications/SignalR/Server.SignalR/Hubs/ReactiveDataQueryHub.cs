@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Runtime.Remoting.Contexts;
 using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
@@ -46,14 +47,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
                 foreach (var d in data)
                 {
-                    Clients.Caller.GetAggregatedDataResult(d);
+                    Clients.Caller.GetAggregatedDataOnNext(d);
                 }
 
-                Clients.Caller.GetAggregatedDataSuccess();
+                Clients.Caller.GetAggregatedDataOnComplete();
             }
             catch (Exception ex)
             {
-                Clients.Caller.GetAggregatedDataFailed(ex);
+                Clients.Caller.GetAggregatedDataOnError(ex);
                 throw ex;
             }
         }
