@@ -5,16 +5,18 @@ using System.Reactive.Linq;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using ReactiveWorksheets.Client.SignalR;
-using ReactiveWorksheets.Console.Client;
 
-namespace ReactiveWorksheets.ConsoleClient
+namespace Console.Client
 {
     class Program
     {
         const string ConnectionString = @"http://localhost:8081";
+        
 
         static void Main(string[] args)
         {
+            FacadesFactory.SetServerUrl(ConnectionString);
+
             while (true)
             {
                 System.Console.Write(">");
@@ -61,7 +63,7 @@ namespace ReactiveWorksheets.ConsoleClient
         private static IReactiveDataQueryFacade _reactiveDataProvider2;
         private static void Subscribe(CommandLineParser.SubscribeParams subscribeArguments)
         {
-            _reactiveDataProvider2 = FacadeFactory.CreateReactiveDataQueryFacade(ConnectionString);
+            _reactiveDataProvider2 = FacadesFactory.CreateReactiveDataQueryFacade();
 
             _reactiveDataProvider2.GetDataChanges(subscribeArguments.DataSourceUrn)
                         //.Where(r => r.ProviderString == subscribeArguments.DataSourceUrn)
@@ -80,7 +82,7 @@ namespace ReactiveWorksheets.ConsoleClient
 
         private static void Get(CommandLineParser.GetParams getArguments)
         {
-            var reactiveDataQueryFacade = FacadeFactory.CreateReactiveDataQueryFacade(ConnectionString);
+            var reactiveDataQueryFacade = FacadesFactory.CreateReactiveDataQueryFacade();
             
             var startTime = DateTime.Now;
 
@@ -97,13 +99,13 @@ namespace ReactiveWorksheets.ConsoleClient
         private static void Submit(CommandLineParser.SubmitParams submitParams)
         {
             //get datasourceinfo 
-            var metaDataFacade = FacadeFactory.CreateMetaDataFacade(ConnectionString);
+            var metaDataFacade = FacadesFactory.CreateMetaDataFacade();
             var dsInfo = metaDataFacade.GetDataSourceInfo(submitParams.DataSourceUrn);
 
             var recordsToUpdate = CSVHelper.ReadRecords(dsInfo, submitParams.UpdateFileName, submitParams.Separator);
             var recordsToDelete = CSVHelper.ReadRecordsToDelete(submitParams.DeleteFileName);
-            
-            var commandFacade = FacadeFactory.CreateReactiveDataCommandFacade(ConnectionString);
+
+            var commandFacade = FacadesFactory.CreateCommandFacade();
             commandFacade.SubmitChanges(submitParams.DataSourceUrn, "console", recordsToUpdate);
         }
     }

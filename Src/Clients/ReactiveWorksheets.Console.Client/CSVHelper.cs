@@ -6,7 +6,7 @@ using System.Text;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using Microsoft.VisualBasic.FileIO;
 
-namespace ReactiveWorksheets.ConsoleClient
+namespace Console.Client
 {
     public static class CSVHelper
     {
