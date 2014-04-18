@@ -22,9 +22,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         private readonly Dictionary<string, RevisionInfo> _onUpdateRevisionInfo;
         private readonly Dictionary<string, IDisposable> _toDeleteDisposables;
         private readonly Dictionary<string, IDisposable> _toUpdateDisposables;
-        private object _toDeleteLock = new object();
-        private object _toUpdateLock = new object();
-
+      
         public CommandsHub(ICommandFacade commandFacade)
         {
             _toDelteSubjects = new Dictionary<string, Subject<string>>();
@@ -45,6 +43,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 _toDelteSubjects.Add(dataSourceInfoPath, new Subject<string>());
 
                 var disposable = _toDelteSubjects[dataSourceInfoPath].Buffer(TimeSpan.FromMilliseconds(100))
+                    .Where(data=>data.Any())
                     .Subscribe(enumerator => _commandFacade.SubmitChanges(dataSourceInfoPath, comment, null,
                         enumerator,
                         r => _onDeleteRevisionInfos[dataSourceInfoPath] = r,
@@ -82,8 +81,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 _toUpdateSubjects.Add(dataSourceInfoPath,new Subject<Dictionary<string, object>>());
 
                 var disposable =_toUpdateSubjects[dataSourceInfoPath].Buffer(TimeSpan.FromMilliseconds(100))
-                    .Subscribe(enumerator =>
-                        _commandFacade.SubmitChanges(dataSourceInfoPath, comment,
+                    .Where(data=>data.Any())
+                    .Subscribe(enumerator => _commandFacade.SubmitChanges(dataSourceInfoPath, comment,
                             enumerator, null,
                             r => _onUpdateRevisionInfo[dataSourceInfoPath] = r,
                             ex => Clients.Caller.OnFail(ex)));
