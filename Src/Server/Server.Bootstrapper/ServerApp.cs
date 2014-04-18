@@ -123,7 +123,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _dataProvidersCatalogs ??
-                       (_dataProvidersCatalogs = new IDataProvidersCatalog[] { new DataProvidersCatalog(ConfigurationManager.AppSettings["MongoServerConnectionString"], ConfigurationManager.AppSettings["MongoDataSourceDataDbName"]), new ExternalProviderCatalog() });
+                       (_dataProvidersCatalogs = new IDataProvidersCatalog[] { new DataProvidersCatalog(ConfigurationManager.AppSettings["MongoDataConnectionString"]), new ExternalProviderCatalog() });
             }
         }
 
@@ -159,7 +159,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _worksheetsPersistence ??
-                       (_worksheetsPersistence = new WorksheetPersistence(ConfigurationManager.AppSettings["MongoServerConnectionString"], ConfigurationManager.AppSettings["MetaDataPersistenceDbName"]));
+                       (_worksheetsPersistence = new WorksheetPersistence(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"]));
             }
         }
 
@@ -168,7 +168,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 // TODO : this has to move to separate method and user should be able to specify specific connection string for each dataprovider or use default one 
-                return _liveDataPersistenceFactory ?? (_liveDataPersistenceFactory = s => new LiveDataPersistence(ConfigurationManager.AppSettings["MongoServerConnectionString"], ConfigurationManager.AppSettings["DefaultPersistenceDataDbName"], s.GetName()));
+                return _liveDataPersistenceFactory ?? (_liveDataPersistenceFactory = s => new LiveDataPersistence(ConfigurationManager.AppSettings["PersistenceDataConnectionString"], s.GetName()));
             }
         }
 
@@ -183,13 +183,12 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
                        case HistoryStorageType.Buffer:
                         {
                             return
-                                new TemporalDataPersistenceBuffer(
-                                    ConfigurationManager.AppSettings["MongoServerConnectionString"],
-                                    ConfigurationManager.AppSettings["DefaultPersistenceDataDbName"], s, "0", string.IsNullOrEmpty(s.HistoryStorageTypeParam)?100:int.Parse(s.HistoryStorageTypeParam));
+                                new TemporalDataPersistenceBuffer(ConfigurationManager.AppSettings["PersistenceDataConnectionString"], s, "0", 
+                                    string.IsNullOrEmpty(s.HistoryStorageTypeParam) ? 100 : int.Parse(s.HistoryStorageTypeParam));
                         }
                        case HistoryStorageType.Event:
                         {
-                            return new TemporalDataPersistence(ConfigurationManager.AppSettings["MongoServerConnectionString"], ConfigurationManager.AppSettings["DefaultPersistenceDataDbName"], s, "0");
+                            return new TemporalDataPersistence(ConfigurationManager.AppSettings["PersistenceDataConnectionString"], s, "0");
                         }
                        case HistoryStorageType.Time:
                         {
@@ -198,9 +197,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
                         }
                     }
                     //DEFAULT RETURN
-                    return new TemporalDataPersistenceBuffer(
-                                    ConfigurationManager.AppSettings["MongoServerConnectionString"],
-                                    ConfigurationManager.AppSettings["DefaultPersistenceDataDbName"], s, "0", 100);
+                    return new TemporalDataPersistenceBuffer(ConfigurationManager.AppSettings["PersistenceDataConnectionString"], s, "0", 100);
                 });
                                                                                          
             }
@@ -211,7 +208,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _searchIndexPersistence ??
-                       (_searchIndexPersistence = new SearchIndexPersistence(ConfigurationManager.AppSettings["MongoServerConnectionString"], ConfigurationManager.AppSettings["DefaultPersistenceDataDbName"]));
+                       (_searchIndexPersistence = new SearchIndexPersistence(ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"]));
             }
         }
 
@@ -220,7 +217,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _securityPersistence ??
-                       (_securityPersistence = new SecurityPersistence(ConfigurationManager.AppSettings["MongoServerConnectionString"], ConfigurationManager.AppSettings["DefaultPersistenceDataDbName"]));
+                       (_securityPersistence = new SecurityPersistence(ConfigurationManager.AppSettings["PersistenceDataConnectionString"]));
             }
         }
 
@@ -229,7 +226,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _metaDataPersistence ??
-                       (_metaDataPersistence = new MetaDataPersistence(ConfigurationManager.AppSettings["MongoServerConnectionString"], ConfigurationManager.AppSettings["MetaDataPersistenceDbName"]));
+                       (_metaDataPersistence = new MetaDataPersistence(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"]));
             }
         }
 
@@ -238,7 +235,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _metaDataProvider ??
-                       (_metaDataProvider = new MetaDataProvider(ConfigurationManager.AppSettings["MongoServerConnectionString"], ConfigurationManager.AppSettings["MongoDataSourceDataDbName"]));
+                       (_metaDataProvider = new MetaDataProvider(ConfigurationManager.AppSettings["MongoDataConnectionString"]));
             }
         }
 

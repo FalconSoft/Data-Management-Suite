@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Security;
 using FalconSoft.ReactiveWorksheets.Core;
 using MongoDB.Bson;
@@ -15,48 +12,47 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.Security
     {
 
         private readonly string _connectionString;
-        private readonly string _dbName;
         private const string UsersCollectionName = "Users";
+        private MongoDatabase _mongoDatabase;
 
-        public SecurityPersistence(string connectionString, string dbName)
+        public SecurityPersistence(string connectionString)
         {
             _connectionString = connectionString;
-            _dbName = dbName;
+        }
+
+        private void ConnectToDb()
+        {
+            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
+            {
+                _mongoDatabase = MongoDatabase.Create(_connectionString);
+            }
         }
 
         public List<User> GetUsers()
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            return db.GetCollection<User>(UsersCollectionName).FindAll().ToList();
+            ConnectToDb();
+            return _mongoDatabase.GetCollection<User>(UsersCollectionName).FindAll().ToList();
         }
 
         public void SaveNewUser(User user)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            ConnectToDb();
             user.Id = ObjectId.GenerateNewId().ToString();
-            db.GetCollection<User>(UsersCollectionName).Insert(user);
+            _mongoDatabase.GetCollection<User>(UsersCollectionName).Insert(user);
         }
 
         public void UpdateUser(User user)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            db.GetCollection<User>(UsersCollectionName).Update(Query<User>.EQ(u=>u.Id,user.Id),Update<User>.Set(u=>u.LoginName,user.LoginName)
+            ConnectToDb();
+            _mongoDatabase.GetCollection<User>(UsersCollectionName).Update(Query<User>.EQ(u => u.Id, user.Id), Update<User>.Set(u => u.LoginName, user.LoginName)
                                                                                                            .Set(u => u.FirstName, user.FirstName)
                                                                                                            .Set(u => u.LastName, user.LastName));
         }
 
         public void RemoveUser(User user)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            db.GetCollection<User>(UsersCollectionName).Remove(Query.EQ("Id", new BsonString(user.Id)));
+            ConnectToDb();
+            _mongoDatabase.GetCollection<User>(UsersCollectionName).Remove(Query.EQ("Id", new BsonString(user.Id)));
         }
     }
 }

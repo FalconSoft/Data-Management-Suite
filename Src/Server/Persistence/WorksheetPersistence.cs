@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
@@ -15,23 +14,18 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
     {
         private readonly string _connectionString;
         
-        private readonly string _dbName;
-        
         private const string WorksheetInfoCollectionName = "WorksheetInfo";
 
         private const string AggregatedWorksheetInfoCollectionName = "AggregatedWorksheetInfo";
 
-        public WorksheetPersistence(string connectionString,string dbName)
+        public WorksheetPersistence(string connectionString)
         {
             _connectionString = connectionString;
-            _dbName = dbName;
         }
 
         public WorksheetInfo GetWorksheetInfo(string urn)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             var ws = db.GetCollection<WorksheetInfo>(WorksheetInfoCollectionName)
                     .FindOne(Query.And(Query.EQ("Name", urn.GetName()),
                                                 Query.EQ("Category", urn.GetCategory())));
@@ -52,9 +46,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
 
         public WorksheetInfo[] GetAvailableWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             var wsCollection = db.GetCollection<WorksheetInfo>(WorksheetInfoCollectionName).FindAll();
             foreach (var ws in wsCollection)
             {
@@ -76,18 +68,14 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
 
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string userId)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             var collection = db.GetCollection<WorksheetInfo>(WorksheetInfoCollectionName);
             collection.Save(wsInfo);
         }
 
         public WorksheetInfo CreateWorksheetInfo(WorksheetInfo wsInfo, string userId)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             var collection = db.GetCollection<WorksheetInfo>(WorksheetInfoCollectionName);
             wsInfo.Id = ObjectId.GenerateNewId().ToString();
             collection.Insert(wsInfo);
@@ -97,17 +85,13 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
 
         public void DeleteWorksheetInfo(string worksheetId, string userId)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             db.GetCollection(WorksheetInfoCollectionName).Remove(Query.EQ("Id", worksheetId));
         }
 
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             var awsi =  db.GetCollection<AggregatedWorksheetInfo>(AggregatedWorksheetInfoCollectionName)
                     .FindOne(Query.And(Query.EQ("Name", worksheetUrn.GetName()),
                                                 Query.EQ("Category", worksheetUrn.GetCategory())));
@@ -130,9 +114,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             var awsCollection = db.GetCollection<AggregatedWorksheetInfo>(AggregatedWorksheetInfoCollectionName).FindAll();
             foreach (var awsi in awsCollection)
             {
@@ -151,24 +133,19 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
                 }
                 awsi.Columns = col2List;
             }
-            //awsCollection.Aggregate()
             return awsCollection.ToArray();
         }
 
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userId)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             var collection = db.GetCollection<AggregatedWorksheetInfo>(AggregatedWorksheetInfoCollectionName);
             collection.Save(wsInfo);
         }
 
         public AggregatedWorksheetInfo CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userId)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             var collection = db.GetCollection<AggregatedWorksheetInfo>(AggregatedWorksheetInfoCollectionName);
             wsInfo.Id = ObjectId.GenerateNewId().ToString();
             collection.Insert(wsInfo);
@@ -178,9 +155,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
 
         public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userId)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
+            var db = MongoDatabase.Create(_connectionString);
             db.GetCollection(AggregatedWorksheetInfoCollectionName).Remove(Query.And(Query.EQ("Name", worksheetUrn.GetName()),
                                                                   Query.EQ("Category", worksheetUrn.GetCategory())));
         }
