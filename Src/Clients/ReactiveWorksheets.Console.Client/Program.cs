@@ -6,7 +6,7 @@ using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using ReactiveWorksheets.Client.SignalR;
 
-namespace ReactiveWorksheets.ConsoleClient
+namespace ReactiveWorksheets.Console.Client
 {
     class Program
     {
