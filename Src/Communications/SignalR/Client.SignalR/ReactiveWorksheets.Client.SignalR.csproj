@@ -7,7 +7,7 @@
     <ProjectGuid>{750EA2E3-E290-4E44-BBF0-033FF8B9FC9D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ReactiveWorksheets.Client.SignalR</RootNamespace>
+    <RootNamespace>FalconSoft.ReactiveWorksheets.Client.SignalR</RootNamespace>
     <AssemblyName>ReactiveWorksheets.Client.SignalR</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -55,7 +55,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FacadeFactory.cs" />
+    <Compile Include="FacadesFactory.cs" />
     <Compile Include="MetaDataFacade.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CommandFacade.cs" />
@@ -68,10 +68,6 @@
     <ProjectReference Include="..\..\..\Common\ReactiveWorksheets.Common.csproj">
       <Project>{1FB17202-DE2B-4DBE-8E48-C3776F86EFF3}</Project>
       <Name>ReactiveWorksheets.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\ReactiveWorksheets-Private\Src\Server\RW.Core\ReactiveWorksheets.Core.csproj">
-      <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
-      <Name>ReactiveWorksheets.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

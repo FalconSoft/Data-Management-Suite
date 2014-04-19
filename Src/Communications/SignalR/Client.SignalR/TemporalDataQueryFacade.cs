@@ -7,7 +7,7 @@ using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using Microsoft.AspNet.SignalR.Client;
 
-namespace ReactiveWorksheets.Client.SignalR
+namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class TemporalDataQueryFacade : ITemporalDataQueryFacade
     {

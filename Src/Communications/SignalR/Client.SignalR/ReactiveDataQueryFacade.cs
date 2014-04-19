@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -9,7 +8,7 @@ using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using Microsoft.AspNet.SignalR.Client;
 
-namespace ReactiveWorksheets.Client.SignalR
+namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class ReactiveDataQueryFacade : IReactiveDataQueryFacade
     {

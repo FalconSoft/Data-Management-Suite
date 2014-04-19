@@ -7,7 +7,7 @@
     <ProjectGuid>{281627BC-5964-4B2F-A491-61EE77BE27AB}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ReactiveWorksheets.Console.Client</RootNamespace>
+    <RootNamespace>FalconSoft.ReactiveWorksheets.Console.Client</RootNamespace>
     <AssemblyName>ReactiveWorksheets.Console.Client</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -36,6 +36,7 @@
   <ItemGroup>
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -73,10 +74,6 @@
     <ProjectReference Include="..\..\Communications\SignalR\Client.SignalR\ReactiveWorksheets.Client.SignalR.csproj">
       <Project>{750EA2E3-E290-4E44-BBF0-033FF8B9FC9D}</Project>
       <Name>ReactiveWorksheets.Client.SignalR</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\ReactiveWorksheets-Private\Src\Clients\DesktopUI\RW.Core\ReactiveWorksheets.Desktop.Core.csproj">
-      <Project>{D51C07BA-4CA8-47E5-A677-B09E637F472F}</Project>
-      <Name>ReactiveWorksheets.Desktop.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

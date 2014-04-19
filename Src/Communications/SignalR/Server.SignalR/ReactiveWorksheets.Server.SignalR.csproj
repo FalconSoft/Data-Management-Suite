@@ -90,10 +90,6 @@
       <Project>{1FB17202-DE2B-4DBE-8E48-C3776F86EFF3}</Project>
       <Name>ReactiveWorksheets.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\ReactiveWorksheets-Private\Src\Server\RW.Core\ReactiveWorksheets.Core.csproj">
-      <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
-      <Name>ReactiveWorksheets.Core</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

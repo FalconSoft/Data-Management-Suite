@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Security;
 using Microsoft.AspNet.SignalR.Client;
 
-namespace ReactiveWorksheets.Client.SignalR
+namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class SecurityFacade : ISecurityFacade
     {

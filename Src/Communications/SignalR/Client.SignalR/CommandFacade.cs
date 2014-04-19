@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using Microsoft.AspNet.SignalR.Client;
 
-namespace ReactiveWorksheets.Client.SignalR
+namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class CommandFacade : ICommandFacade
     {
