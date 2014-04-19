@@ -1,7 +1,7 @@
-Welcome to ReactiveWorksheets platform!
+ReactiveWorksheets
 ==================
 
-FalconSoft's Reactive Worksheets platform is a set of reusable enterprise data management and analysis components designed and build as an reference platform in data management space.
+FalconSoft's Reactive Worksheets platform is a set of reusable enterprise data management and analysis companents that solves already most common enterprise data management tasks.
 
 ###Core feadures
  - Real-time data updates
@@ -16,7 +16,7 @@ for more information look into...
 ReactiveWorksheets platform is organized into several high level assemblies
 
 Common
- - **ReactiveWorksheets.Common** - base project what incapsulates all core interfaces and base structures 
+ - ReactiveWorksheets.Common
 
 Server
  - **ReactiveWorksheets.Server** - data virtualization server source code
@@ -39,18 +39,7 @@ Clients
 
 ###NuGet Packages
 
-##Technologies used
- - .Net 4.5 (C#)
- - Reactive Extensions (RX)
- - Tasks / Async
- - MongoDb
- - SignalR
- - MEF
- - log4net
- - Json.Net
- - NUnit
- - IronPython
-
 ###Current Release
+ - release is comming
 
 ###Future plans / Roadmat
