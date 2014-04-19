@@ -15,27 +15,27 @@ for more information look into...
 ###Project Structure
 ReactiveWorksheets platform is organized into several high level assemblies
 
-Common
- - ReactiveWorksheets.Common
+####Common
+ - **ReactiveWorksheets.Common** - common assembly that contains all main interfaces and base classes
 
-Server
+####Server
  - **ReactiveWorksheets.Server** - data virtualization server source code
  - **ReactiveWorksheets.Server.Bootstrapper** - source code for bootstrapping data virtualization server
  - **ReactiveWorksheets.Server.Persistence** - project responsible to persist objects within
 
-DataSources
- - MongoDb.DataSource
- - Sample.External Data Sources
+####DataSources
+ - **MongoDb.DataSource**
+ - **Sample.DataSources**
 
-Communications
+####Communications
 - SignalR
- * Client.SignalR
- * Server.SignalR
+ * **Client.SignalR**
+ * **Server.SignalR**
 - InProcess
 
-Clients
- - ReactiveWorksheets.Console
- - Real-time and customizable Wpf application
+####Clients
+ - **ReactiveWorksheets.Console**
+ - **ReactiveWorksheets** - Real-time and customizable Wpf application. Is not open source yet!
 
 ###NuGet Packages
 
