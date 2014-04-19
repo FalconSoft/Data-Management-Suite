@@ -18,7 +18,11 @@ DataSources
  - Sample.External Data Sources
 
 Communications
-SignalR
- - Client.SignalR
- - Server.SignalR
-Mock
+- SignalR
+ * Client.SignalR
+ * Server.SignalR
+- InProcess
+
+Clients
+ - ReactiveWorksheets.Console
+ - Real-time and customizable Wpf application
