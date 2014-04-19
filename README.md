@@ -1,17 +1,27 @@
 ReactiveWorksheets
 ==================
 
-Reactive Worksheets is a sophisticated enterprise data management and analysis platform that gives a coherent, consistent and holistic view of enterprise data sets, business processes and business workflow, whatever the data source –database, proprietary or legacy system, or even real-time external feed.
+FalconSoft's Reactive Worksheets platform is a set of reusable enterprise data management and analysis companents that solves already most common enterprise data management tasks.
 
+###Core feadures
+ - Real-time data updates
+ - Data Virtualization
+ - Security / control
+ - Full Audit trail
+ - Customizable WPF GUI with high frequent and real-time updates
+ - Advanced search
+for more information look into...
+
+###Project Structure
 ReactiveWorksheets platform is organized into several high level assemblies
 
 Common
  - ReactiveWorksheets.Common
 
 Server
- - ReactiveWorksheets.Server
- - ReactiveWorksheets.Server.Bootstrapper
- - ReactiveWorksheets.Server.Persistence
+ - **ReactiveWorksheets.Server** - data virtualization server source code
+ - **ReactiveWorksheets.Server.Bootstrapper** - source code for bootstrapping data virtualization server
+ - **ReactiveWorksheets.Server.Persistence** - project responsible to persist objects within
 
 DataSources
  - MongoDb.DataSource
@@ -26,3 +36,9 @@ Communications
 Clients
  - ReactiveWorksheets.Console
  - Real-time and customizable Wpf application
+
+###NuGet Packages
+
+###Current Release
+
+###Future plans / Roadmat
