@@ -42,4 +42,4 @@ ReactiveWorksheets platform is organized into several high level assemblies
 ###Current Release
  - release is comming
 
-###Future plans / Roadmat
+###Future plans / Roadmap
