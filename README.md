@@ -1,7 +1,9 @@
 ReactiveWorksheets
 ==================
 
-FalconSoft's Reactive Worksheets platform is a set of reusable enterprise data management and analysis companents that solves already most common enterprise data management tasks.
+Reactive Worksheets is a set of reusable data management and analysis components designed and built by FalconSoft to significantly speed up and simplify development of real-time data management solutions within an enterprise.
+
+Reactive Worksheets' reference architecture and set of reusable components aimed to cover most common enterprise data management tasks, and allowing developers to focus rather on business tasks instead of technology issues.
 
 ###Core feadures
  - Real-time data updates
@@ -16,7 +18,7 @@ for more information look into...
 ReactiveWorksheets platform is organized into several high level assemblies
 
 ####Common
- - **ReactiveWorksheets.Common** - common assembly that contains all main interfaces and base classes
+ - **ReactiveWorksheets.Common** - common assembly that contains all main interfaces and base classes used in data virtualization server as well as GUI.
 
 ####Server
  - **ReactiveWorksheets.Server** - data virtualization server source code
