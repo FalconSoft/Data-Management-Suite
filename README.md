@@ -30,10 +30,13 @@ ReactiveWorksheets platform is organized into several high level assemblies
  - **Sample.DataSources**
 
 ####Communications
+Reactive Worksheets server side implementation does not depend on any specific communication technology. Even more, we made it easy to implement communication level with differend kind of communication protocols, what better suits your infrastructure.
+
 - SignalR
- * **Client.SignalR**
- * **Server.SignalR**
+ * **Client.SignalR** - Client assembly what implements facades communication with [Microsoft SignalR](http://www.asp.net/signalr). 
+ * **Server.SignalR** Server side assembly what implements facades communication with [Microsoft SignalR](http://www.asp.net/signalr) 
 - InProcess
+A simple library what references server-side logic into clients AppDomain. It doesn't have any communication overhead and acts as a fat client. Mainly for testing or when no server side infrastructure. 
 
 ####Clients
  - **ReactiveWorksheets.Console**
