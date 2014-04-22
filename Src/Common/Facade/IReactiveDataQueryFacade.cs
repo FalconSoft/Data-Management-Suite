@@ -65,5 +65,17 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
             Action<string, RecordChangedParam> onSuccess,
             Action<string, Exception> onFail);
 
+        /// <summary>
+        /// Method to get result from formula
+        /// </summary>
+        /// <param name="formulaType">Formula Type</param>
+        /// <param name="formulaString">Formula</param>
+        /// <param name="inParams">input params</param>
+        /// <param name="outParams">out params</param>
+        /// <param name="onSuccess">Action called when fields have been resolved</param>
+        /// <param name="onFail">Resolve failed</param>
+        void GetFormulaResult(FormulaType formulaType,string formulaString, Dictionary<string, object> inParams,
+            Dictionary<string, object> outParams, Action<string, Dictionary<string, object>> onSuccess,
+            Action<string, Exception> onFail);
     }
 }

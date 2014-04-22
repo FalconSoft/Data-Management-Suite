@@ -58,12 +58,15 @@
     <Compile Include="DataProvidersCatalog.cs" />
     <Compile Include="MetaDataProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServiceSourceDataProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\ReactiveWorksheets-Private\Src\Server\RW.Server\ReactiveWorksheets.Server.csproj">
+      <Project>{CA16FFE9-BC48-4DC6-BBCE-9A7A3EECA424}</Project>
+      <Name>ReactiveWorksheets.Server</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Common\ReactiveWorksheets.Common.csproj">
       <Project>{1fb17202-de2b-4dbe-8e48-c3776f86eff3}</Project>
       <Name>ReactiveWorksheets.Common</Name>
