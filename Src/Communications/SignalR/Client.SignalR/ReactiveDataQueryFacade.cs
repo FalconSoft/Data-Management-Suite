@@ -43,6 +43,10 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private Action<string, RecordChangedParam> _resolveRecordbyForeignKeySuccessAction;
         private Action<string, Exception> _resolveRecordbyForeignKeyFailedAction; 
         //********************************
+
+        private Action<string, Dictionary<string,object>> _getFormulaResultSuccessAction;
+        private Action<string, Exception> _getFormulaResultFailedAction; 
+
         public ReactiveDataQueryFacade(string connectionString)
         {
             _connection = new HubConnection(connectionString);
@@ -153,6 +157,12 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _resolveRecordbyForeignKeyFailedAction(message, ex);
             });
             // **********************************
+
+            // For GetFormulaResult method
+            _proxy.On<string, Dictionary<string,object>>("GetFormulaResultSuccess", (message, data) => _getFormulaResultSuccessAction(message, data));
+            _proxy.On<string, Exception>("GetFormulaResultFailed", (message, ex) => _getFormulaResultFailedAction(message, ex));
+
+
             _startConnectionTask = _connection.Start();
             _startConnectionTask.Wait();
         }
@@ -240,6 +250,14 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             _resolveRecordbyForeignKeyFailedAction = onFail;
             _proxy.Invoke("ResolveRecordbyForeignKey", changedRecord);
         }
-        // ***************************************************************************************
+
+        public void GetFormulaResult(FormulaType formulaType, string formulaString, Dictionary<string, object> inParams, Dictionary<string, object> outParams,
+            Action<string, Dictionary<string, object>> onSuccess, Action<string, Exception> onFail)
+        {
+            _getFormulaResultSuccessAction = onSuccess;
+            _getFormulaResultFailedAction = onFail;
+            _proxy.Invoke("GetFormulaResult", formulaType,formulaString,inParams,outParams);
+        }
+
     }
 }
