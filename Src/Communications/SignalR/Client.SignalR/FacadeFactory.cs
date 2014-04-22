@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 
 namespace ReactiveWorksheets.Client.SignalR
@@ -20,12 +21,17 @@ namespace ReactiveWorksheets.Client.SignalR
             return new CommandFacade(_serverUrl);
         }
 
+        private static object _createReactiveDataQueryFacadeLock = new object();
         public static IReactiveDataQueryFacade CreateReactiveDataQueryFacade()
         {
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
-
-            return new ReactiveDataQueryFacade(_serverUrl);
+            lock (_createReactiveDataQueryFacadeLock)
+            {
+                var obj = Task.Run(() => new ReactiveDataQueryFacade(_serverUrl)).Result;
+                //return new ReactiveDataQueryFacade(_serverUrl);
+                return obj;
+            }
         }
 
         public static ITemporalDataQueryFacade CreateTemporalDataQueryFacade()

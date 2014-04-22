@@ -155,6 +155,7 @@ namespace ReactiveWorksheets.Client.SignalR
             });
             // **********************************
             _startConnectionTask = _connection.Start();
+            _startConnectionTask.Wait();
         }
         
         public void Dispose()
