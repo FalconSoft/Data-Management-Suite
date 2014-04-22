@@ -1,12 +1,18 @@
 ﻿using System;
 using System.ComponentModel.Composition;
-using FalconSoft.ReactiveWorksheets.Common.AttInterfaces;
 
 namespace FalconSoft.ReactiveWorksheets.Common.Attributes
 {
+    public interface ICustomComboSourceAttribute
+    {
+        string Name { get; }
+
+        Type DataType { get; }
+    }
+
     [MetadataAttribute]
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public class CustomComboSourceAttribute : Attribute, ICustomComboSourceAtribute
+    public class CustomComboSourceAttribute : Attribute, ICustomComboSourceAttribute
     {
 
         public CustomComboSourceAttribute(string name, Type dataType)

@@ -1,19 +1,18 @@
 ﻿using System;
-using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 
-namespace ReactiveWorksheets.Client.SignalR
+namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
-    public static class FacadesFactory
+    public class SignalRFacadesFactory : IFacadesFactory
     {
-        private static string _serverUrl;
+        private readonly string _serverUrl;
 
-        public static void SetServerUrl(string serverUrl)
+        public SignalRFacadesFactory(string serverUrl)
         {
             _serverUrl = serverUrl;
         }
 
-        public static ICommandFacade CreateCommandFacade()
+        public ICommandFacade CreateCommandFacade()
         {
             if(string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
@@ -21,20 +20,15 @@ namespace ReactiveWorksheets.Client.SignalR
             return new CommandFacade(_serverUrl);
         }
 
-        private static object _createReactiveDataQueryFacadeLock = new object();
-        public static IReactiveDataQueryFacade CreateReactiveDataQueryFacade()
+        public IReactiveDataQueryFacade CreateReactiveDataQueryFacade()
         {
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
-            lock (_createReactiveDataQueryFacadeLock)
-            {
-                var obj = Task.Run(() => new ReactiveDataQueryFacade(_serverUrl)).Result;
-                //return new ReactiveDataQueryFacade(_serverUrl);
-                return obj;
-            }
+
+            return new ReactiveDataQueryFacade(_serverUrl);
         }
 
-        public static ITemporalDataQueryFacade CreateTemporalDataQueryFacade()
+        public ITemporalDataQueryFacade CreateTemporalDataQueryFacade()
         {
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
@@ -42,7 +36,7 @@ namespace ReactiveWorksheets.Client.SignalR
             return new TemporalDataQueryFacade(_serverUrl);
         }
 
-        public static IMetaDataAdminFacade CreateMetaDataAdminFacade()
+        public IMetaDataAdminFacade CreateMetaDataAdminFacade()
         {
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
@@ -50,7 +44,7 @@ namespace ReactiveWorksheets.Client.SignalR
             return new MetaDataFacade(_serverUrl);
         }
 
-        public static IMetaDataFacade CreateMetaDataFacade()
+        public IMetaDataFacade CreateMetaDataFacade()
         {
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
@@ -58,7 +52,7 @@ namespace ReactiveWorksheets.Client.SignalR
             return new MetaDataFacade(_serverUrl);
         }
 
-        public static ISearchFacade CreateSearchFacade()
+        public ISearchFacade CreateSearchFacade()
         {
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
@@ -66,7 +60,7 @@ namespace ReactiveWorksheets.Client.SignalR
             return new SearchFacade(_serverUrl);
         }
 
-        public static ISecurityFacade CreateSecurityFacade()
+        public ISecurityFacade CreateSecurityFacade()
         {
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");

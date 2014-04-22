@@ -1,21 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Reactive.Linq;
+using FalconSoft.ReactiveWorksheets.Client.SignalR;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
-using ReactiveWorksheets.Client.SignalR;
 
-namespace ReactiveWorksheets.Console.Client
+namespace FalconSoft.ReactiveWorksheets.Console.Client
 {
     class Program
     {
-        const string ConnectionString = @"http://localhost:8081";
-        
+        private static IFacadesFactory GetFacadesFactory(string facadeType)
+        {
+            if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
+            {
+                return new SignalRFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"]);
+            }
+            else
+            {
+                throw new ConfigurationException("Unsupported facade type - >" + facadeType);
+            }
+        }
+
+        public static IFacadesFactory FacadesFactory { get; private set; }
 
         static void Main(string[] args)
         {
-            FacadesFactory.SetServerUrl(ConnectionString);
+            FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
 
             while (true)
             {

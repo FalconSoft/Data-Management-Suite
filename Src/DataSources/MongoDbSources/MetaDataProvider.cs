@@ -65,7 +65,8 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
             foreach (string addedfield in addedfields)
             {
                 dataCollection.Update(Query.Null, Update.Set(addedfield, string.Empty), UpdateFlags.Multi);
-                historyCollection.Update(Query.Null, Update.Set(addedfield, string.Empty), UpdateFlags.Multi);
+                //historyCollection.Update(Query.Null, Update.Set(addedfield, string.Empty), UpdateFlags.Multi);
+                ChooseHistoryStorageType(historyCollection,dataSource.HistoryStorageType,addedfield);
             }
             //IF FIELDS REMOVED  (ONLY)
             var removedfields = oldDs.Fields.Keys.Except(dataSource.Fields.Keys)
@@ -160,5 +161,18 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 _mongoDatabase = MongoDatabase.Create(_connectionString);
             }
         }
+
+        private void ChooseHistoryStorageType(MongoCollection<BsonDocument> collection,HistoryStorageType storageType,string field)
+        {
+            switch (storageType)
+            {
+                case HistoryStorageType.Buffer: //collection.Update(Query.Null, Update.PushEach("Data.$."+field, string.Empty), UpdateFlags.Multi);
+                    break;
+               case HistoryStorageType.Event: collection.Update(Query.Null, Update.Set(field, string.Empty), UpdateFlags.Multi);
+                   break;
+            }
+            
+        }
+
     }
 }

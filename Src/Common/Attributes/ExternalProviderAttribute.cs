@@ -1,9 +1,15 @@
 ﻿using System;
 using System.ComponentModel.Composition;
-using FalconSoft.ReactiveWorksheets.Common.AttInterfaces;
 
 namespace FalconSoft.ReactiveWorksheets.Common.Attributes
 {
+    public interface IExternalProviderAttribute
+    {
+        Type BaseType { get; }
+
+        string[] KeyFieldNames { get; }
+    }
+
     [MetadataAttribute]
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property)]
     public class ExternalProviderAttribute : Attribute, IExternalProviderAttribute

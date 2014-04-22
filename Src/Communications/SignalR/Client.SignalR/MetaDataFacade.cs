@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
@@ -8,7 +7,7 @@ using FalconSoft.ReactiveWorksheets.Common.Security;
 using Microsoft.AspNet.SignalR.Client;
 using Newtonsoft.Json;
 
-namespace ReactiveWorksheets.Client.SignalR
+namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class MetaDataFacade : IMetaDataAdminFacade
     {

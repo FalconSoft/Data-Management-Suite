@@ -35,16 +35,12 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AttInterfaces\ICustomComboSourceAtt.cs" />
-    <Compile Include="AttInterfaces\IExternalProviderAtt.cs" />
-    <Compile Include="AttInterfaces\IImportDataProviderAtt.cs" />
-    <Compile Include="AttInterfaces\IValueConverterAtt.cs" />
-    <Compile Include="Attributes\CustomComboSourceAtt.cs" />
-    <Compile Include="Attributes\ExternalProviderAtt.cs" />
-    <Compile Include="Attributes\ImportDataInfoAtt.cs" />
-    <Compile Include="Attributes\ValueConverterAtt.cs" />
+    <Compile Include="Attributes\CustomComboSourceAttribute.cs" />
+    <Compile Include="Attributes\ExternalProviderAttribute.cs" />
+    <Compile Include="Attributes\ValueConverterAttribute.cs" />
     <Compile Include="DataHelper.cs" />
     <Compile Include="Facade\ICommandFacade.cs" />
+    <Compile Include="Facade\IFacadesFactory.cs" />
     <Compile Include="Facade\IMetaDataAdminFacade.cs" />
     <Compile Include="Facade\IMetaDataFacade.cs" />
     <Compile Include="Facade\IReactiveDataQueryFacade.cs" />
