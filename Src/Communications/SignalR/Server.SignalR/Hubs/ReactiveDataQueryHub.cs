@@ -137,6 +137,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 (str,ex) => Clients.Caller.ResolveRecordbyForeignKeyFailed(str,ex));
         }
 
+        public void GetFormulaResult(FormulaType formulaType,string formulaString, Dictionary<string, object> inParams,
+            Dictionary<string, object> outParams)
+        {
+            _reactiveDataQueryFacade.GetFormulaResult(formulaType,formulaString,inParams,outParams,
+                (str, rcp) => Clients.Caller.GetFormulaResultSuccess(str, rcp),
+                (str, ex) => Clients.Caller.GetFormulaResultFailed(str, ex));
+        }
+
         public void GetDataChangesDispose()
         {
             

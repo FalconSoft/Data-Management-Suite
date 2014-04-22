@@ -47,6 +47,7 @@
     <Compile Include="Facade\ISearchFacade.cs" />
     <Compile Include="Facade\ISecurityFacade.cs" />
     <Compile Include="Facade\ITemporalDataQueryFacade.cs" />
+    <Compile Include="FormulaType.cs" />
     <Compile Include="HistoryStorageType.cs" />
     <Compile Include="IMetaDataProvider.cs" />
     <Compile Include="FilterRule.cs" />
