@@ -37,6 +37,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void SubmitChangesDeleteOnNext(string dataSourceInfoPath, string comment, string toDeleteKey)
         {
+            lock (_toDelteSubjects)
             if (!_toDelteSubjects.ContainsKey(dataSourceInfoPath))
             {
                 _toDelteSubjects.Add(dataSourceInfoPath, new Subject<string>());
@@ -74,6 +75,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         public void SubmitChangesChangeRecordsOnNext(string dataSourceInfoPath, string comment,
             Dictionary<string, object> changedRecord)
         {
+            lock (_toUpdateSubjects)
             if (!_toUpdateSubjects.ContainsKey(dataSourceInfoPath))
             {
                 _toUpdateSubjects.Add(dataSourceInfoPath,new Subject<Dictionary<string, object>>());

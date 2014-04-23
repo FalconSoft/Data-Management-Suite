@@ -17,9 +17,9 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _securityFacade = securityFacade;
         }
 
-        public async Task<List<User>> GetUsers()
+        public List<User> GetUsers()
         {
-            return await Task.Run(() => _securityFacade.GetUsers());
+            return  _securityFacade.GetUsers();
         }
 
         public void SaveNewUser(User user)

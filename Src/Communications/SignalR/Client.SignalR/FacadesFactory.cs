@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Mime;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 
 namespace FalconSoft.ReactiveWorksheets.Client.SignalR
@@ -24,7 +25,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
-
+            
             return new ReactiveDataQueryFacade(_serverUrl);
         }
 

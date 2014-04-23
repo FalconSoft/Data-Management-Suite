@@ -109,48 +109,47 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void GetData(string dataSourcePath, FilterRule[] filterRules = null)
         {
-            lock (_getDataLock)
-                //Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(connectionId =>
+            {
+                Trace.WriteLine("   GetData Start connection Id : " + connectionId);
+                try
                 {
-                    var connectionId = string.Copy(Context.ConnectionId);
-                    Trace.WriteLine("   GetData Start connection Id : " + connectionId);
-                    try
+                    var data = _reactiveDataQueryFacade.GetData(dataSourcePath,
+                        filterRules.Any() ? filterRules : null);
+
+                    var i = 0;
+                    foreach (var d in data)
                     {
-                        var data = _reactiveDataQueryFacade.GetData(dataSourcePath,
-                            filterRules.Any() ? filterRules : null);
-
-                        foreach (var d in data)
-                        {
-                            Clients.Client(connectionId).GetDataOnNext(d);
-                        }
-
-
-                        Clients.Client(connectionId).GetDataOnComplete();
-                        Trace.WriteLine("   GetData Complete connection Id : " + connectionId);
+                        Clients.Client(connectionId.ToString()).GetDataOnNext(d);
+                        Console.Write(" \r{0}", i++);
                     }
-                    catch (Exception ex)
-                    {
-                        Clients.Client(connectionId).GetDataOnError(ex);
-                        Trace.WriteLine("   GetData Failed connection Id : " + connectionId);
-                        throw ex;
-                    }
-                }//);
+
+
+                    Clients.Client(connectionId.ToString()).GetDataOnComplete();
+                    Trace.WriteLine("   GetData Complete connection Id : " + connectionId);
+                }
+                catch (Exception ex)
+                {
+                    Clients.Client(connectionId.ToString()).GetDataOnError(ex);
+                    Trace.WriteLine("   GetData Failed connection Id : " + connectionId);
+                    throw ex;
+                }
+            }, string.Copy(Context.ConnectionId));
         }
 
-        private static readonly object _lock = new object();
         public void GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null)
         {
-            lock((_lock))
-            if (!_getDataChangesDisposables.ContainsKey(Context.ConnectionId))
+            var connectionId = string.Copy(Context.ConnectionId);
+            if (!_getDataChangesDisposables.ContainsKey(connectionId))
             {
-                Groups.Add(Context.ConnectionId, dataSourcePath);
+                Groups.Add(connectionId, dataSourcePath);
 
                 var disposable = _reactiveDataQueryFacade.GetDataChanges(dataSourcePath,
                     filterRules.Any() ? filterRules : null)
                     .Subscribe(r => Clients.Group(dataSourcePath).GetDataChangesOnNext(r),
-                        () => Groups.Remove(Context.ConnectionId, dataSourcePath));
-                _getDataChangesDisposables.Add(Context.ConnectionId, disposable);
-                _dataSourcePathDictionary.Add(Context.ConnectionId, dataSourcePath);
+                        () => Groups.Remove(connectionId, dataSourcePath));
+                _getDataChangesDisposables.Add(connectionId, disposable);
+                _dataSourcePathDictionary.Add(connectionId, dataSourcePath);
             }
             
         }

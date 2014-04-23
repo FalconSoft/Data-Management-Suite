@@ -15,14 +15,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _searchFacade = searchFacade;
         }
 
-        public async Task<SearchData[]> Search(string searchString)
+        public SearchData[] Search(string searchString)
         {
-            return await Task.Run(() => _searchFacade.Search(searchString));
+            return  _searchFacade.Search(searchString);
         }
 
-        public async Task<HeaderInfo[]> GetSearchableWorksheets(SearchData searchData)
+        public HeaderInfo[] GetSearchableWorksheets(SearchData searchData)
         {
-            return await Task.Run(() => _searchFacade.GetSearchableWorksheets(searchData));
+            return  _searchFacade.GetSearchableWorksheets(searchData);
         }
 
     }
