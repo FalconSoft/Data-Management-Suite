@@ -145,6 +145,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 (str, ex) => Clients.Caller.GetFormulaResultFailed(str, ex));
         }
 
+        public void RequestCalculation(RecordChangedParam recordChangedParam)
+        {
+            _reactiveDataQueryFacade.RequestCalculation(recordChangedParam,
+                (str, rcp) => Clients.Caller.RequestCalculationSuccess(str, rcp),
+                (str, ex) => Clients.Caller.RequestCalculationFailed(str, ex));
+        }
+
+
         public void GetDataChangesDispose()
         {
             

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -45,7 +46,10 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         //********************************
 
         private Action<string, Dictionary<string,object>> _getFormulaResultSuccessAction;
-        private Action<string, Exception> _getFormulaResultFailedAction; 
+        private Action<string, Exception> _getFormulaResultFailedAction;
+
+        private Action<string,RecordChangedParam> _calculationSuccessAction;
+        private Action<string, Exception> _calculationFailedAction; 
 
         public ReactiveDataQueryFacade(string connectionString)
         {
@@ -161,6 +165,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             // For GetFormulaResult method
             _proxy.On<string, Dictionary<string,object>>("GetFormulaResultSuccess", (message, data) => _getFormulaResultSuccessAction(message, data));
             _proxy.On<string, Exception>("GetFormulaResultFailed", (message, ex) => _getFormulaResultFailedAction(message, ex));
+            // For RequestCalculation method
+            _proxy.On<string, RecordChangedParam>("RequestCalculationSuccess", (message, data) => _calculationSuccessAction(message,data));
+            _proxy.On<string, Exception>("RequestCalculationFailed", (message, ex) => _calculationFailedAction(message, ex));
 
 
             _startConnectionTask = _connection.Start();
@@ -259,5 +266,12 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             _proxy.Invoke("GetFormulaResult", formulaType,formulaString,inParams,outParams);
         }
 
+        public void RequestCalculation(RecordChangedParam recordChangedParam, Action<string, RecordChangedParam> onSuccess,
+            Action<string, Exception> onFail)
+        {
+            _calculationSuccessAction = onSuccess;
+            _calculationFailedAction = onFail;
+            _proxy.Invoke("RequestCalculation", recordChangedParam);
+        }
     }
 }
