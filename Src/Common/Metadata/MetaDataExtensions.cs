@@ -89,7 +89,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 
         public static WorksheetInfo MakeWorksheetInfo(this AggregatedWorksheetInfo aggregatedWorksheet)
         {
-            return new WorksheetInfo
+            var ws = new WorksheetInfo
             {
                 Id = aggregatedWorksheet.Id,
                 Name = aggregatedWorksheet.Name,
@@ -97,15 +97,16 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 Columns = aggregatedWorksheet.GetColumnsFromAgrWs(),
                 DataSourceInfo = aggregatedWorksheet.MakeAggregatedDataSourceInfo()
             };
+            ws.Columns.ForEach(x=>x.Update(ws.DataSourceInfo.Fields[x.Header]));
+            return ws;
         }
 
         public static List<ColumnInfo> GetColumnsFromAgrWs(this AggregatedWorksheetInfo aggregatedWorksheet)
         {
             var columns = new List<ColumnInfo>();
             columns.AddRange(aggregatedWorksheet.GroupByColumns);
-            columns.ForEach(x=> { x.SortIndex = columns.IndexOf(x); x.SortOrder = ColumnSortOrder.Ascending; } ); // TODO POSSIBLY WE DONT NEED THIS
+            columns.ForEach(x=> x.SortOrder = ColumnSortOrder.Ascending); // TODO POSSIBLY WE DONT NEED THIS
             columns.AddRange(aggregatedWorksheet.Columns.Select(x => x.Value));
-            columns.ForEach(x=>x.ColumnIndex = columns.IndexOf(x));
             return columns;
         }
 
@@ -114,12 +115,11 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             return new DataSourceInfo
             {
                 Category = aggregatedWorksheet.DataSourceInfo.Category,
-                Description = aggregatedWorksheet.DataSourceInfo.Description,
                 Id = aggregatedWorksheet.DataSourceInfo.Id,
                 Name = aggregatedWorksheet.DataSourceInfo.Name,
                 Fields = aggregatedWorksheet.GetColumnsFromAgrWs().ToDictionary(x=>x.Header, x=>new FieldInfo
                 {
-                    DataSourceProviderString = aggregatedWorksheet.DataSourceInfo.ParentProviderString,
+                    DataSourceProviderString = aggregatedWorksheet.DataSourceInfo.DataSourcePath,
                     IsKey = x.FieldName == x.Header,
                     IsNullable = x.FieldName!=x.Header,
                     DataType = aggregatedWorksheet.DataSourceInfo.Fields[x.FieldName].DataType,

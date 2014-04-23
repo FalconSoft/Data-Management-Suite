@@ -175,7 +175,6 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         
         public void Dispose()
         {
-            _proxy.Invoke("GetDataChangesDispose");
             _connection.Stop();
         }
 

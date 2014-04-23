@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using FalconSoft.ReactiveWorksheets.Common.Facade;
+﻿using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FalconSoft.ReactiveWorksheets.Common.Security;
 using Microsoft.AspNet.SignalR;
@@ -17,14 +16,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _metaDataFacade.ObjectInfoChanged += OnObjectInfoChanged;
         }
         
-        public  async Task<DataSourceInfo[]> GetAvailableDataSources(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
+        public DataSourceInfo[] GetAvailableDataSources(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            return await Task.Run(() => _metaDataFacade.GetAvailableDataSources(userId, minAccessLevel));
+            return  _metaDataFacade.GetAvailableDataSources(userId, minAccessLevel);
         }
 
-        public async Task<DataSourceInfo> GetDataSourceInfo(string dataSourceUrn)
+        public DataSourceInfo GetDataSourceInfo(string dataSourceUrn)
         {
-            return await Task.Run(() => _metaDataFacade.GetDataSourceInfo(dataSourceUrn));
+            return  _metaDataFacade.GetDataSourceInfo(dataSourceUrn);
         }
 
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userId)
@@ -42,14 +41,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _metaDataFacade.DeleteDataSourceInfo(dataSourceUrn, userId);
         }
 
-        public async Task<WorksheetInfo> GetWorksheetInfo(string worksheetUrn)
+        public WorksheetInfo GetWorksheetInfo(string worksheetUrn)
         {
-            return await Task.Run(() => _metaDataFacade.GetWorksheetInfo(worksheetUrn));
+            return _metaDataFacade.GetWorksheetInfo(worksheetUrn);
         }
 
-        public async Task<WorksheetInfo[]> GetAvailableWorksheets(string userId,AccessLevel minAccessLevel = AccessLevel.Read)
+        public WorksheetInfo[] GetAvailableWorksheets(string userId,AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            return await Task.Run(() => _metaDataFacade.GetAvailableWorksheets(userId, minAccessLevel));
+            return _metaDataFacade.GetAvailableWorksheets(userId, minAccessLevel);
         }
 
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
@@ -67,14 +66,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _metaDataFacade.DeleteWorksheetInfo(worksheetUrn, userId);
         }
 
-        public async Task<AggregatedWorksheetInfo> GetAggregatedWorksheetInfo(string worksheetUrn)
+        public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn)
         {
-            return await Task.Run(() => _metaDataFacade.GetAggregatedWorksheetInfo(worksheetUrn));
+            return  _metaDataFacade.GetAggregatedWorksheetInfo(worksheetUrn);
         }
 
-        public async Task<AggregatedWorksheetInfo[]> GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
+        public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            return await Task.Run(() => _metaDataFacade.GetAvailableAggregatedWorksheets(userId, minAccessLevel));
+            return  _metaDataFacade.GetAvailableAggregatedWorksheets(userId, minAccessLevel);
         }
 
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
@@ -92,14 +91,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _metaDataFacade.DeleteAggregatedWorksheetInfo(worksheetUrn, userId);
         }
 
-        public async Task<ServiceSourceInfo[]> GetAvailableServiceSources(string userId)
+        public ServiceSourceInfo[] GetAvailableServiceSources(string userId)
         {
-            return await Task.Run(() => _metaDataFacade.GetAvailableServiceSources(userId));
+            return  _metaDataFacade.GetAvailableServiceSources(userId);
         }
 
-        public async Task<ServiceSourceInfo> GetServiceSourceInfo(string serviceSourceUrn)
+        public ServiceSourceInfo GetServiceSourceInfo(string serviceSourceUrn)
         {
-            return await Task.Run(()=>_metaDataFacade.GetServiceSourceInfo(serviceSourceUrn));
+            return _metaDataFacade.GetServiceSourceInfo(serviceSourceUrn);
         }
 
         public void CreateServiceSourceInfo(ServiceSourceInfo serviceSourceInfo, string userId)

@@ -81,7 +81,11 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
         {
             get
             {
+<<<<<<< HEAD
                 return _dataQueryFacade ?? (_dataQueryFacade = new ReactiveDataFacade(MessageBus, LiveDataPersistenceFactory,ProvidersRegistry));
+=======
+                return _dataQueryFacade ?? (_dataQueryFacade = new ReactiveDataFacade(MessageBus, LiveDataPersistenceFactory, ReactiveEngine));
+>>>>>>> 2b4a9ef9748184907b7bd577c5a5d53766303303
             }
         }
 

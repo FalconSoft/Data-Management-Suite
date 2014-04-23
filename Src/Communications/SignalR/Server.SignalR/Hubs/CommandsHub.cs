@@ -37,20 +37,19 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void SubmitChangesDeleteOnNext(string dataSourceInfoPath, string comment, string toDeleteKey)
         {
+            lock (_toDelteSubjects)
             if (!_toDelteSubjects.ContainsKey(dataSourceInfoPath))
             {
-
                 _toDelteSubjects.Add(dataSourceInfoPath, new Subject<string>());
 
                 var disposable = _toDelteSubjects[dataSourceInfoPath].Buffer(TimeSpan.FromMilliseconds(100))
                     .Where(data=>data.Any())
                     .Subscribe(enumerator => _commandFacade.SubmitChanges(dataSourceInfoPath, comment, null,
-                        enumerator,
-                        r => _onDeleteRevisionInfos[dataSourceInfoPath] = r,
+                        enumerator, r => _onDeleteRevisionInfos[dataSourceInfoPath] = r,
                         ex => Clients.Caller.OnFail(ex)));
                 _toDeleteDisposables.Add(dataSourceInfoPath, disposable);
-
             }
+
             _toDelteSubjects[dataSourceInfoPath].OnNext(toDeleteKey);
         }
 
@@ -76,6 +75,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         public void SubmitChangesChangeRecordsOnNext(string dataSourceInfoPath, string comment,
             Dictionary<string, object> changedRecord)
         {
+            lock (_toUpdateSubjects)
             if (!_toUpdateSubjects.ContainsKey(dataSourceInfoPath))
             {
                 _toUpdateSubjects.Add(dataSourceInfoPath,new Subject<Dictionary<string, object>>());
