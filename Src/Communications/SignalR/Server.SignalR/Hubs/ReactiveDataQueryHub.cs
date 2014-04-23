@@ -161,7 +161,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 (str, ex) => Clients.Caller.ResolveRecordbyForeignKeyFailed(str, ex));
         }
 
-<<<<<<< HEAD
         public void GetFormulaResult(FormulaType formulaType,string formulaString, Dictionary<string, object> inParams,
             Dictionary<string, object> outParams)
         {
@@ -182,7 +181,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         {
             
         }
-=======
->>>>>>> 2b4a9ef9748184907b7bd577c5a5d53766303303
+
     }
 }
