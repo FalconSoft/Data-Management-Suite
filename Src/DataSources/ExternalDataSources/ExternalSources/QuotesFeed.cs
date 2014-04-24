@@ -118,7 +118,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
             }
         }
 
-        public List<Dictionary<string, object>> GetData(string[] fields = null, IList<FilterRule> whereCondition = null)
+        public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
             _timer.Start();
             var list = new List<Dictionary<string, object>>();
@@ -138,7 +138,6 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
             //throw new NotImplementedException();
             return null;
         }
-
 
         public void UpdateSourceInfo(object sourceInfo)
         {

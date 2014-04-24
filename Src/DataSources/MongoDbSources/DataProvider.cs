@@ -22,11 +22,11 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
         public DataSourceInfo DataSourceInfo { get; set; }
 
-        public List<Dictionary<string, object>> GetData(string[] fields = null, IList<FilterRule> whereCondition = null)
+        public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
             var collection = GetCollection(DataSourceInfo.DataSourcePath.ToValidDbString() + "_Data");
             MongoCursor<BsonDocument> cursor;
-            var query = CreateFilterRuleQuery(whereCondition);
+            var query = CreateFilterRuleQuery(filterRules);
             if (string.IsNullOrEmpty(query))
             {
                 cursor = collection.FindAll();
@@ -95,7 +95,7 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
             return "";
         }
 
-        private string CreateFilterRuleQuery(IList<FilterRule> whereCondition)
+        private string CreateFilterRuleQuery(IEnumerable<FilterRule> whereCondition)
         {
             if (whereCondition == null || !whereCondition.Any()) return string.Empty;
             var query = "{";
@@ -195,7 +195,6 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 
             }
         }
-
 
         private MongoCollection<BsonDocument> GetCollection(string name)
         {

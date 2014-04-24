@@ -59,7 +59,6 @@
     <Compile Include="IDataProvider.cs" />
     <Compile Include="IDataProvidersCatalog.cs" />
     <Compile Include="ILogger.cs" />
-    <Compile Include="IServiceDataProvider.cs" />
     <Compile Include="Metadata\AggregatedWorksheetInfo.cs" />
     <Compile Include="Metadata\AnalyticsSourceInfo.cs" />
     <Compile Include="Metadata\BaseSourceInfo.cs" />
@@ -67,7 +66,6 @@
     <Compile Include="Metadata\DataSourceInfo.cs" />
     <Compile Include="Metadata\FieldInfo.cs" />
     <Compile Include="Metadata\HeaderInfo.cs" />
-    <Compile Include="Metadata\ImportIOInfo.cs" />
     <Compile Include="Metadata\MetaDataExtensions.cs" />
     <Compile Include="Metadata\RelationshipInfo.cs" />
     <Compile Include="Metadata\SearchData.cs" />

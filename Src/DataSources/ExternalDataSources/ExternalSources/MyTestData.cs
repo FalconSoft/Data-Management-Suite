@@ -67,7 +67,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
 
         }
 
-        List<Dictionary<string, object>> IDataProvider.GetData(string[] fields, IList<FilterRule> whereCondition)
+        public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
             _timer.Start();
             var list = new List<Dictionary<string, object>>();
