@@ -56,6 +56,7 @@ namespace FalconSoft.ReactiveWorksheets.Common
 
         public static string WorkOutRecordKey(Dictionary<string, object> record, IEnumerable<string> keys)
         {
+            if (!record.Any()) return string.Empty;
             return keys.Aggregate("", (current, key) => current + ("|" + record[key]));
         }
     }

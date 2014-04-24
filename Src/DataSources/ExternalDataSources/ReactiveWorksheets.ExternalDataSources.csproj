@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="ExternalExtensions.cs" />
     <Compile Include="ExternalProviderCatalog.cs" />
+    <Compile Include="ExternalSources\Calculator.cs" />
     <Compile Include="ExternalSources\MyTestData.cs" />
     <Compile Include="ExternalSources\QuotesFeed.cs" />
     <Compile Include="ExternalSources\TestFunctionDataProvider.cs" />

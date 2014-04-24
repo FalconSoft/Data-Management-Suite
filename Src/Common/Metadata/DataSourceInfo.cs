@@ -12,11 +12,12 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             Relationships = new Dictionary<string, RelationshipInfo>();
             ServiceRelations = new Dictionary<string, ServiceSourceRelationship>();
         }
-        public DataSourceInfo(IEnumerable<FieldInfo> fields)
+        public DataSourceInfo(IEnumerable<FieldInfo> fields, bool accessToOriginalData = false)
         {
             Relationships = new Dictionary<string, RelationshipInfo>();
             ServiceRelations = new Dictionary<string, ServiceSourceRelationship>();
             Fields = fields.ToDictionary(f => f.Name, f => f);
+            AccessToOriginalData = accessToOriginalData;
         }
 
 
@@ -59,7 +60,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         /// <summary>
         /// Access to original data 
         /// </summary>
-        public bool AccessToOriginalData { get; set; }
+        public bool AccessToOriginalData { get; private set; }
 
 
         public void Update(DataSourceInfo dataSourceInfo)
