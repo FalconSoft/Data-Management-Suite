@@ -23,6 +23,19 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
 {
     public static class ServerApp
     {
+        private static string _metaDataPersistenceConnectionString;
+        private static string _persistenceDataConnectionString;
+        private static string _mongoDataConnectionString;
+
+        internal static void SetConfiguration(string metaDataPersistenceConnectionString, 
+            string persistenceDataConnectionString,
+            string mongoDataConnectionString)
+        {
+            _metaDataPersistenceConnectionString = metaDataPersistenceConnectionString;
+            _persistenceDataConnectionString = persistenceDataConnectionString;
+            _mongoDataConnectionString = mongoDataConnectionString;
+        }
+
         private static ICommandsAggregator _commandAggregator;
 
         private static IProvidersRegistry _providersRegistry;
@@ -123,7 +136,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _dataProvidersCatalogs ??
-                       (_dataProvidersCatalogs = new IDataProvidersCatalog[] { new DataProvidersCatalog(ConfigurationManager.AppSettings["MongoDataConnectionString"]), new ExternalProviderCatalog() });
+                       (_dataProvidersCatalogs = new IDataProvidersCatalog[] { new DataProvidersCatalog(_mongoDataConnectionString), new ExternalProviderCatalog() });
             }
         }
 
@@ -159,7 +172,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _worksheetsPersistence ??
-                       (_worksheetsPersistence = new WorksheetPersistence(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"]));
+                       (_worksheetsPersistence = new WorksheetPersistence(_metaDataPersistenceConnectionString));
             }
         }
 
@@ -168,7 +181,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 // TODO : this has to move to separate method and user should be able to specify specific connection string for each dataprovider or use default one 
-                return _liveDataPersistenceFactory ?? (_liveDataPersistenceFactory = s => new LiveDataPersistence(ConfigurationManager.AppSettings["PersistenceDataConnectionString"], s.GetName()));
+                return _liveDataPersistenceFactory ?? (_liveDataPersistenceFactory = s => new LiveDataPersistence(_persistenceDataConnectionString, s.GetName()));
             }
         }
 
@@ -183,12 +196,12 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
                        case HistoryStorageType.Buffer:
                         {
                             return
-                                new TemporalDataPersistenceBuffer(ConfigurationManager.AppSettings["PersistenceDataConnectionString"], s, "0", 
+                                new TemporalDataPersistenceBuffer(_persistenceDataConnectionString, s, "0", 
                                     string.IsNullOrEmpty(s.HistoryStorageTypeParam) ? 100 : int.Parse(s.HistoryStorageTypeParam));
                         }
                        case HistoryStorageType.Event:
                         {
-                            return new TemporalDataPersistence(ConfigurationManager.AppSettings["PersistenceDataConnectionString"], s, "0");
+                            return new TemporalDataPersistence(_persistenceDataConnectionString, s, "0");
                         }
                        case HistoryStorageType.Time:
                         {
@@ -197,7 +210,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
                         }
                     }
                     //DEFAULT RETURN
-                    return new TemporalDataPersistenceBuffer(ConfigurationManager.AppSettings["PersistenceDataConnectionString"], s, "0", 100);
+                    return new TemporalDataPersistenceBuffer(_persistenceDataConnectionString, s, "0", 100);
                 });
                                                                                          
             }
@@ -208,7 +221,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _searchIndexPersistence ??
-                       (_searchIndexPersistence = new SearchIndexPersistence(ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"]));
+                       (_searchIndexPersistence = new SearchIndexPersistence(_persistenceDataConnectionString, _metaDataPersistenceConnectionString));
             }
         }
 
@@ -217,7 +230,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _securityPersistence ??
-                       (_securityPersistence = new SecurityPersistence(ConfigurationManager.AppSettings["PersistenceDataConnectionString"]));
+                       (_securityPersistence = new SecurityPersistence(_persistenceDataConnectionString));
             }
         }
 
@@ -226,7 +239,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _metaDataPersistence ??
-                       (_metaDataPersistence = new MetaDataPersistence(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"]));
+                       (_metaDataPersistence = new MetaDataPersistence(_metaDataPersistenceConnectionString));
             }
         }
 
@@ -235,7 +248,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _metaDataProvider ??
-                       (_metaDataProvider = new MetaDataProvider(ConfigurationManager.AppSettings["MongoDataConnectionString"]));
+                       (_metaDataProvider = new MetaDataProvider(_mongoDataConnectionString));
             }
         }
 

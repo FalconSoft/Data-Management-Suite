@@ -18,7 +18,7 @@ namespace ReactiveWorksheets.Server.ConsoleRunner
             try
             {
                 var bootstrapper = new Bootstrapper();
-                bootstrapper.Configure();
+                bootstrapper.Configure(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MongoDataConnectionString"]);
                 bootstrapper.Run();
             }
             catch (Exception ex)
