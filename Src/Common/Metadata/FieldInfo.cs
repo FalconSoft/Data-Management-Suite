@@ -99,5 +99,10 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 IsParentField = IsParentField,
             };
         }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }
