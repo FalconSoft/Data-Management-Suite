@@ -42,8 +42,6 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                     return JsonConvert.DeserializeObject<WorksheetInfo>(jsonObject);
                 case ChangedObjectType.DataSourceInfo:
                     return JsonConvert.DeserializeObject<DataSourceInfo>(jsonObject);
-                case ChangedObjectType.ServiceSourceInfo:
-                    return JsonConvert.DeserializeObject<ServiceSourceInfo>(jsonObject);
                 case ChangedObjectType.AggregatedWorksheetInfo:
                     return JsonConvert.DeserializeObject<AggregatedWorksheetInfo>(jsonObject);
                 default:

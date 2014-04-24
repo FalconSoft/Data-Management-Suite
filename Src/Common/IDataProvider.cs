@@ -16,27 +16,9 @@ namespace FalconSoft.ReactiveWorksheets.Common
 
         RevisionInfo SubmitChanges(List<Dictionary<string, object>> recordsToChange, List<string> recordsToDelete, string comment = null);
 
+        // this method must be removed from here!
         void UpdateSourceInfo(object sourceInfo);
     }
-
-    public interface IServiceDataProvider : IBaseProvider
-    {
-
-        /// <summary>
-        /// Definition of synchronous method to perform calculations.
-        /// This method will be called when server starts and when any of "in" Parameters will change.
-        /// In future, we will add more options to control over calls to this method  
-        /// </summary>
-        /// <param name="inParams">input parameters</param>
-        /// <param name="onError">error callback(string RecordKey, string errorMessage). Will be called every time when error occurs</param>
-        /// <returns></returns>
-        IEnumerable<Dictionary<string, object>> GetData(IEnumerable<Dictionary<string, object>> inParams, Action<string, string> onError = null);
-
-        // remove this method in favour to above one
-        void RequestCalculation(DataSourceInfo dataSourceInfo, RecordChangedParam recordChangedParam, Action<string, RecordChangedParam> onSuccess,
-            Action<string, Exception> onFail);
-    }
-
 
     public class RevisionInfo
     {

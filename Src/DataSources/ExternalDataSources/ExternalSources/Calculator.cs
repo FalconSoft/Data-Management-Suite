@@ -10,6 +10,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
     public class CalculatorDataProvider:IDataProvider
     {
         public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
+
         public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
             if (filterRules != null && filterRules.Length >= 1)

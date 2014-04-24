@@ -26,9 +26,5 @@ namespace FalconSoft.ReactiveWorksheets.Common
         DataSourceInfo CreateDataSource(DataSourceInfo dataSource, string userId);
 
         void RemoveDataSource(string providerString);
-
-        ServiceSourceInfo CreateServiceSource(ServiceSourceInfo dataSource, string userId);
-
-        void RemoveServiceSource(string providerString);
     }
 }

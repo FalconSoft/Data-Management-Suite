@@ -51,7 +51,6 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
         public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
 
-
         public void UpdateSourceInfo(object sourceInfo)
         {
             DataSourceInfo = sourceInfo as DataSourceInfo;

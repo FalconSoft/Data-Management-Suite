@@ -40,16 +40,7 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                     };
                 listDataProviders.Add(dataProviderContext);
             }
-            foreach (var serviceSourceInfo in collectionSs)
-            {
-                var dataProviderContext = new DataProvidersContext
-                    {
-                        Urn = serviceSourceInfo.DataSourcePath,
-                        DataProvider = new ServiceSourceDataProvider(_connectionString) { ServiceSourceInfo = serviceSourceInfo },
-                        ProviderInfo = serviceSourceInfo
-                    };
-                listDataProviders.Add(dataProviderContext);
-            }
+
             return listDataProviders;
         }
 
@@ -93,38 +84,6 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
             _mongoDatabase.GetCollection(providerString.ToValidDbString() + "_History")
               .Drop();
             _mongoDatabase.GetCollection(DataSourceCollectionName)
-              .Remove(Query.And(Query.EQ("Name", providerString.GetName()),
-                                Query.EQ("Category", providerString.GetCategory())));
-            DataProviderRemoved(this, providerString);
-        }
-
-        public ServiceSourceInfo CreateServiceSource(ServiceSourceInfo servicesource, string userId)
-        {
-            ConnectToDb();
-            var collection =
-                _mongoDatabase.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName);
-            servicesource.Id = ObjectId.GenerateNewId()
-                                       .ToString();
-            collection.Save(servicesource);
-            var dataProviderContext = new DataProvidersContext
-                {
-                    Urn = servicesource.DataSourcePath,
-                    DataProvider = new DataProvider(_connectionString),
-                    ProviderInfo = servicesource
-                };
-            DataProviderAdded(this, dataProviderContext);
-
-            new MetaDataProvider(_connectionString).CreateServiceSourceInfo(servicesource, userId);
-            return
-                collection.FindOneAs<ServiceSourceInfo>(
-                    Query.And(Query.EQ("Name", servicesource.DataSourcePath.GetName()),
-                              Query.EQ("Category", servicesource.DataSourcePath.GetCategory())));
-        }
-
-        public void RemoveServiceSource(string providerString)
-        {
-            ConnectToDb();
-            _mongoDatabase.GetCollection(ServiceSourceCollectionName)
               .Remove(Query.And(Query.EQ("Name", providerString.GetName()),
                                 Query.EQ("Category", providerString.GetCategory())));
             DataProviderRemoved(this, providerString);

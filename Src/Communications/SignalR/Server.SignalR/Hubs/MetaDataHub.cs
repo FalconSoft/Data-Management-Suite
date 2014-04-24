@@ -90,31 +90,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         {
             _metaDataFacade.DeleteAggregatedWorksheetInfo(worksheetUrn, userId);
         }
-
-        public ServiceSourceInfo[] GetAvailableServiceSources(string userId)
-        {
-            return  _metaDataFacade.GetAvailableServiceSources(userId);
-        }
-
-        public ServiceSourceInfo GetServiceSourceInfo(string serviceSourceUrn)
-        {
-            return _metaDataFacade.GetServiceSourceInfo(serviceSourceUrn);
-        }
-
-        public void CreateServiceSourceInfo(ServiceSourceInfo serviceSourceInfo, string userId)
-        {
-            _metaDataFacade.CreateServiceSourceInfo(serviceSourceInfo, userId);
-        }
-
-        public void UpdateServiceSourceInfo(ServiceSourceInfo serviceSourceInfo, string oldUrn, string userId)
-        {
-            _metaDataFacade.UpdateServiceSourceInfo(serviceSourceInfo, oldUrn, userId);
-        }
-
-        public void DeleteServiceSourceInfo(string serviceSourceUrn, string userId)
-        {
-           _metaDataFacade.DeleteServiceSourceInfo(serviceSourceUrn, userId);
-        }
       
         private void OnObjectInfoChanged(object sender, SourceObjectChangedEventArgs e)
         {

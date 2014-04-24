@@ -105,42 +105,5 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
         /// <returns>Worksheet Info class</returns>
         AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn);
 
-        /// <summary>
-        ///     Get all available Service source infos indicated bu user id
-        /// </summary>
-        /// <param name="userId">Id that indicates user</param>
-        /// <returns>Array of service source infos</returns>
-        ServiceSourceInfo[] GetAvailableServiceSources(string userId);
-
-        /// <summary>
-        ///     Get Service source info by service source name
-        /// </summary>
-        /// <param name="serviceSourceUrn">String that indicates service source info</param>
-        /// <returns>Instance of service source info that is indicated by name</returns>
-        ServiceSourceInfo GetServiceSourceInfo(string serviceSourceUrn);
-
-        /// <summary>
-        ///     Create service source
-        /// </summary>
-        /// <param name="serviceSourceInfo">Instance of new service source</param>
-        /// <param name="userId">Id that indicates user who create Service source</param>
-        /// <returns>Object that indicates just created service source</returns>
-        void CreateServiceSourceInfo(ServiceSourceInfo serviceSourceInfo, string userId);
-
-        /// <summary>
-        ///     Update service source
-        /// </summary>
-        /// <param name="serviceSourceInfo">Service source info with data to update</param>
-        /// <param name="oldUrn">Providers string that indicates service source that must be updated</param>
-        /// <param name="userId">Id that indicates user who make update</param>
-
-        void UpdateServiceSourceInfo(ServiceSourceInfo serviceSourceInfo, string oldUrn, string userId);
-
-        /// <summary>
-        ///     Delete Service source
-        /// </summary>
-        /// <param name="serviceSourceUrn">String that indicates service source by name</param>
-        /// <param name="userId">Id that indicates user who delete service source</param>
-        void DeleteServiceSourceInfo(string serviceSourceUrn, string userId);
     }
 }

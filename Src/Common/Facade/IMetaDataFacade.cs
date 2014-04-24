@@ -64,6 +64,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
 
     public enum ChangedObjectType
     {
-        DataSourceInfo, WorksheetInfo, ServiceSourceInfo, AggregatedWorksheetInfo
+        DataSourceInfo, WorksheetInfo, AggregatedWorksheetInfo
     }
 }
