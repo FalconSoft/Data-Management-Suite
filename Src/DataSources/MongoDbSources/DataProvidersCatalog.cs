@@ -45,7 +45,7 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 var dataProviderContext = new DataProvidersContext
                     {
                         Urn = serviceSourceInfo.DataSourcePath,
-                        DataProvider = new ServiceSourceDataProvider {ServiceSourceInfo = serviceSourceInfo},
+                        DataProvider = new ServiceSourceDataProvider(_connectionString) { ServiceSourceInfo = serviceSourceInfo },
                         ProviderInfo = serviceSourceInfo
                     };
                 listDataProviders.Add(dataProviderContext);

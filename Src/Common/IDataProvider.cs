@@ -30,7 +30,7 @@ namespace FalconSoft.ReactiveWorksheets.Common
         /// <param name="inParams">input parameters</param>
         /// <param name="onError">error callback(string RecordKey, string errorMessage). Will be called every time when error occurs</param>
         /// <returns></returns>
-//        IEnumerable<Dictionary<string, object>> GetData(IEnumerable<Dictionary<string, object>> inParams, Action<string, string> onError = null);
+        IEnumerable<Dictionary<string, object>> GetData(IEnumerable<Dictionary<string, object>> inParams, Action<string, string> onError = null);
 
         // remove this method in favour to above one
         void RequestCalculation(DataSourceInfo dataSourceInfo, RecordChangedParam recordChangedParam, Action<string, RecordChangedParam> onSuccess,

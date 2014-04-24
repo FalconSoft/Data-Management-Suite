@@ -56,6 +56,12 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         public string HistoryStorageTypeParam { get; set; }
 
 
+        /// <summary>
+        /// Access to original data 
+        /// </summary>
+        public bool AccessToOriginalData { get; set; }
+
+
         public void Update(DataSourceInfo dataSourceInfo)
         {
             Id = dataSourceInfo.Id;

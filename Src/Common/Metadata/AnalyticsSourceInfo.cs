@@ -19,6 +19,8 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         public string Script { get; set; }
 
         public ScriptType ScriptType { get; set; }
+
+        public bool AccessToOriginalData { get; set; }
     }
 
     public enum ScriptType
