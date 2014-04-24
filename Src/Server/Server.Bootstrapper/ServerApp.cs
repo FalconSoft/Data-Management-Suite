@@ -6,7 +6,6 @@ using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Core;
 
 using FalconSoft.ReactiveWorksheets.Core.MessageBus;
-using FalconSoft.ReactiveWorksheets.Core.ReactiveEngine;
 using FalconSoft.ReactiveWorksheets.MongoDbSources;
 using FalconSoft.ReactiveWorksheets.Persistence;
 using FalconSoft.ReactiveWorksheets.Persistence.LiveData;
@@ -17,6 +16,7 @@ using FalconSoft.ReactiveWorksheets.Persistence.TemporalData;
 using FalconSoft.ReactiveWorksheets.Server.Core;
 using FalconSoft.ReactiveWorksheets.Server.Core.CommandsAggregator;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
+using FalconSoft.ReactiveWorksheets.Server.Core.ReactiveEngine;
 using ReactiveWorksheets.ExternalDataSources;
 
 namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
@@ -131,7 +131,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
         {
             get
             {
-                return _reactiveEngine ?? (_reactiveEngine = new ReactiveEngine(MetaDataFacade, LiveDataPersistenceFactory, new DenormalizedBusPublisher(MessageBus), Logger));
+                return _reactiveEngine ?? (_reactiveEngine = new ReactiveEngine(MetaDataFacade, LiveDataPersistenceFactory, ProvidersRegistry, new DenormalizedBusPublisher(MessageBus), Logger));
             }
         }
 

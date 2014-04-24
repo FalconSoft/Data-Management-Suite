@@ -31,7 +31,7 @@ namespace ReactiveWorksheets.ExternalDataSources
                 fields.Add(fieldInfo);
             },
                 pocoType.GetProperties(), string.Empty);
-            return new DataSourceInfo(fields) { Name = pocoType.Name, Id = "-1", Category = "ExternalDataSource" };
+            return new DataSourceInfo(fields,true) { Name = pocoType.Name, Id = "-1", Category = "ExternalDataSource" };
         }
 
         private static void EnumerateProperties(Action<string, Type, object> setPropertyNameAction,
