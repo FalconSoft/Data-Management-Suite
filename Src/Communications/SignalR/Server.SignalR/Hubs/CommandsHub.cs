@@ -45,7 +45,10 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 var disposable = _toDelteSubjects[dataSourceInfoPath].Buffer(TimeSpan.FromMilliseconds(100))
                     .Where(data=>data.Any())
                     .Subscribe(enumerator => _commandFacade.SubmitChanges(dataSourceInfoPath, comment, null,
-                        enumerator, r => _onDeleteRevisionInfos[dataSourceInfoPath] = r,
+                        enumerator, r =>
+                        {
+                            _onDeleteRevisionInfos[dataSourceInfoPath] = r;
+                        },
                         ex => Clients.Caller.OnFail(ex)));
                 _toDeleteDisposables.Add(dataSourceInfoPath, disposable);
             }
@@ -57,12 +60,16 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         {
             _toDelteSubjects[dataSourceInfoPath].OnCompleted();
             _toDeleteDisposables[dataSourceInfoPath].Dispose();
-            Clients.Caller.OnSuccess(new RevisionInfo());
-            //Clients.Caller.OnSuccess(_onDeleteRevisionInfos[dataSourceInfoPath]);
+            if (_onDeleteRevisionInfos.ContainsKey(dataSourceInfoPath))
+            {
+                Clients.Caller.OnSuccess(_onDeleteRevisionInfos[dataSourceInfoPath]);
+                _onDeleteRevisionInfos.Remove(dataSourceInfoPath);
+            }
+            else Clients.Caller.OnSuccess(new RevisionInfo());
             
+
             _toDelteSubjects.Remove(dataSourceInfoPath);
             _toDeleteDisposables.Remove(dataSourceInfoPath);
-            //_onDeleteRevisionInfos.Remove(dataSourceInfoPath);
         }
 
         public void SubmitChangesDeleteOnError(string dataSourceInfoPath, Exception ex)
@@ -84,7 +91,10 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     .Where(data=>data.Any())
                     .Subscribe(enumerator => _commandFacade.SubmitChanges(dataSourceInfoPath, comment,
                             enumerator, null,
-                            r => _onUpdateRevisionInfo[dataSourceInfoPath] = r,
+                        r =>
+                        {
+                            _onUpdateRevisionInfo[dataSourceInfoPath] = r;
+                        },
                             ex => Clients.Caller.OnFail(ex)));
                 _toUpdateDisposables.Add(dataSourceInfoPath,disposable);
 
@@ -96,12 +106,11 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         {
             _toUpdateSubjects[dataSourceInfoPath].OnCompleted();
             _toUpdateDisposables[dataSourceInfoPath].Dispose();
-            Clients.Caller.OnSuccess(new RevisionInfo());
-            //Clients.Caller.OnSuccess(_onUpdateRevisionInfo[dataSourceInfoPath]);
+            Clients.Caller.OnSuccess(_onUpdateRevisionInfo[dataSourceInfoPath]);
 
             _toUpdateSubjects.Remove(dataSourceInfoPath);
             _toUpdateDisposables.Remove(dataSourceInfoPath);
-            //_onUpdateRevisionInfo.Remove(dataSourceInfoPath);
+            _onUpdateRevisionInfo.Remove(dataSourceInfoPath);
         }
 
         public void SubmitChangesChangeRecordsOnError(string dataSourceInfoPath, Exception ex)
