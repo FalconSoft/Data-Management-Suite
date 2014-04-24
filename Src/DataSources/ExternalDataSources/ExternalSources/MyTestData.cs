@@ -98,9 +98,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
             throw new NotImplementedException();
         }
 
-        public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
-
-       
+        public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;      
     }
 
     public class MyTestData
