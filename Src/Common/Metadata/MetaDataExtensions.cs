@@ -35,7 +35,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 
             foreach (var parentField in parentFields)
             {
-                //parentField.DataSourceProviderString = dataSource.DataSourcePath;  //PARENT FIEDLS MUST HAVE IT`S PARENT DATASOURCE PROVIDER STRING
                 parentField.IsParentField = true;
                 dataSource.Fields.Add(parentField.Name, parentField);
             }
@@ -69,6 +68,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             ResolveChildDataSources(ref childDataSources, dataSourceInfo, dataSources);
             return childDataSources.Values.ToArray();
         }
+
         public static DataSourceInfo[] GetChildDataSources(this string dataSourcePath, DataSourceInfo[] dataSources)
         {
             var childDataSources = new Dictionary<string, DataSourceInfo>();
@@ -97,7 +97,11 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 Columns = aggregatedWorksheet.GetColumnsFromAgrWs(),
                 DataSourceInfo = aggregatedWorksheet.MakeAggregatedDataSourceInfo()
             };
-            ws.Columns.ForEach(x=>x.Update(ws.DataSourceInfo.Fields[x.Header]));
+            ws.Columns.ForEach(x =>
+            {
+                x.Field = ws.DataSourceInfo.Fields[x.Header];
+                x.FieldName = x.Header;
+            });
             return ws;
         }
 
@@ -105,7 +109,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         {
             var columns = new List<ColumnInfo>();
             columns.AddRange(aggregatedWorksheet.GroupByColumns);
-            columns.ForEach(x=> x.SortOrder = ColumnSortOrder.Ascending); // TODO POSSIBLY WE DONT NEED THIS
             columns.AddRange(aggregatedWorksheet.Columns.Select(x => x.Value));
             return columns;
         }

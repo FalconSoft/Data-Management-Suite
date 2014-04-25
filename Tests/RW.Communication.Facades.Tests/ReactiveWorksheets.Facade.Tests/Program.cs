@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Configuration;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Client.SignalR;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
+using FalconSoft.ReactiveWorksheets.Common.Security;
+using FalconSoft.ReactiveWorksheets.InProcessServer.Client;
 
 namespace ReactiveWorksheets.Facade.Tests
 {
@@ -16,15 +15,18 @@ namespace ReactiveWorksheets.Facade.Tests
     {
         private static IFacadesFactory _facadesFactory;
         private const string ConnectionString = @"http://localhost:8081";
-       
-
+        private static ISecurityFacade _securityFacade;
+        private static IMetaDataAdminFacade _metaDataAdminFacade;
+        private static ICommandFacade _commandFacade;
+        private static IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private static void Main()
         {
-            _facadesFactory = new SignalRFacadesFactory(ConnectionString);
-            var metadatafacade = _facadesFactory.CreateMetaDataAdminFacade();
-            var securityFacade = _facadesFactory.CreateSecurityFacade();
-            var reactiveDataProvider = _facadesFactory.CreateReactiveDataQueryFacade();
-            var commandFacade = _facadesFactory.CreateCommandFacade();
+            _facadesFactory = GetFacadesFactory("InProcess");
+            _metaDataAdminFacade = _facadesFactory.CreateMetaDataAdminFacade();
+            _securityFacade = _facadesFactory.CreateSecurityFacade();
+            _metaDataAdminFacade.ObjectInfoChanged += ObjectInfoChanged;
+            _reactiveDataQueryFacade = _facadesFactory.CreateReactiveDataQueryFacade();
+            _commandFacade = _facadesFactory.CreateCommandFacade();
 
             var datasource = TestDataFactory.CreateTestDataSourceInfo();
             var worksheet = TestDataFactory.CreateTestWorksheetInfo();
@@ -32,157 +34,153 @@ namespace ReactiveWorksheets.Facade.Tests
             var user = TestDataFactory.CreateTestUser();
 
             Console.WriteLine("Testing starts...");
-            Console.WriteLine("Step #1. Create test user.");
-            securityFacade.SaveNewUser(user);
-            var userArray = securityFacade.GetUsers();
-            Console.WriteLine("Cheacking if user is created...");
-            var updateUser = userArray.Find(u => u.LoginName == user.LoginName);
-
-            while (updateUser == null)
-            {
-                Console.WriteLine("User has not created yet...");
-                Thread.Sleep(TimeSpan.FromMilliseconds(100));
-                Console.WriteLine("Try again");
-                userArray = securityFacade.GetUsers();
-                updateUser = userArray.Find(u => u.LoginName == user.LoginName);
-            }
             
-            Console.WriteLine("User saved");
-            user = updateUser;
+            user = TestSecurityfacade(user);
+
+            datasource = TestMetaDataFacadeDataSourceInfo(datasource, user);
+
+            worksheet = TestMetaDataFacadeWorksheetInfo(worksheet, user);
+
+            SaveDataIntoDatasourceTest(data,datasource,"Test data");
+
+            var keyFields = datasource.GetKeyFieldsName();
+            var dataKeys = data.Select(record => keyFields.Aggregate("", (cur, key) => cur + "|" + record[key]));
             
-            Console.WriteLine("\nStep #2. Create test datasource");
-            metadatafacade.CreateDataSourceInfo(datasource, user.Id);
-            
-            Console.WriteLine("Checking if datasource is created and saved");
-            var datasourceArray = metadatafacade.GetAvailableDataSources(user.Id);
-            
-            var ds = datasourceArray.FirstOrDefault(d => d.DataSourcePath == datasource.DataSourcePath);
-            while (ds==null)
-            {
-                Console.WriteLine("Datasource has not created yet");
-                Thread.Sleep(TimeSpan.FromMilliseconds(100));
-                Console.WriteLine("Try again...");
-                datasourceArray = metadatafacade.GetAvailableDataSources(user.Id);
-                ds = datasourceArray.FirstOrDefault(d => d.DataSourcePath == datasource.DataSourcePath);
-            }
-            
-            Console.WriteLine("DataSourceInfo saved");
-            datasource = ds;
+            RemoveTestData(worksheet, datasource, user, dataKeys);
 
+            DisposeAllConnections();
 
-            Console.WriteLine("\nStep #3. Create worksheetInfo");
-            metadatafacade.CreateWorksheetInfo(worksheet,user.Id);
-
-            var worksheetArray = metadatafacade.GetAvailableWorksheets(user.Id);
-
-            var ws = worksheetArray.FirstOrDefault(d => d.DataSourcePath == datasource.DataSourcePath);
-            while (ws == null)
-            {
-                Console.WriteLine("Worksheet has not created yet");
-                Thread.Sleep(TimeSpan.FromMilliseconds(100));
-                Console.WriteLine("Try again...");
-                worksheetArray = metadatafacade.GetAvailableWorksheets(user.Id);
-                ws = worksheetArray.FirstOrDefault(w=> w.Name == worksheet.Name);
-            }
-
-            Console.WriteLine("Worksheet saved");
-            worksheet = ws;
-
-            Console.WriteLine("\nStep #4. Submit data");
-            var changedRecords = data as Dictionary<string, object>[] ?? data.ToArray();
-
-            //start when all test data is submited
-            Action action = ()=>
-            {
-                action = null;
-                Console.WriteLine("GetData");
-               
-                var getData = reactiveDataProvider.GetData(datasource.DataSourcePath).ToArray();
-
-                while (getData.Count() < changedRecords.Count())
-                {
-                    Console.WriteLine("Not all data submited");
-                    Thread.Sleep(TimeSpan.FromMilliseconds(3000));
-                    Console.WriteLine("Try again getData");
-                    getData = reactiveDataProvider.GetData(datasource.DataSourcePath).ToArray();
-                    Console.WriteLine("Data count : {0}", getData.Count());
-                }
-
-                if (getData.Count() == changedRecords.Count())
-                {
-                    Console.WriteLine("Data count : {0}", getData.Count());
-                }
-
-                else Console.WriteLine("Not all data sumbited submited count : {0}  #getData count : {1}",
-                        changedRecords.Count(), getData.Count());
-
-                Console.WriteLine("\nStep #5. Remove WorksheetInfo");
-                metadatafacade.DeleteWorksheetInfo(worksheet.DataSourcePath, user.Id);
-                Thread.Sleep(TimeSpan.FromMilliseconds(150));
-
-                // start when all test data is removed
-                Action a = () =>
-                {
-                    a = null;
-                    var cheackIfDataExists = reactiveDataProvider.GetData(datasource.DataSourcePath).ToArray();
-
-                    while (cheackIfDataExists.Any())
-                    {
-                        Console.WriteLine("Not all data removed");
-                        Thread.Sleep(TimeSpan.FromMilliseconds(3000));
-                        Console.WriteLine("Try again getData");
-                        cheackIfDataExists = reactiveDataProvider.GetData(datasource.DataSourcePath).ToArray();
-                        Console.WriteLine("Data count : {0}", cheackIfDataExists.Count());
-                    }
-
-                    Console.WriteLine("\nStep #7. Remove DatasourceInso");
-                    metadatafacade.DeleteDataSourceInfo(datasource.DataSourcePath, user.Id);
-                    
-                    Console.WriteLine("\nStep #8. Remove user");
-                    securityFacade.RemoveUser(user);
-                    
-                    Console.WriteLine("\nStep #9. Close connections");
-
-                    Thread.Sleep(TimeSpan.FromMilliseconds(300));
-                    
-                    reactiveDataProvider.Dispose();
-                    commandFacade.Dispose();
-                    metadatafacade.Dispose();
-                    securityFacade.Dispose();
-
-                    Console.WriteLine("Test finish. Type <Enter> to exit.");
-                };
-
-                Console.WriteLine("\nStep #6. Remove submited data");
-                commandFacade.SubmitChanges(datasource.DataSourcePath, "Some comment", null, changedRecords.Select(record => datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + record[key])),
-                    r =>
-                    {
-                        Console.WriteLine("Test data Removed");
-                        a();
-                    });
-              
-
-                
-            };
-
-            Console.WriteLine("Start data submit.");
-            commandFacade.SubmitChanges(datasource.DataSourcePath, "some comment", changedRecords, null,
-                revision =>
-                {
-                    Console.WriteLine("Revision returned");
-                    action();
-                }, 
-                ex => Console.WriteLine("Exception returned"));
-
-           
-           
-           
-          
+            Console.WriteLine("Test finish. Type <Enter> to exit.");
             Console.ReadLine();
-
-            
         }
 
+        private static void DisposeAllConnections()
+        {
+            Console.WriteLine("\nStep #6. Dispose all connections");
+            _commandFacade.Dispose();
+            _metaDataAdminFacade.Dispose();
+            _reactiveDataQueryFacade.Dispose();
+            _securityFacade.Dispose();
+        }
+
+        private static void RemoveTestData(WorksheetInfo worksheetInfo, DataSourceInfo dataSourceInfo, User user,
+            IEnumerable<string> dataKeys)
+        {
+            Console.WriteLine("\nStep #5. Remove test data.");
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _commandFacade.SubmitChanges(dataSourceInfo.DataSourcePath,"Remove test data",null,dataKeys, r =>
+            {
+                Console.WriteLine("Test data removed successfull");
+                tcs.SetResult(r);
+            }, ex =>
+            {
+                Console.WriteLine("Test data remove failed");
+                tcs.SetException(ex);
+            });
+            task.Wait();
+
+            Console.WriteLine("Try to get test data");
+            var removeData = _reactiveDataQueryFacade.GetData(dataSourceInfo.DataSourcePath);
+            
+            if (!removeData.Any())
+            {
+                Console.WriteLine("All test data removed");
+            }
+
+            _metaDataAdminFacade.DeleteWorksheetInfo(worksheetInfo.DataSourcePath,user.Id);
+            _metaDataAdminFacade.DeleteDataSourceInfo(dataSourceInfo.DataSourcePath, user.Id);
+            _securityFacade.RemoveUser(user);
+        }
+
+        private static void SaveDataIntoDatasourceTest(IEnumerable<Dictionary<string, object>> data,DataSourceInfo dataSourceInfo,string comment)
+        {
+            Console.WriteLine("\nStep #4. Save data");
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            var changedRecords = data as IList<Dictionary<string, object>> ?? data.ToList();
+
+            _commandFacade.SubmitChanges(dataSourceInfo.DataSourcePath, comment, changedRecords,null,
+                r =>
+                {
+                    Console.WriteLine("Data saved successfull");
+                    tcs.SetResult(r);
+                }, ex =>
+                {
+                    Console.WriteLine("Data save failed");
+                    tcs.SetException(ex);
+                });
+
+            task.Wait();
+
+            Console.WriteLine("Get saved data");
+            var savedData = _reactiveDataQueryFacade.GetData(dataSourceInfo.DataSourcePath);
+
+            if (savedData.Count() == changedRecords.Count)
+            {
+                Console.WriteLine("All data saved");
+            }
+        }
+
+
+        private static WorksheetInfo TestMetaDataFacadeWorksheetInfo(WorksheetInfo worksheetInfo, User user)
+        {
+            Console.WriteLine("\nStep #3. Create worksheetInfo");
+            _metaDataAdminFacade.CreateWorksheetInfo(worksheetInfo, user.Id);
+
+            Console.WriteLine("Get created worksheetInfo");
+            var worksheet = _metaDataAdminFacade.GetWorksheetInfo(worksheetInfo.DataSourcePath);
+            return worksheet;
+        }
+
+        private static DataSourceInfo TestMetaDataFacadeDataSourceInfo(DataSourceInfo dataSourceInfo, User user)
+        {
+            Console.WriteLine("\nStep #2. Create test datasource");
+            _metaDataAdminFacade.CreateDataSourceInfo(dataSourceInfo, user.Id);
+
+            Console.WriteLine("Get created datasource");
+            var datasource = _metaDataAdminFacade.GetDataSourceInfo(dataSourceInfo.DataSourcePath);
+            return datasource;
+        }
+
+        private static void ObjectInfoChanged(object sender, SourceObjectChangedEventArgs e)
+        {
+            Console.WriteLine("ChangedObjectType : {0}\n ChangeObjectUrl : {1}", e.ChangedObjectType,
+                e.OldObjectUrn);
+        }
+
+        private static User TestSecurityfacade(User user)
+        {
+            Console.WriteLine("Step #1. Create test user.");
+            _securityFacade.SaveNewUser(user);
+
+            Console.WriteLine("Cheacking if user is created...");
+            var allUsers = _securityFacade.GetUsers();
+            if (allUsers.Exists(u => u.LoginName == user.LoginName))
+            {
+                Console.WriteLine("Insert successfull");
+                user = allUsers.FirstOrDefault(u => u.LoginName == user.LoginName);
+            }
+            return user;
+        }
+
+        private static IFacadesFactory  GetFacadesFactory(string facadeType)
+        {
+            if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
+            {
+                return new SignalRFacadesFactory(ConnectionString);
+            }
+            if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
+            {
+                // this is hardcode for testing only
+                const string metaDataPersistenceConnectionString = "mongodb://localhost/rw_metadata";
+                const string persistenceDataConnectionString = "mongodb://localhost/rw_data";
+                const string mongoDataConnectionString = "mongodb://localhost/MongoData";
+
+                return new InProcessServerFacadesFactory(metaDataPersistenceConnectionString, persistenceDataConnectionString, mongoDataConnectionString);
+            }
+            throw new ConfigurationException("Unsupported facade type - >" + facadeType);
+        }
     }
 }
 

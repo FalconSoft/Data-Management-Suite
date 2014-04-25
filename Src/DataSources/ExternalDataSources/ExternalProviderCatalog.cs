@@ -13,7 +13,7 @@ namespace ReactiveWorksheets.ExternalDataSources
     {
         public event EventHandler<DataProvidersContext> DataProviderAdded;
 
-        public event EventHandler<string> DataProviderRemoved;
+        public event EventHandler<StringEventArg> DataProviderRemoved;
 
         public IEnumerable<DataProvidersContext> GetProviders()  //DEMO TEST VERSION        TODO
         {

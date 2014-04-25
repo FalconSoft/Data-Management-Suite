@@ -4,7 +4,7 @@ using FalconSoft.ReactiveWorksheets.Common.Metadata;
 
 namespace FalconSoft.ReactiveWorksheets.Common
 {
-    public class DataProvidersContext
+    public class DataProvidersContext : EventArgs
     {
         public string Urn { get; set; }
         
@@ -15,13 +15,23 @@ namespace FalconSoft.ReactiveWorksheets.Common
         public IMetaDataProvider MetaDataProvider { get; set; }
     }
 
+    public class StringEventArg : EventArgs
+    {
+        public string Value { get; set; }
+
+        public StringEventArg(string value)
+        {
+            Value = value;
+        }
+    }
+
     public interface IDataProvidersCatalog
     {
         IEnumerable<DataProvidersContext> GetProviders();
 
         event EventHandler<DataProvidersContext> DataProviderAdded;
 
-        event EventHandler<string> DataProviderRemoved;
+        event EventHandler<StringEventArg> DataProviderRemoved;
 
         DataSourceInfo CreateDataSource(DataSourceInfo dataSource, string userId);
 
