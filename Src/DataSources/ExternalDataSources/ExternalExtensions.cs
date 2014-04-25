@@ -51,7 +51,7 @@ namespace ReactiveWorksheets.ExternalDataSources
                 {
                     continue;
                 }
-                object propValue = (value != null) ? propInfo.GetValue(value) : null;
+                object propValue = (value != null) ? propInfo.GetValue(value, null) : null;
 
                 if (
                     propInfo.PropertyType.IsValueType

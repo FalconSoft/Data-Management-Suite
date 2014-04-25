@@ -46,7 +46,7 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
         public event EventHandler<DataProvidersContext> DataProviderAdded;
         
-        public event EventHandler<string> DataProviderRemoved;
+        public event EventHandler<StringEventArg> DataProviderRemoved;
 
         public DataSourceInfo CreateDataSource(DataSourceInfo dataSource, string userId)
         {
@@ -86,7 +86,7 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
             _mongoDatabase.GetCollection(DataSourceCollectionName)
               .Remove(Query.And(Query.EQ("Name", providerString.GetName()),
                                 Query.EQ("Category", providerString.GetCategory())));
-            DataProviderRemoved(this, providerString);
+            DataProviderRemoved(this, new StringEventArg(providerString));
         }
 
         private void ConnectToDb()

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace FalconSoft.ReactiveWorksheets.Common
 {
@@ -9,7 +10,7 @@ namespace FalconSoft.ReactiveWorksheets.Common
         Removed
     }
 
-    public class RecordChangedParam
+    public class RecordChangedParam : EventArgs
     {
         public string ChangeSource { get; set; }
 
