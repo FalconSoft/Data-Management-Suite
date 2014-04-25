@@ -21,20 +21,15 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
     //todo : Refactor me, please!!! 
     public class ColumnInfo : ICloneable
     {
-        private FieldInfo _field;
-
         public ColumnInfo(FieldInfo field)
         {
-            _field = field;
+            Field = field;
             FieldName = field.Name;
         }
 
         public ColumnInfo() { }
 
-        public FieldInfo Field
-        {
-            get { return _field; }
-        }
+        public FieldInfo Field { get; set; }
 
         public int Id { get; set; }
 
@@ -42,19 +37,19 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 
         public string BindableFieldName
         {
-            get { return string.Format("[{0}].Value", _field != null ? _field.Name : Header); }
+            get { return string.Format("[{0}].Value", Field != null ? Field.Name : Header); }
         }
 
         public string FieldName { get; set; }
         
         public bool FieldIsNullable
         {
-            get { return _field == null || _field.IsNullable; }
+            get { return Field == null || Field.IsNullable; }
         }
 
         public DataTypes DataType
         {
-            get { return _field != null ? _field.DataType : DataTypes.String; }
+            get { return Field != null ? Field.DataType : DataTypes.String; }
         }
 
         public int SortIndex { get; set; }
@@ -72,7 +67,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         public bool IsVisible { get; set; }
 
         public bool IsReadOnly { get; set; }
-
 
         public string BackgroundColor { get; set; }
 
@@ -116,6 +110,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         public void Update(ColumnInfo columnInfo)
         {
             Id = columnInfo.Id;
+            Field = columnInfo.Field;
             FieldName = columnInfo.FieldName;
             Header = columnInfo.Header;
             SortIndex = columnInfo.SortIndex;
@@ -137,23 +132,17 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             ComboValueNameField = columnInfo.ComboValueNameField;
             // ComboValueField = columnInfo.ComboValueField;
             ComboBoxWhereCondition = columnInfo.ComboBoxWhereCondition;
-            //IsFormulaColumn = columnInfo.IsFormulaColumn;
-            //FormulaString = columnInfo.FormulaString;
             GroupSummary = columnInfo.GroupSummary;
             TotalSummary = columnInfo.TotalSummary;
         }
 
-        public void Update(FieldInfo fieldInfo)
-        {
-            _field = fieldInfo;
-        }
-
         public object Clone()
         {
-            return new ColumnInfo(_field)
+            return new ColumnInfo
             {
                 Id = Id,
-                FieldName = _field.Name,
+                Field = Field,
+                FieldName = FieldName,
                 Header = Header,
                 SortIndex = SortIndex,
                 SortOrder = SortOrder,
@@ -174,8 +163,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 ComboValueNameField = ComboValueNameField,
                 //ComboValueField = ComboValueField,
                 ComboBoxWhereCondition = ComboBoxWhereCondition,
-                //IsFormulaColumn = IsFormulaColumn,
-                //FormulaString = FormulaString,
                 GroupSummary = GroupSummary,
                 TotalSummary = TotalSummary
             };

@@ -208,7 +208,6 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                         tcs.SetCanceled();
                         return;
                     }
-                    t.Result.Columns.ForEach(c=>c.Update(t.Result.DataSourceInfo.Fields[c.FieldName]));
                     tcs.SetResult(t.Result);
                 });
             return task.Result;
@@ -235,10 +234,6 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                            {
                                tcs.SetCanceled();
                                return;
-                           }
-                           foreach (var ws in t.Result)
-                           {
-                               ws.Columns.ForEach(c=>c.Update(ws.DataSourceInfo.Fields[c.FieldName]));
                            }
                            tcs.SetResult(t.Result);
                        });
@@ -306,11 +301,6 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                                tcs.SetCanceled();
                                return;
                            }
-                           foreach (var aws in t.Result)
-                           {
-                               aws.Columns.ForEach(c => c.Value.Update(aws.DataSourceInfo.Fields[c.Value.FieldName]));
-                               aws.GroupByColumns.ForEach(c => c.Update(aws.DataSourceInfo.Fields[c.FieldName]));
-                           }
                            tcs.SetResult(t.Result);
                        });
             return task.Result;
@@ -377,8 +367,6 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                                tcs.SetCanceled();
                                return;
                            }
-                           t.Result.Columns.ForEach(c=>c.Value.Update(t.Result.DataSourceInfo.Fields[c.Value.FieldName]));
-                           t.Result.GroupByColumns.ForEach(c=>c.Update(t.Result.DataSourceInfo.Fields[c.FieldName]));
                            tcs.SetResult(t.Result);
                        });
             return task.Result;

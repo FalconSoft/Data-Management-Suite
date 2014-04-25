@@ -11,7 +11,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
     public class WorksheetPersistence : IWorksheetPersistence
     {
         private readonly string _connectionString;
-        
+
         private const string WorksheetInfoCollectionName = "WorksheetInfo";
 
         private const string AggregatedWorksheetInfoCollectionName = "AggregatedWorksheetInfo";
