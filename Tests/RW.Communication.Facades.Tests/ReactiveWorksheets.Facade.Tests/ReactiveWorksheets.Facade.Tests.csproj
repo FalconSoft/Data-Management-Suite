@@ -9,10 +9,11 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ReactiveWorksheets.Facade.Tests</RootNamespace>
     <AssemblyName>ReactiveWorksheets.Facade.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\Src\</SolutionDir>
     <RestorePackages>true</RestorePackages>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -34,9 +35,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\packages\Newtonsoft.Json.6.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\..\..\ReactiveWorksheets-Private\Src\packages\Newtonsoft.Json.6.0.2\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -63,6 +63,10 @@
     <ProjectReference Include="..\..\..\..\ReactiveWorksheets\Src\Communications\SignalR\Client.SignalR\ReactiveWorksheets.Client.SignalR.csproj">
       <Project>{750ea2e3-e290-4e44-bbf0-033ff8b9fc9d}</Project>
       <Name>ReactiveWorksheets.Client.SignalR</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Src\Communications\InProcess\InProcessServer.Client\ReactiveWorksheets.InProcessServer.Client.csproj">
+      <Project>{94d962b3-abd7-4a74-949a-f5d8a510aa9c}</Project>
+      <Name>ReactiveWorksheets.InProcessServer.Client</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
