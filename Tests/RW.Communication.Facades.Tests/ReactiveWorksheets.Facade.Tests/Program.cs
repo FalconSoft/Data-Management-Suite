@@ -34,21 +34,66 @@ namespace ReactiveWorksheets.Facade.Tests
             var user = TestDataFactory.CreateTestUser();
 
             Console.WriteLine("Testing starts...");
-            Console.WriteLine("Step #1. Create test user.");
-
+            
             user = TestSecurityfacade(user);
 
             datasource = TestMetaDataFacadeDataSourceInfo(datasource, user);
 
             worksheet = TestMetaDataFacadeWorksheetInfo(worksheet, user);
 
-            SaveDataIntoDatasource(data,datasource,"Test data");
+            SaveDataIntoDatasourceTest(data,datasource,"Test data");
+
+            var keyFields = datasource.GetKeyFieldsName();
+            var dataKeys = data.Select(record => keyFields.Aggregate("", (cur, key) => cur + "|" + record[key]));
+            
+            RemoveTestData(worksheet, datasource, user, dataKeys);
+
+            DisposeAllConnections();
 
             Console.WriteLine("Test finish. Type <Enter> to exit.");
             Console.ReadLine();
         }
 
-        private static void SaveDataIntoDatasource(IEnumerable<Dictionary<string, object>> data,DataSourceInfo dataSourceInfo,string comment)
+        private static void DisposeAllConnections()
+        {
+            Console.WriteLine("\nStep #6. Dispose all connections");
+            _commandFacade.Dispose();
+            _metaDataAdminFacade.Dispose();
+            _reactiveDataQueryFacade.Dispose();
+            _securityFacade.Dispose();
+        }
+
+        private static void RemoveTestData(WorksheetInfo worksheetInfo, DataSourceInfo dataSourceInfo, User user,
+            IEnumerable<string> dataKeys)
+        {
+            Console.WriteLine("\nStep #5. Remove test data.");
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _commandFacade.SubmitChanges(dataSourceInfo.DataSourcePath,"Remove test data",null,dataKeys, r =>
+            {
+                Console.WriteLine("Test data removed successfull");
+                tcs.SetResult(r);
+            }, ex =>
+            {
+                Console.WriteLine("Test data remove failed");
+                tcs.SetException(ex);
+            });
+            task.Wait();
+
+            Console.WriteLine("Try to get test data");
+            var removeData = _reactiveDataQueryFacade.GetData(dataSourceInfo.DataSourcePath);
+            
+            if (!removeData.Any())
+            {
+                Console.WriteLine("All test data removed");
+            }
+
+            _metaDataAdminFacade.DeleteWorksheetInfo(worksheetInfo.DataSourcePath,user.Id);
+            _metaDataAdminFacade.DeleteDataSourceInfo(dataSourceInfo.DataSourcePath, user.Id);
+            _securityFacade.RemoveUser(user);
+        }
+
+        private static void SaveDataIntoDatasourceTest(IEnumerable<Dictionary<string, object>> data,DataSourceInfo dataSourceInfo,string comment)
         {
             Console.WriteLine("\nStep #4. Save data");
             var tcs = new TaskCompletionSource<object>();
@@ -70,7 +115,11 @@ namespace ReactiveWorksheets.Facade.Tests
 
             Console.WriteLine("Get saved data");
             var savedData = _reactiveDataQueryFacade.GetData(dataSourceInfo.DataSourcePath);
-           
+
+            if (savedData.Count() == changedRecords.Count)
+            {
+                Console.WriteLine("All data saved");
+            }
         }
 
 
