@@ -5,6 +5,7 @@ using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FalconSoft.ReactiveWorksheets.Common.Security;
 using Microsoft.AspNet.SignalR.Client;
+using Microsoft.AspNet.SignalR.Client.Hubs;
 using Newtonsoft.Json;
 
 namespace FalconSoft.ReactiveWorksheets.Client.SignalR
