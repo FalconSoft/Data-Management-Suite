@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Security;
 using Microsoft.AspNet.SignalR.Client;
+using Microsoft.AspNet.SignalR.Client.Hubs;
 
 namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
@@ -19,6 +20,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             _connection = new HubConnection(connectionString);
             _proxy = _connection.CreateHubProxy("ISecurityFacade");
 
+            
             _connection.Reconnecting += OnReconnecting;
             _connection.Reconnected += OnReconnected;
             _connection.Closed += OnClosed;
