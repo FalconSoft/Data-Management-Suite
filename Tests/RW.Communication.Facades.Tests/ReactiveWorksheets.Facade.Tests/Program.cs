@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
-using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Client.SignalR;
+using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FalconSoft.ReactiveWorksheets.Common.Security;
@@ -16,137 +16,117 @@ namespace ReactiveWorksheets.Facade.Tests
         private static IFacadesFactory _facadesFactory;
         private const string ConnectionString = @"http://localhost:8081";
         private static ISecurityFacade _securityFacade;
-        private static IMetaDataAdminFacade _metaDataAdminFacade;
-        private static ICommandFacade _commandFacade;
-        private static IReactiveDataQueryFacade _reactiveDataQueryFacade;
+        
         private static void Main()
         {
             _facadesFactory = GetFacadesFactory("InProcess");
-            _metaDataAdminFacade = _facadesFactory.CreateMetaDataAdminFacade();
+            
             _securityFacade = _facadesFactory.CreateSecurityFacade();
-            _metaDataAdminFacade.ObjectInfoChanged += ObjectInfoChanged;
-            _reactiveDataQueryFacade = _facadesFactory.CreateReactiveDataQueryFacade();
-            _commandFacade = _facadesFactory.CreateCommandFacade();
+          
 
             var datasource = TestDataFactory.CreateTestDataSourceInfo();
-            var worksheet = TestDataFactory.CreateTestWorksheetInfo();
-            var data = TestDataFactory.CreateTestData();
             var user = TestDataFactory.CreateTestUser();
 
             Console.WriteLine("Testing starts...");
-            
+           
             user = TestSecurityfacade(user);
 
-            datasource = TestMetaDataFacadeDataSourceInfo(datasource, user);
+            Console.WriteLine("Create DataSource (Customers)");
+            var dataSourceTest = new SimpleDataSourceTest(datasource, _facadesFactory, user);
 
-            worksheet = TestMetaDataFacadeWorksheetInfo(worksheet, user);
-
-            SaveDataIntoDatasourceTest(data,datasource,"Test data");
-
-            var keyFields = datasource.GetKeyFieldsName();
-            var dataKeys = data.Select(record => keyFields.Aggregate("", (cur, key) => cur + "|" + record[key]));
+            Console.WriteLine("Create 3 different worksheets referencing to the same data source with three different columns set and filter rules");
+            var firstWorksheetColumns = new List<ColumnInfo>
+            {
+                new ColumnInfo(datasource.Fields["CustomerID"]),
+                new ColumnInfo(datasource.Fields["CompanyName"]),
+                new ColumnInfo(datasource.Fields["ContactName"])
+            };
+            var firstWorksheet = dataSourceTest.CreateWorksheetInfo("First Worksheet", "Test", firstWorksheetColumns, user);
             
-            RemoveTestData(worksheet, datasource, user, dataKeys);
+            var secondWorksheetColumns = new List<ColumnInfo>
+            {
+                new ColumnInfo(datasource.Fields["CustomerID"]),
+                new ColumnInfo(datasource.Fields["ContactTitle"]),
+                new ColumnInfo(datasource.Fields["Address"])
+            };
+            var secondWorksheet = dataSourceTest.CreateWorksheetInfo("Second Worksheet", "Test", secondWorksheetColumns, user);
+            var thirdWorksheetColumns =  new List<ColumnInfo>
+            {
+                new ColumnInfo(datasource.Fields["CustomerID"]),
+                new ColumnInfo(datasource.Fields["City"]),
+                new ColumnInfo(datasource.Fields["Region"])
+            };
+            var thirdWorksheet = dataSourceTest.CreateWorksheetInfo("Third Worksheet", "Test", thirdWorksheetColumns, user);
 
-            DisposeAllConnections();
+            Console.WriteLine("Submit data (from Tsv)");
+            var data = TestDataFactory.CreateTestData().ToArray();
+
+            dataSourceTest.SubmitData("test data save", data);
+
+            Console.WriteLine("GetData");
+            var getData = dataSourceTest.GetData();
+            Console.WriteLine("Saved data count : {0}",getData.Count());
+
+            Console.WriteLine("Subscribe on changes and submit a few modified rows. Make sure you get proper updates.");
+            dataSourceTest.GetDataChanges().Subscribe(GetDataChanges);
+
+            data[0]["CompanyName"] = "New value";
+            data[1]["CompanyName"] = "New value";
+            data[2]["CompanyName"] = "New value";
+
+            dataSourceTest.SubmitData("Make changes",data.Take(3));
+
+            Console.WriteLine("Check history for modified records");
+            var firstRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
+            Console.WriteLine("First Record History count : {0}",firstRecordHistory.Count());
+            var secondRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
+            Console.WriteLine("First Record History count : {0}", secondRecordHistory.Count());
+            var thirdtRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
+            Console.WriteLine("First Record History count : {0}", thirdtRecordHistory.Count());
+
+            Console.WriteLine("Make changes to DataSourcenfo (no joins yet, just add or remove columns)");
+            var addField = new FieldInfo
+            {
+                DataSourceProviderString = "Customers\\Northwind",
+                DataType = DataTypes.String,
+                DefaultValue = null,
+                IsKey = false,
+                IsNullable = true,
+                IsParentField = false,
+                IsReadOnly = false,
+                IsSearchable = true,
+                IsUnique = false,
+                Name = "NewField",
+                RelatedFieldName = null,
+                RelationUrn = null,
+                Size = null
+            };
+
+            datasource.Fields.Add(addField.Name,addField);
+            datasource = dataSourceTest.UpdateDataSourceInfo(datasource, user);
+
+            getData = dataSourceTest.GetData();
+            Console.WriteLine("Updated dataSource data count : {0}", getData.Count());
+            var updatedDatasourceKeys = getData.First().Keys;
+            Console.WriteLine("Data keys {0}",updatedDatasourceKeys.Aggregate("",(cur,key)=>cur + " : ["+key+"]"));
+            Console.WriteLine("Datasource field keys {0}", datasource.Fields.Keys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
+            Console.WriteLine("Delete records");
+            dataSourceTest.RemoveWorksheet(firstWorksheet,user);
+            dataSourceTest.RemoveWorksheet(secondWorksheet, user);
+            dataSourceTest.RemoveWorksheet(thirdWorksheet, user);
+            var keyFields = datasource.GetKeyFieldsName();
+            var datakeys = data.Select(record => keyFields.Aggregate("", (cur, key) => cur + "|" + record[key]));
+            dataSourceTest.SubmitData("Remove test data", null, datakeys);
+            dataSourceTest.RemoveDatasourceInfo(user);
+            dataSourceTest.Dispose();
 
             Console.WriteLine("Test finish. Type <Enter> to exit.");
             Console.ReadLine();
         }
 
-        private static void DisposeAllConnections()
+        private static void GetDataChanges(RecordChangedParam obj)
         {
-            Console.WriteLine("\nStep #6. Dispose all connections");
-            _commandFacade.Dispose();
-            _metaDataAdminFacade.Dispose();
-            _reactiveDataQueryFacade.Dispose();
-            _securityFacade.Dispose();
-        }
-
-        private static void RemoveTestData(WorksheetInfo worksheetInfo, DataSourceInfo dataSourceInfo, User user,
-            IEnumerable<string> dataKeys)
-        {
-            Console.WriteLine("\nStep #5. Remove test data.");
-            var tcs = new TaskCompletionSource<object>();
-            var task = tcs.Task;
-            _commandFacade.SubmitChanges(dataSourceInfo.DataSourcePath,"Remove test data",null,dataKeys, r =>
-            {
-                Console.WriteLine("Test data removed successfull");
-                tcs.SetResult(r);
-            }, ex =>
-            {
-                Console.WriteLine("Test data remove failed");
-                tcs.SetException(ex);
-            });
-            task.Wait();
-
-            Console.WriteLine("Try to get test data");
-            var removeData = _reactiveDataQueryFacade.GetData(dataSourceInfo.DataSourcePath);
-            
-            if (!removeData.Any())
-            {
-                Console.WriteLine("All test data removed");
-            }
-
-            _metaDataAdminFacade.DeleteWorksheetInfo(worksheetInfo.DataSourcePath,user.Id);
-            _metaDataAdminFacade.DeleteDataSourceInfo(dataSourceInfo.DataSourcePath, user.Id);
-            _securityFacade.RemoveUser(user);
-        }
-
-        private static void SaveDataIntoDatasourceTest(IEnumerable<Dictionary<string, object>> data,DataSourceInfo dataSourceInfo,string comment)
-        {
-            Console.WriteLine("\nStep #4. Save data");
-            var tcs = new TaskCompletionSource<object>();
-            var task = tcs.Task;
-            var changedRecords = data as IList<Dictionary<string, object>> ?? data.ToList();
-
-            _commandFacade.SubmitChanges(dataSourceInfo.DataSourcePath, comment, changedRecords,null,
-                r =>
-                {
-                    Console.WriteLine("Data saved successfull");
-                    tcs.SetResult(r);
-                }, ex =>
-                {
-                    Console.WriteLine("Data save failed");
-                    tcs.SetException(ex);
-                });
-
-            task.Wait();
-
-            Console.WriteLine("Get saved data");
-            var savedData = _reactiveDataQueryFacade.GetData(dataSourceInfo.DataSourcePath);
-
-            if (savedData.Count() == changedRecords.Count)
-            {
-                Console.WriteLine("All data saved");
-            }
-        }
-
-
-        private static WorksheetInfo TestMetaDataFacadeWorksheetInfo(WorksheetInfo worksheetInfo, User user)
-        {
-            Console.WriteLine("\nStep #3. Create worksheetInfo");
-            _metaDataAdminFacade.CreateWorksheetInfo(worksheetInfo, user.Id);
-
-            Console.WriteLine("Get created worksheetInfo");
-            var worksheet = _metaDataAdminFacade.GetWorksheetInfo(worksheetInfo.DataSourcePath);
-            return worksheet;
-        }
-
-        private static DataSourceInfo TestMetaDataFacadeDataSourceInfo(DataSourceInfo dataSourceInfo, User user)
-        {
-            Console.WriteLine("\nStep #2. Create test datasource");
-            _metaDataAdminFacade.CreateDataSourceInfo(dataSourceInfo, user.Id);
-
-            Console.WriteLine("Get created datasource");
-            var datasource = _metaDataAdminFacade.GetDataSourceInfo(dataSourceInfo.DataSourcePath);
-            return datasource;
-        }
-
-        private static void ObjectInfoChanged(object sender, SourceObjectChangedEventArgs e)
-        {
-            Console.WriteLine("ChangedObjectType : {0}\n ChangeObjectUrl : {1}", e.ChangedObjectType,
-                e.OldObjectUrn);
+            Console.WriteLine("RecordChangedParam resived RecordKey : {0} OriginalRecordKey : {1} dataDourcePath : {2}", obj.RecordKey, obj.OriginalRecordKey, obj.ProviderString);
         }
 
         private static User TestSecurityfacade(User user)
