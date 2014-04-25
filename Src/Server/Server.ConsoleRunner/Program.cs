@@ -56,7 +56,8 @@ namespace ReactiveWorksheets.Server.ConsoleRunner
             var hubConfiguration = new HubConfiguration {EnableDetailedErrors = true};
 
             GlobalHost.HubPipeline.AddModule(new LoggingPipelineModule());
-            app.MapSignalR(hubConfiguration);
+            //app.MapSignalR(hubConfiguration);
+            app.MapHubs(hubConfiguration);
         }
     }
 
