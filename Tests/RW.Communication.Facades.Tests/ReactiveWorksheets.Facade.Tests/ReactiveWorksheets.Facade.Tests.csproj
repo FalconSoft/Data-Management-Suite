@@ -64,6 +64,10 @@
       <Project>{750ea2e3-e290-4e44-bbf0-033ff8b9fc9d}</Project>
       <Name>ReactiveWorksheets.Client.SignalR</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\Src\Communications\InProcess\InProcessServer.Client\ReactiveWorksheets.InProcessServer.Client.csproj">
+      <Project>{94d962b3-abd7-4a74-949a-f5d8a510aa9c}</Project>
+      <Name>ReactiveWorksheets.InProcessServer.Client</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
