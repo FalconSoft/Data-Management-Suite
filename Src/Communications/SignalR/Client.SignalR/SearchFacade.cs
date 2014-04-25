@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using Microsoft.AspNet.SignalR.Client;
+using Microsoft.AspNet.SignalR.Client.Hubs;
 
 namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Reflection;
 using FalconSoft.ReactiveWorksheets.Server.Bootstrapper;
 using FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs;
 using Microsoft.AspNet.SignalR;
@@ -26,6 +27,7 @@ namespace ReactiveWorksheets.Server.ConsoleRunner
                 ServerApp.Logger.Error("Failed to Configure and Run Bootstrapper", ex);
                 throw;
             }
+
             using (WebApp.Start<HubServer>(ConfigurationManager.AppSettings["ConnectionString"]))
             {
                 Console.WriteLine("Server is running, Press <Enter> to stop");
@@ -43,26 +45,38 @@ namespace ReactiveWorksheets.Server.ConsoleRunner
             var reactiveDataQueryHub = new ReactiveDataQueryHub(ServerApp.ReactiveDataQueryFacade, ServerApp.Logger);
             var temporalDataQueryHub = new TemporalDataQueryHub(ServerApp.TemporalQueryFacade);
             var searchHub = new SearchHub(ServerApp.SearchFacade);
-            
+
             var securityHub = new SecurityHub(ServerApp.SecurityFacade);
 
-            GlobalHost.DependencyResolver.Register(typeof (CommandsHub), () => commandHub);
-            GlobalHost.DependencyResolver.Register(typeof (MetaDataHub), () => metaDataHub);
-            GlobalHost.DependencyResolver.Register(typeof (ReactiveDataQueryHub), () => reactiveDataQueryHub);
-            GlobalHost.DependencyResolver.Register(typeof (TemporalDataQueryHub), () => temporalDataQueryHub);
-            GlobalHost.DependencyResolver.Register(typeof (SearchHub), () => searchHub);
-            GlobalHost.DependencyResolver.Register(typeof (SecurityHub), () => securityHub);
+            GlobalHost.DependencyResolver.Register(typeof(CommandsHub), () => commandHub);
+            GlobalHost.DependencyResolver.Register(typeof(MetaDataHub), () => metaDataHub);
+            GlobalHost.DependencyResolver.Register(typeof(ReactiveDataQueryHub), () => reactiveDataQueryHub);
+            GlobalHost.DependencyResolver.Register(typeof(TemporalDataQueryHub), () => temporalDataQueryHub);
+            GlobalHost.DependencyResolver.Register(typeof(SearchHub), () => searchHub);
+            GlobalHost.DependencyResolver.Register(typeof(SecurityHub), () => securityHub);
             
-            var hubConfiguration = new HubConfiguration {EnableDetailedErrors = true};
+            var hubConfiguration = new HubConfiguration { EnableDetailedErrors = true, EnableCrossDomain = true};
 
             GlobalHost.HubPipeline.AddModule(new LoggingPipelineModule());
-            //app.MapSignalR(hubConfiguration);
+            
             app.MapHubs(hubConfiguration);
         }
     }
 
     internal class LoggingPipelineModule : HubPipelineModule
     {
+        protected override void OnIncomingError(Exception ex, IHubIncomingInvokerContext context)
+        {
+            Console.WriteLine("=> Invoking " + context.MethodDescriptor.Name + " on hub " + context.MethodDescriptor.Hub.Name);
+            base.OnIncomingError(ex, context);
+        }
+
+        protected override bool OnBeforeConnect(IHub hub)
+        {
+            Console.WriteLine("=> OnBeforeConnect " + hub.Context.QueryString);
+            return base.OnBeforeConnect(hub);
+        }
+
         protected override bool OnBeforeIncoming(IHubIncomingInvokerContext context)
         {
             Console.WriteLine("=> Invoking " + context.MethodDescriptor.Name + " on hub " + context.MethodDescriptor.Hub.Name);
