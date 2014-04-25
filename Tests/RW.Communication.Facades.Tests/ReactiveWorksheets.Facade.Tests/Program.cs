@@ -14,7 +14,7 @@ namespace ReactiveWorksheets.Facade.Tests
     internal class Program
     {
         private static IFacadesFactory _facadesFactory;
-        private const string ConnectionString = @"http://localhost:8081";
+        private const string ConnectionString = @"http://192.168.0.15:8081";
         private static ISecurityFacade _securityFacade;
         
         private static void Main()
@@ -31,10 +31,10 @@ namespace ReactiveWorksheets.Facade.Tests
            
             user = TestSecurityfacade(user);
 
-            Console.WriteLine("Create DataSource (Customers)");
+            Console.WriteLine("\n1. Create DataSource (Customers)");
             var dataSourceTest = new SimpleDataSourceTest(datasource, _facadesFactory, user);
 
-            Console.WriteLine("Create 3 different worksheets referencing to the same data source with three different columns set and filter rules");
+            Console.WriteLine("\n2. Create 3 different worksheets referencing to the same data source with three different columns set and filter rules");
             var firstWorksheetColumns = new List<ColumnInfo>
             {
                 new ColumnInfo(datasource.Fields["CustomerID"]),
@@ -58,16 +58,16 @@ namespace ReactiveWorksheets.Facade.Tests
             };
             var thirdWorksheet = dataSourceTest.CreateWorksheetInfo("Third Worksheet", "Test", thirdWorksheetColumns, user);
 
-            Console.WriteLine("Submit data (from Tsv)");
+            Console.WriteLine("\n3. Submit data (from Tsv)");
             var data = TestDataFactory.CreateTestData().ToArray();
 
             dataSourceTest.SubmitData("test data save", data);
 
-            Console.WriteLine("GetData");
+            Console.WriteLine("\n4. GetData");
             var getData = dataSourceTest.GetData();
             Console.WriteLine("Saved data count : {0}",getData.Count());
 
-            Console.WriteLine("Subscribe on changes and submit a few modified rows. Make sure you get proper updates.");
+            Console.WriteLine("\n5. Subscribe on changes and submit a few modified rows. Make sure you get proper updates.");
             dataSourceTest.GetDataChanges().Subscribe(GetDataChanges);
 
             data[0]["CompanyName"] = "New value";
@@ -76,7 +76,7 @@ namespace ReactiveWorksheets.Facade.Tests
 
             dataSourceTest.SubmitData("Make changes",data.Take(3));
 
-            Console.WriteLine("Check history for modified records");
+            Console.WriteLine("\n6. Check history for modified records");
             var firstRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
             Console.WriteLine("First Record History count : {0}",firstRecordHistory.Count());
             var secondRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
@@ -84,7 +84,7 @@ namespace ReactiveWorksheets.Facade.Tests
             var thirdtRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
             Console.WriteLine("First Record History count : {0}", thirdtRecordHistory.Count());
 
-            Console.WriteLine("Make changes to DataSourcenfo (no joins yet, just add or remove columns)");
+            Console.WriteLine("\n7. Make changes to DataSourcenfo add fields");
             var addField = new FieldInfo
             {
                 DataSourceProviderString = "Customers\\Northwind",
@@ -105,12 +105,25 @@ namespace ReactiveWorksheets.Facade.Tests
             datasource.Fields.Add(addField.Name,addField);
             datasource = dataSourceTest.UpdateDataSourceInfo(datasource, user);
 
+            Console.WriteLine("\n8. Get Data and see what is there");
             getData = dataSourceTest.GetData();
             Console.WriteLine("Updated dataSource data count : {0}", getData.Count());
             var updatedDatasourceKeys = getData.First().Keys;
             Console.WriteLine("Data keys {0}",updatedDatasourceKeys.Aggregate("",(cur,key)=>cur + " : ["+key+"]"));
             Console.WriteLine("Datasource field keys {0}", datasource.Fields.Keys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
-            Console.WriteLine("Delete records");
+            
+            Console.WriteLine("\n7. Make changes to DataSourcenfo remove fields");
+            datasource.Fields.Remove("Region");
+
+            datasource = dataSourceTest.UpdateDataSourceInfo(datasource, user);
+            Console.WriteLine("\n8. Get Data and see what is there");
+            getData = dataSourceTest.GetData();
+            Console.WriteLine("Updated dataSource data count : {0}", getData.Count());
+            updatedDatasourceKeys = getData.First().Keys;
+            Console.WriteLine("Data keys {0}", updatedDatasourceKeys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
+            Console.WriteLine("Datasource field keys {0}", datasource.Fields.Keys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
+            
+            Console.WriteLine("\n9. Delete records");
             dataSourceTest.RemoveWorksheet(firstWorksheet,user);
             dataSourceTest.RemoveWorksheet(secondWorksheet, user);
             dataSourceTest.RemoveWorksheet(thirdWorksheet, user);
