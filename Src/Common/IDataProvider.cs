@@ -9,8 +9,10 @@ namespace FalconSoft.ReactiveWorksheets.Common
     /// Is a main interface what describes a basic data provider functionality
     /// This interface has to be registered before it will consumed with ReactiveWorksheets.
     /// </summary>
-    public interface IDataProvider : IBaseProvider
+    public interface IDataProvider
     {
+        event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
+
         IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null,
                                                         Action<string, string> onError = null);
 

@@ -54,7 +54,6 @@
     <Compile Include="HistoryStorageType.cs" />
     <Compile Include="IMetaDataProvider.cs" />
     <Compile Include="FilterRule.cs" />
-    <Compile Include="IBaseProvider.cs" />
     <Compile Include="ICustomComboSource.cs" />
     <Compile Include="IDataProvider.cs" />
     <Compile Include="IDataProvidersCatalog.cs" />

@@ -8,9 +8,9 @@ namespace FalconSoft.ReactiveWorksheets.Common
     {
         public string Urn { get; set; }
         
-        public HeaderInfo ProviderInfo { get; set; }
+        public DataSourceInfo ProviderInfo { get; set; }
         
-        public IBaseProvider DataProvider { get; set; }
+        public IDataProvider DataProvider { get; set; }
 
         public IMetaDataProvider MetaDataProvider { get; set; }
     }

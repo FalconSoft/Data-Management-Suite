@@ -31,15 +31,6 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                                  .ToArray();
         }
 
-        public DataSourceInfo GetDataSourceInfo(string dataSourceProviderString)
-        {
-            ConnectToDb();
-            var allds = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName);
-            var ds = allds.FindOne(Query.And(Query.EQ("Name", dataSourceProviderString.GetName()),
-                                       Query.EQ("Category", dataSourceProviderString.GetCategory())));
-            return string.IsNullOrEmpty(ds.ParentProviderString) ? ds : ds.ResolveDataSourceParents(allds.FindAll().ToArray());
-        }
-
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceProviderString, string userId)
         {
             ConnectToDb();
