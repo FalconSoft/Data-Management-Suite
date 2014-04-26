@@ -27,7 +27,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 
         public static DataSourceInfo ResolveDataSourceParents(this DataSourceInfo dataSourceInfo, DataSourceInfo[] dataSources)
         {
-            if (string.IsNullOrEmpty(dataSourceInfo.ParentProviderString)) return dataSourceInfo;
+            if (string.IsNullOrEmpty(dataSourceInfo.ParentDataSourcePath)) return dataSourceInfo;
             var dataSource = (DataSourceInfo)dataSourceInfo.Clone();
 
             var parentFields = GetParentFields(dataSource,
@@ -44,18 +44,18 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         private static List<FieldInfo> GetParentFields(DataSourceInfo dataSourceInfo, Dictionary<string, DataSourceInfo> dataSources)
         {
             var parentFields = new List<FieldInfo>();
-            if (!string.IsNullOrEmpty(dataSourceInfo.ParentProviderString))
+            if (!string.IsNullOrEmpty(dataSourceInfo.ParentDataSourcePath))
             {
 
                 parentFields.AddRange(
-                    dataSources[dataSourceInfo.ParentProviderString].Fields.Values.Select(f =>
+                    dataSources[dataSourceInfo.ParentDataSourcePath].Fields.Values.Select(f =>
                     {
                         var childField = (FieldInfo)f.Clone();
                         childField.IsParentField = true;
                         return childField;
                     }));
 
-                parentFields.AddRange(GetParentFields(dataSources[dataSourceInfo.ParentProviderString], dataSources));
+                parentFields.AddRange(GetParentFields(dataSources[dataSourceInfo.ParentDataSourcePath], dataSources));
             }
 
 
@@ -78,8 +78,8 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 
         private static void ResolveChildDataSources(ref Dictionary<string, DataSourceInfo> list, HeaderInfo dataSource, DataSourceInfo[] dataSources)
         {
-            if (dataSources.All(x => x.ParentProviderString != dataSource.DataSourcePath)) return;
-            foreach (var dataSourceInfo in dataSources.Where(x => x.ParentProviderString == dataSource.DataSourcePath))
+            if (dataSources.All(x => x.ParentDataSourcePath != dataSource.DataSourcePath)) return;
+            foreach (var dataSourceInfo in dataSources.Where(x => x.ParentDataSourcePath == dataSource.DataSourcePath))
             {
                 if (list.ContainsKey(dataSourceInfo.DataSourcePath)) continue;
                 list.Add(dataSourceInfo.DataSourcePath, dataSourceInfo);

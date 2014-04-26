@@ -10,7 +10,16 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         /// <summary>
         /// Relation Type
         /// </summary>
-        public RelationType RelationType { get; set; }
+        public RelationType RelationType
+        {
+            get
+            {
+                if (MappedFields == null)
+                    return default(RelationType);
+
+                return (MappedFields.Count == 1) ? RelationType.Single : RelationType.Multi;
+            }
+        }
         /// <summary>
         /// Relation Name
         /// </summary>
@@ -31,6 +40,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 
     public enum RelationType
     {
-        Single,Multi
+        Single, Multi
     }
 }

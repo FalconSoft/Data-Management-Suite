@@ -32,7 +32,6 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
             _timer.Elapsed += OnClick;
         }
 
-
         private void OnClick(object sender, EventArgs e)
         {
             // Trace.WriteLine("Is background Timer => " + (Thread.CurrentThread.IsBackground ? "True" : "False"));
@@ -83,22 +82,17 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
             return list;
         }
 
-        public RevisionInfo SubmitChanges(List<Dictionary<string, object>> recordsToChange, List<string> recordsToDelete, string comment = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        public RevisionInfo SubmitChanges(List<Dictionary<string, object>> recordsToInsert, List<Dictionary<string, object>> recordsToUpdate, List<Dictionary<string, object>> recordsToDelete, string comment = null)
-        {
-            return null;
-        }
-
         public void UpdateSourceInfo(object sourceInfo)
         {
             throw new NotImplementedException();
         }
 
-        public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;      
+        public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
+
+        public RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange, IEnumerable<string> recordsToDelete, string comment = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class MyTestData

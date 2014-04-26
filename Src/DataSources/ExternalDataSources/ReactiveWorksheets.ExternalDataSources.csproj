@@ -45,7 +45,6 @@
     <Compile Include="ExternalSources\Calculator.cs" />
     <Compile Include="ExternalSources\MyTestData.cs" />
     <Compile Include="ExternalSources\QuotesFeed.cs" />
-    <Compile Include="ExternalSources\TestFunctionDataProvider.cs" />
     <Compile Include="ExternalSources\YahooEquityRefData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

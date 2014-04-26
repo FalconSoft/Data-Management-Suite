@@ -39,13 +39,14 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         }
 
         public void SubmitChanges<T>(string dataSourcePath, string comment, IEnumerable<T> changedRecords = null,
-            IEnumerable<string> deleted = null, Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null)
+            IEnumerable<string> deleted = null, Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null,
+            Action<string, string> onValidationError = null)
         {
             throw new NotImplementedException();
         }
 
         public void SubmitChanges(string dataSourcePath, string comment, IEnumerable<Dictionary<string, object>> changedRecords = null, IEnumerable<string> deleted = null,
-            Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null)
+            Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null, Action<string, string> onValidationError = null)
         {
             _onSuccessAction = onSuccess;
             _onFailedAction = onFail;

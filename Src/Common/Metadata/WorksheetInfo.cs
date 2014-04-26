@@ -10,8 +10,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 
         public string FilterString { get; set; }
 
-        public string WhereCondition { get; set; }
-
         public bool IsVisibleGroupPanel { get; set; }
 
         public bool IsVisibleAutoFilter { get; set; }

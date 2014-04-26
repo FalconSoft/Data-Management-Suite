@@ -16,7 +16,8 @@ namespace FalconSoft.ReactiveWorksheets.Common
         IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null,
                                                         Action<string, string> onError = null);
 
-        RevisionInfo SubmitChanges(List<Dictionary<string, object>> recordsToChange, List<string> recordsToDelete, string comment = null);
+        RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange, 
+            IEnumerable<string> recordsToDelete, string comment = null);
 
         // this method must be removed from here!
         void UpdateSourceInfo(object sourceInfo);

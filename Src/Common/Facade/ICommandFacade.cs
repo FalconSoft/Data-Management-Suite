@@ -18,11 +18,16 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
         /// <param name="deleted">RecordKeys to delete</param>
         /// <param name="onSuccess">Action called when on success, where string is a RecordKey and Revision</param>
         /// <param name="onFail">Action called on fail</param>
+        /// <param name="onValidationError">
+        /// Action will be called each time record doesn't pass validation.
+        /// Signature: string : RecordKey, string: errorMessage
+        /// </param>
         void SubmitChanges<T>(string dataSourcePath, string comment,
             IEnumerable<T> changedRecords = null,
             IEnumerable<string> deleted = null,
             Action<RevisionInfo> onSuccess = null,
-            Action<Exception> onFail = null);
+            Action<Exception> onFail = null,
+            Action<string, string> onValidationError = null);
 
         /// <summary>
         /// Submit changed records to ReactiveWorksheets server, which will update original source as well as Data Repository
@@ -33,10 +38,15 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
         /// <param name="deleted">records to delete</param>
         /// <param name="onSuccess">Action called when on success, where string is a RecordKey and Revision</param>
         /// <param name="onFail">Action called on fail</param>
+        /// <param name="onValidationError">
+        /// Action will be called each time record doesn't pass validation.
+        /// Signature: string : RecordKey, string: errorMessage
+        /// </param>
         void SubmitChanges(string dataSourcePath, string comment,
             IEnumerable<Dictionary<string, object>> changedRecords = null,
             IEnumerable<string> deleted = null,
             Action<RevisionInfo> onSuccess = null,
-            Action<Exception> onFail = null);
+            Action<Exception> onFail = null,
+            Action<string, string> onValidationError = null);
     }
 }

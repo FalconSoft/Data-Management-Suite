@@ -257,21 +257,5 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             _resolveRecordbyForeignKeyFailedAction = onFail;
             _proxy.Invoke("ResolveRecordbyForeignKey", changedRecord);
         }
-
-        public void GetFormulaResult(FormulaType formulaType, string formulaString, Dictionary<string, object> inParams, Dictionary<string, object> outParams,
-            Action<string, Dictionary<string, object>> onSuccess, Action<string, Exception> onFail)
-        {
-            _getFormulaResultSuccessAction = onSuccess;
-            _getFormulaResultFailedAction = onFail;
-            _proxy.Invoke("GetFormulaResult", formulaType,formulaString,inParams,outParams);
-        }
-
-        public void RequestCalculation(RecordChangedParam recordChangedParam, Action<string, RecordChangedParam> onSuccess,
-            Action<string, Exception> onFail)
-        {
-            _calculationSuccessAction = onSuccess;
-            _calculationFailedAction = onFail;
-            _proxy.Invoke("RequestCalculation", recordChangedParam);
-        }
     }
 }

@@ -43,7 +43,7 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
             return listOfRecords;
         }
 
-        public RevisionInfo SubmitChanges(List<Dictionary<string, object>> recordsToChange, List<string> recordsToDelete, string comment = null)
+        public RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange, IEnumerable<string> recordsToDelete, string comment = null)
         {
             return SubmitChangesHelper(recordsToChange, recordsToDelete, DataSourceInfo.DataSourcePath,
                  comment);

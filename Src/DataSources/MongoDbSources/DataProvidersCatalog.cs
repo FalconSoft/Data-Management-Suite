@@ -13,7 +13,6 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
     public class DataProvidersCatalog : IDataProvidersCatalog
     {
         private const string DataSourceCollectionName = "DataSourceInfo";
-        private const string ServiceSourceCollectionName = "ServiceSourceInfo";
         private readonly string _connectionString;
         private MongoDatabase _mongoDatabase;
 
@@ -26,7 +25,6 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         {
             ConnectToDb();
             var collectionDs = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName).FindAll();
-            var collectionSs = _mongoDatabase.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName).FindAll();
             var listDataProviders = new List<DataProvidersContext>();
 
             foreach (var dataSource in collectionDs)

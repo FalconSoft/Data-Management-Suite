@@ -57,14 +57,5 @@ namespace ReactiveWorksheets.ExternalDataSources
             
         }
 
-        public ServiceSourceInfo CreateServiceSource(ServiceSourceInfo dataSource, string userId)
-        {
-            return null;
-        }
-
-        public void RemoveServiceSource(string providerString)
-        {
-            
-        }
     }
 }

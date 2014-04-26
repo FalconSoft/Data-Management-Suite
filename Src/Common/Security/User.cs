@@ -56,8 +56,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Security
         DesignerPermission,
         WorksheetPermission,
         DataSourcePermission,
-        ServiceSourcePermission,
-        ImportIOSourcePermission
+        ServiceSourcePermission        
     }
 
 }

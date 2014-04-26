@@ -7,7 +7,7 @@ using FalconSoft.ReactiveWorksheets.Common;
 
 namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
 {
-    public class CalculatorDataProvider:IDataProvider
+    public class CalculatorDataProvider : IDataProvider
     {
         public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
 
@@ -32,7 +32,9 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
             return new List<Dictionary<string, object>>();
         }
 
-        public RevisionInfo SubmitChanges(List<Dictionary<string, object>> recordsToChange, List<string> recordsToDelete, string comment = null)
+        public RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange, 
+            IEnumerable<string> recordsToDelete, 
+            string comment = null)
         {
             return null;
         }

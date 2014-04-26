@@ -101,50 +101,6 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                                             Query.EQ("Category", dataSourceProviderString.GetCategory())));
         }
 
-        public ServiceSourceInfo[] GetAllServiceSourceInfos(string userId)
-        {
-            ConnectToDb();
-            return _mongoDatabase.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName)
-                                 .FindAll()
-                                 .ToArray();
-        }
-
-        public ServiceSourceInfo GetServiceSourceInfo(string providerstring)
-        {
-            ConnectToDb();
-            return
-                _mongoDatabase.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName)
-                              .FindOne(Query.And(Query.EQ("Name", providerstring.GetName()),
-                                                 Query.EQ("Category", providerstring.GetCategory())));
-        }
-
-        public ServiceSourceInfo CreateServiceSourceInfo(ServiceSourceInfo serviceSourceInfo, string userId)
-        {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName);
-            serviceSourceInfo.Id = ObjectId.GenerateNewId().ToString();
-            collection.Insert(serviceSourceInfo);
-            return
-                collection.FindOneAs<ServiceSourceInfo>(
-                    Query.And(Query.EQ("Name", serviceSourceInfo.DataSourcePath.GetName()),
-                              Query.EQ("Category", serviceSourceInfo.DataSourcePath.GetCategory())));
-        }
-
-        public void UpdateServiceSourceInfo(ServiceSourceInfo serviceSourceInfo, string userId)
-        {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<ServiceSourceInfo>(ServiceSourceCollectionName);
-            collection.Save(serviceSourceInfo);
-        }
-
-        public void DeleteServiceSourceInfo(string serviceSourceProviderstring, string userId)
-        {
-            ConnectToDb();
-            _mongoDatabase.GetCollection(DataSourceCollectionName)
-                          .Remove(Query.And(Query.EQ("Name", serviceSourceProviderstring.GetName()),
-                                            Query.EQ("Category", serviceSourceProviderstring.GetCategory())));
-        }
-
         private void ConnectToDb()
         {
             if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
