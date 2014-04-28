@@ -5,7 +5,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 {
     public class AggregatedWorksheetInfo : HeaderInfo
     {
-        public DataSourceInfo DataSourceInfo { get; set; }
+        public string DataSourceInfoPath { get; set; }
 
         public List<ColumnInfo> GroupByColumns { get; set; }
 

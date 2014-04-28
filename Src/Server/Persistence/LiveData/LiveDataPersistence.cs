@@ -102,12 +102,13 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
             return result;
         }
 
-        public IEnumerable<LiveDataObject> GetDataByForeignKey(string foreignFieldName, object recordValue)
+        public IEnumerable<LiveDataObject> GetDataByForeignKey(Dictionary<string, object> record)
         {
-            if (recordValue == null)
+            if (record.Keys.Any(a => a == null))
                 return null;
 
-            return _collection.FindAs<LiveDataObject>(Query.EQ(string.Format("RecordValues.{0}", foreignFieldName), BsonValue.Create(recordValue))).SetFields(Fields.Exclude("_id")).ToList();
+            var queryList = record.Select(rec => Query.EQ(string.Format("RecordValues.{0}", rec.Key), BsonValue.Create(rec.Value))).ToList();
+            return _collection.FindAs<LiveDataObject>(Query.And(queryList)).SetFields(Fields.Exclude("_id")).ToList();
 
             //return _collection.AsQueryable().Cast<LiveDataObject>()
             //        .Where(e => e.RecordValues[foreignFieldName] == recordValue).ToList();

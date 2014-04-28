@@ -8,19 +8,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
     public class RelationshipInfo
     { 
         /// <summary>
-        /// Relation Type
-        /// </summary>
-        public RelationType RelationType
-        {
-            get
-            {
-                if (MappedFields == null)
-                    return default(RelationType);
-
-                return (MappedFields.Count == 1) ? RelationType.Single : RelationType.Multi;
-            }
-        }
-        /// <summary>
         /// Relation Name
         /// </summary>
         public string Name { get; set; }
