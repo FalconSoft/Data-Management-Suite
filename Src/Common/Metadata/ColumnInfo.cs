@@ -21,37 +21,17 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
     //todo : Refactor me, please!!! 
     public class ColumnInfo : ICloneable
     {
-        public ColumnInfo(FieldInfo field)
-        {
-            Field = field;
-            FieldName = field.Name;
-        }
-
-        public ColumnInfo() { }
-
-        public FieldInfo Field { get; set; }
-
         public int Id { get; set; }
 
         public string Header { get; set; }
 
         public string BindableFieldName
         {
-            get { return string.Format("[{0}].Value", Field != null ? Field.Name : Header); }
+            get { return string.Format("[{0}].Value", FieldName); }
         }
 
         public string FieldName { get; set; }
         
-        public bool FieldIsNullable
-        {
-            get { return Field == null || Field.IsNullable; }
-        }
-
-        public DataTypes DataType
-        {
-            get { return Field != null ? Field.DataType : DataTypes.String; }
-        }
-
         public int SortIndex { get; set; }
 
         public ColumnSortOrder SortOrder { get; set; }
@@ -99,10 +79,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 
         public IList CustomComboBoxValues { get; set; }
 
-        public bool IsFormulaColumn { get; set; }
-
-        public string FormulaString { get; set; }
-
         public int GroupSummary { get; set; }
 
         public int TotalSummary { get; set; }
@@ -110,7 +86,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         public void Update(ColumnInfo columnInfo)
         {
             Id = columnInfo.Id;
-            Field = columnInfo.Field;
             FieldName = columnInfo.FieldName;
             Header = columnInfo.Header;
             SortIndex = columnInfo.SortIndex;
@@ -130,7 +105,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             ItemsSourceType = columnInfo.ItemsSourceType;
             ComboDisplayNameField = columnInfo.ComboDisplayNameField;
             ComboValueNameField = columnInfo.ComboValueNameField;
-            // ComboValueField = columnInfo.ComboValueField;
             ComboBoxWhereCondition = columnInfo.ComboBoxWhereCondition;
             GroupSummary = columnInfo.GroupSummary;
             TotalSummary = columnInfo.TotalSummary;
@@ -141,7 +115,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             return new ColumnInfo
             {
                 Id = Id,
-                Field = Field,
                 FieldName = FieldName,
                 Header = Header,
                 SortIndex = SortIndex,
@@ -161,7 +134,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 ItemsSourceType = ItemsSourceType,
                 ComboDisplayNameField = ComboDisplayNameField,
                 ComboValueNameField = ComboValueNameField,
-                //ComboValueField = ComboValueField,
                 ComboBoxWhereCondition = ComboBoxWhereCondition,
                 GroupSummary = GroupSummary,
                 TotalSummary = TotalSummary

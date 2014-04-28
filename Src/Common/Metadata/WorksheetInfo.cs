@@ -4,7 +4,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 {
     public class WorksheetInfo : HeaderInfo
     {
-        public DataSourceInfo DataSourceInfo { get; set; }
+        public string DataSourceInfoPath { get; set; }
 
         public List<ColumnInfo> Columns { get; set; }
 
