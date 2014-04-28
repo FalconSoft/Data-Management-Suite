@@ -8,7 +8,7 @@ namespace ReactiveWorksheets.Facade.Tests
 {
     internal static class TestDataFactory
     {
-        private static FieldInfo[] _fieldInfos =
+        private static readonly FieldInfo[] FieldInfos =
         {
             new FieldInfo
             {
@@ -189,52 +189,52 @@ namespace ReactiveWorksheets.Facade.Tests
             }
         };
 
-        private static DataSourceInfo _testDataSourceInfo = new DataSourceInfo(_fieldInfos)
+        private static readonly DataSourceInfo TestDataSourceInfo = new DataSourceInfo(FieldInfos)
         {
             Category = "Customers",
             Description = "Test datasource",
             Name = "Northwind",
         };
 
-        private static WorksheetInfo _tetsWorksheetInfo = new WorksheetInfo
+        private static readonly WorksheetInfo TetsWorksheetInfo = new WorksheetInfo
             {
                 Name = "TestDatasource Worksheet",
                 Category = "Test",
-                DataSourceInfo = _testDataSourceInfo,
                 Columns = new List<ColumnInfo>(new []
                 {
-                    new ColumnInfo(_fieldInfos[0])
+                    new ColumnInfo
                     {
-                        ColumnIndex = 0
+                        ColumnIndex = 0,
+                        FieldName = FieldInfos[0].Name
                     }, 
-                    new ColumnInfo(_fieldInfos[1])
+                    new ColumnInfo
                     {
-                        ColumnIndex = 1
+                        ColumnIndex = 1,
+                        FieldName = FieldInfos[1].Name
                     },
-                    new ColumnInfo(_fieldInfos[2])
+                    new ColumnInfo
                     {
-                        ColumnIndex = 2
+                        ColumnIndex = 2,
+                        FieldName = FieldInfos[2].Name
                     } 
                 })
             };
-
-        private static List<Dictionary<string, object>> _dataList;
 
         private static User _testUser;
 
         internal static DataSourceInfo CreateTestDataSourceInfo()
         {
-            return _testDataSourceInfo;
+            return TestDataSourceInfo;
         }
 
         internal static WorksheetInfo CreateTestWorksheetInfo()
         {
-            return _tetsWorksheetInfo;
+            return TetsWorksheetInfo;
         }
 
         internal static IEnumerable<Dictionary<string, object>> CreateTestData()
         {
-            var keys = _fieldInfos.Select(f => f.Name).ToArray();
+            var keys = FieldInfos.Select(f => f.Name).ToArray();
             var count = keys.Count();
             using (var sr = new StreamReader("Customers.txt"))
             {
@@ -244,15 +244,18 @@ namespace ReactiveWorksheets.Facade.Tests
                 {
                     var dictionary = new Dictionary<string, object>();
 
-                    var str = sr.ReadLine().Split('\t');
-                    for (int i = 0; i < count; i++)
+                    var readLine = sr.ReadLine();
+                    if (readLine != null)
                     {
-                        dictionary.Add(keys[i],str[i]);
+                        var str = readLine.Split('\t');
+                        for (var i = 0; i < count; i++)
+                        {
+                            dictionary.Add(keys[i],str[i]);
+                        }
                     }
                     yield return dictionary;
                 }
             }
-            yield break;
         }
 
         internal static User CreateTestUser()

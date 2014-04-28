@@ -52,7 +52,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         /// <summary>
         /// Access to original data 
         /// </summary>
-        public bool AccessToOriginalData { get; private set; }
+        public bool AccessToOriginalData { get;  set; }
 
         public void Update(DataSourceInfo dataSourceInfo)
         {

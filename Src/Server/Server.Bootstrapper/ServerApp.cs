@@ -248,7 +248,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _metaDataProvider ??
-                       (_metaDataProvider = new MetaDataProvider(_mongoDataConnectionString));
+                       (_metaDataProvider = new MetaDataProvider(_mongoDataConnectionString, null));
             }
         }
 

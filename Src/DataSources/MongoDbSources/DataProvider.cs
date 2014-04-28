@@ -15,12 +15,13 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
     {
         private readonly string _connectionString;
 
-        public DataProvider(string dataConnectionString)
+        public DataProvider(string dataConnectionString, DataSourceInfo datasourceInfo)
         {
             _connectionString = dataConnectionString;
+            DataSourceInfo = datasourceInfo;
         }
 
-        public DataSourceInfo DataSourceInfo { get; set; }
+        public DataSourceInfo DataSourceInfo { get; private set; }
 
         public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
