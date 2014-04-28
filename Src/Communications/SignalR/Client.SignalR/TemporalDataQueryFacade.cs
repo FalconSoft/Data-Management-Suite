@@ -38,7 +38,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private Action<TagInfo> _geTagInfosOnNextAction;
         private Action _geTagInfosOnCompleteAction;
         private Action<Exception> _geTagInfosOnErrorAction;
-        // ************************************************
+        
+        private Action _onCompleteAction;
+        private Action<Exception> _onFailedAction;
         public TemporalDataQueryFacade(string connectionString)
         {
             _connection = new HubConnection(connectionString);
@@ -128,6 +130,11 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
             //*********************************************
 
+            _proxy.On("OnComplete", () =>
+            {
+                if (_onCompleteAction != null)
+                    _onCompleteAction();
+            });
             _startConnectionTask = _connection.Start();
         }
         public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)
@@ -192,18 +199,28 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public void SaveTagInfo(TagInfo tagInfo)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
                 _proxy.Invoke("SaveTagInfo", tagInfo);
             else 
                 _startConnectionTask.ContinueWith(t=>_proxy.Invoke("SaveTagInfo", tagInfo));
+            task.Wait();
         }
 
         public void RemoveTagInfo(TagInfo tagInfo)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
                 _proxy.Invoke("RemoveTagInfo", tagInfo);
             else
                 _startConnectionTask.ContinueWith(t => _proxy.Invoke("RemoveTagInfo", tagInfo));
+            task.Wait();
         }
 
         public void Dispose()

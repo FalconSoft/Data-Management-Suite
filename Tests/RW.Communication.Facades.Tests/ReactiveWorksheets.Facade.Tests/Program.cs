@@ -14,16 +14,15 @@ namespace ReactiveWorksheets.Facade.Tests
     internal class Program
     {
         private static IFacadesFactory _facadesFactory;
-        private const string ConnectionString = @"http://192.168.0.15:8081";
+        private const string ConnectionString = @"http://localhost:8081";
         private static ISecurityFacade _securityFacade;
         
         private static void Main()
         {
-            _facadesFactory = GetFacadesFactory("InProcess");
+            _facadesFactory = GetFacadesFactory("SignalR");
             
             _securityFacade = _facadesFactory.CreateSecurityFacade();
           
-
             var datasource = TestDataFactory.CreateTestDataSourceInfo();
             var user = TestDataFactory.CreateTestUser();
 
@@ -50,6 +49,7 @@ namespace ReactiveWorksheets.Facade.Tests
                 new ColumnInfo(datasource.Fields["Address"])
             };
             var secondWorksheet = dataSourceTest.CreateWorksheetInfo("Second Worksheet", "Test", secondWorksheetColumns, user);
+            
             var thirdWorksheetColumns =  new List<ColumnInfo>
             {
                 new ColumnInfo(datasource.Fields["CustomerID"]),
@@ -68,13 +68,15 @@ namespace ReactiveWorksheets.Facade.Tests
             Console.WriteLine("Saved data count : {0}",getData.Count());
 
             Console.WriteLine("\n5. Subscribe on changes and submit a few modified rows. Make sure you get proper updates.");
-            dataSourceTest.GetDataChanges().Subscribe(GetDataChanges);
+            var disposer = dataSourceTest.GetDataChanges().Subscribe(GetDataChanges);
 
             data[0]["CompanyName"] = "New value";
             data[1]["CompanyName"] = "New value";
             data[2]["CompanyName"] = "New value";
 
-            dataSourceTest.SubmitData("Make changes",data.Take(3));
+            dataSourceTest.SubmitData("Make changes",data.ToArray());
+
+            disposer.Dispose();
 
             Console.WriteLine("\n6. Check history for modified records");
             var firstRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
@@ -83,7 +85,7 @@ namespace ReactiveWorksheets.Facade.Tests
             Console.WriteLine("First Record History count : {0}", secondRecordHistory.Count());
             var thirdtRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
             Console.WriteLine("First Record History count : {0}", thirdtRecordHistory.Count());
-
+            
             Console.WriteLine("\n7. Make changes to DataSourcenfo add fields");
             var addField = new FieldInfo
             {
@@ -107,8 +109,9 @@ namespace ReactiveWorksheets.Facade.Tests
 
             Console.WriteLine("\n8. Get Data and see what is there");
             getData = dataSourceTest.GetData();
-            Console.WriteLine("Updated dataSource data count : {0}", getData.Count());
-            var updatedDatasourceKeys = getData.First().Keys;
+            var getDataArray = getData as Dictionary<string, object>[] ?? getData.ToArray();
+            Console.WriteLine("Updated dataSource data count : {0}", getDataArray.Count());
+            var updatedDatasourceKeys = getDataArray.First().Keys;
             Console.WriteLine("Data keys {0}",updatedDatasourceKeys.Aggregate("",(cur,key)=>cur + " : ["+key+"]"));
             Console.WriteLine("Datasource field keys {0}", datasource.Fields.Keys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
             
@@ -118,8 +121,10 @@ namespace ReactiveWorksheets.Facade.Tests
             datasource = dataSourceTest.UpdateDataSourceInfo(datasource, user);
             Console.WriteLine("\n8. Get Data and see what is there");
             getData = dataSourceTest.GetData();
-            Console.WriteLine("Updated dataSource data count : {0}", getData.Count());
-            updatedDatasourceKeys = getData.First().Keys;
+            
+            getDataArray = getData as Dictionary<string, object>[] ?? getData.ToArray();
+            Console.WriteLine("Updated dataSource data count : {0}", getDataArray.Count());
+            updatedDatasourceKeys = getDataArray.First().Keys;
             Console.WriteLine("Data keys {0}", updatedDatasourceKeys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
             Console.WriteLine("Datasource field keys {0}", datasource.Fields.Keys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
             

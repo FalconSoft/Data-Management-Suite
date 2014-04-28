@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FalconSoft.ReactiveWorksheets.Common.Security;
-using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Hubs;
 using Newtonsoft.Json;
 
@@ -15,6 +14,8 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private readonly HubConnection _connection;
         private readonly IHubProxy _proxy;
         private readonly Task _startConnectionTask;
+        private Action _onCompleteAction;
+        private Action<Exception> _onFailedAction;
 
         public MetaDataFacade(string connectionString)
         {
@@ -30,6 +31,12 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 evArgs.SourceObjectInfo = JsonDeserializer(evArgs.SourceObjectInfo.ToString(), evArgs.ChangedObjectType);
                 if (ObjectInfoChanged != null)
                     ObjectInfoChanged(this, evArgs);
+            });
+
+            _proxy.On("OnComplete", () =>
+            {
+                if (_onCompleteAction != null)
+                    _onCompleteAction();
             });
 
             _startConnectionTask = _connection.Start();
@@ -150,6 +157,10 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userId)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("UpdateDataSourceInfo", dataSource, oldDataSourceUrn, userId);
@@ -159,10 +170,15 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                 _proxy.Invoke("UpdateDataSourceInfo", dataSource, oldDataSourceUrn, userId));
             }
+            task.Wait();
         }
 
         public void CreateDataSourceInfo(DataSourceInfo dataSource, string userId)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("CreateDataSourceInfo", dataSource, userId);
@@ -172,10 +188,16 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                     _proxy.Invoke("CreateDataSourceInfo", dataSource, userId));
             }
+
+            task.Wait();
         }
 
         public void DeleteDataSourceInfo(string dataSourceUrn, string userId)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("DeleteDataSourceInfo", dataSourceUrn, userId);
@@ -185,6 +207,8 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                 _proxy.Invoke("DeleteDataSourceInfo", dataSourceUrn, userId));
             }
+
+            task.Wait();
         }
 
         public WorksheetInfo GetWorksheetInfo(string worksheetUrn)
@@ -243,6 +267,10 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("UpdateWorksheetInfo", wsInfo, oldWorksheetUrn, userId);
@@ -252,10 +280,15 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                 _proxy.Invoke("UpdateWorksheetInfo", wsInfo, oldWorksheetUrn, userId));
             }
+            task.Wait();
         }
 
         public void CreateWorksheetInfo(WorksheetInfo wsInfo, string userId)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("CreateWorksheetInfo", wsInfo, userId);
@@ -265,10 +298,15 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                 _proxy.Invoke("CreateWorksheetInfo", wsInfo, userId));
             }
+            task.Wait();
         }
 
         public void DeleteWorksheetInfo(string worksheetUrn, string userId)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("DeleteWorksheetInfo", worksheetUrn, userId);
@@ -278,6 +316,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                 _proxy.Invoke("DeleteWorksheetInfo", worksheetUrn, userId));
             }
+            task.Wait();
         }
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
@@ -309,6 +348,10 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("UpdateAggregatedWorksheetInfo", wsInfo, oldWorksheetUrn, userId);
@@ -318,10 +361,16 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                 _proxy.Invoke("UpdateAggregatedWorksheetInfo", wsInfo, oldWorksheetUrn, userId));
             }
+
+            task.Wait();
         }
 
         public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userId)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("CreateAggregatedWorksheetInfo", wsInfo, userId);
@@ -331,10 +380,16 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                 _proxy.Invoke("CreateAggregatedWorksheetInfo", wsInfo, userId));
             }
+
+            task.Wait();
         }
 
         public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userId)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("DeleteAggregatedWorksheetInfo", worksheetUrn, userId);
@@ -344,6 +399,8 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                 _proxy.Invoke("DeleteAggregatedWorksheetInfo", worksheetUrn, userId));
             }
+
+            task.Wait();
         }
 
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn)

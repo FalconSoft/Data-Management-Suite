@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
@@ -10,20 +11,25 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class SecurityFacade : ISecurityFacade
     {
-
-         private readonly HubConnection _connection;
+        private readonly HubConnection _connection;
         private readonly IHubProxy _proxy;
         private readonly Task _startConnectionTask;
+        private Action _onCompleteAction;
 
         public SecurityFacade(string connectionString)
         {
             _connection = new HubConnection(connectionString);
             _proxy = _connection.CreateHubProxy("ISecurityFacade");
-
             
             _connection.Reconnecting += OnReconnecting;
             _connection.Reconnected += OnReconnected;
             _connection.Closed += OnClosed;
+
+            _proxy.On("OnComplete", () =>
+            {
+                if (_onCompleteAction != null)
+                    _onCompleteAction();
+            });
 
             _startConnectionTask = _connection.Start();
         }
@@ -68,19 +74,28 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public void SaveNewUser(User user)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("SaveNewUser", user);
             }
             else
             {
-                _startConnectionTask.ContinueWith(t =>
-                _proxy.Invoke("SaveNewUser", user));
+                _startConnectionTask.Wait();
+                _proxy.Invoke("SaveNewUser", user);
             }
+            task.Wait();
         }
 
         public void UpdateUser(User user)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
+
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("UpdateUser", user);
@@ -90,10 +105,14 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                 _proxy.Invoke("UpdateUser", user));
             }
+            task.Wait();
         }
 
         public void RemoveUser(User user)
         {
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onCompleteAction = () => tcs.SetResult(new object());
             if (_startConnectionTask.IsCompleted)
             {
                 _proxy.Invoke("RemoveUser", user);
@@ -103,6 +122,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.ContinueWith(t =>
                 _proxy.Invoke("RemoveUser", user));
             }
+            task.Wait();
         }
 
         public void Dispose()

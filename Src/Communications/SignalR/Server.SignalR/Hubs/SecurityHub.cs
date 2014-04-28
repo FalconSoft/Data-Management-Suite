@@ -25,16 +25,19 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         public void SaveNewUser(User user)
         {
             _securityFacade.SaveNewUser(user);
+            Clients.Caller.OnComplete();
         }
 
         public void UpdateUser(User user)
         {
             _securityFacade.UpdateUser(user);
+            Clients.Caller.OnComplete();
         }
 
         public void RemoveUser(User user)
         {
             _securityFacade.UpdateUser(user);
+            Clients.Caller.OnComplete();
         }
     }
 }

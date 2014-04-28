@@ -29,16 +29,19 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userId)
         {
             _metaDataFacade.UpdateDataSourceInfo(dataSource,oldDataSourceUrn,userId);
+            Clients.Caller.OnComplete();
         }
 
         public void CreateDataSourceInfo(DataSourceInfo dataSource, string userId)
         {
             _metaDataFacade.CreateDataSourceInfo(dataSource, userId);
+            Clients.Caller.OnComplete();
         }
 
         public void DeleteDataSourceInfo(string dataSourceUrn, string userId)
         {
             _metaDataFacade.DeleteDataSourceInfo(dataSourceUrn, userId);
+            Clients.Caller.OnComplete();
         }
 
         public WorksheetInfo GetWorksheetInfo(string worksheetUrn)
@@ -54,16 +57,19 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
         {
             _metaDataFacade.UpdateWorksheetInfo(wsInfo, oldWorksheetUrn, userId);
+            Clients.Caller.OnComplete();
         }
 
         public void CreateWorksheetInfo(WorksheetInfo wsInfo, string userId)
         {
             _metaDataFacade.CreateWorksheetInfo(wsInfo, userId);
+            Clients.Caller.OnComplete();
         }
 
         public void DeleteWorksheetInfo(string worksheetUrn, string userId)
         {
             _metaDataFacade.DeleteWorksheetInfo(worksheetUrn, userId);
+            Clients.Caller.OnComplete();
         }
 
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn)
@@ -79,16 +85,19 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
         {
             _metaDataFacade.UpdateAggregatedWorksheetInfo(wsInfo, oldWorksheetUrn, userId);
+            Clients.Caller.OnComplete();
         }
 
         public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userId)
         {
             _metaDataFacade.CreateAggregatedWorksheetInfo(wsInfo, userId);
+            Clients.Caller.OnComplete();
         }
 
         public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userId)
         {
             _metaDataFacade.DeleteAggregatedWorksheetInfo(worksheetUrn, userId);
+            Clients.Caller.OnComplete();
         }
       
         private void OnObjectInfoChanged(object sender, SourceObjectChangedEventArgs e)

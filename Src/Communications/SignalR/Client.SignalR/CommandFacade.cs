@@ -14,7 +14,8 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private readonly IHubProxy _proxy;
         private readonly Task _startConnectionTask;
         private Action<RevisionInfo> _onSuccessAction;
-        private Action<Exception> _onFailedAction; 
+        private Action<Exception> _onFailedAction;
+        private Action _onInitilizeCompleteAction;
 
         public CommandFacade(string connectionString)
         {
@@ -30,6 +31,13 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 if (_onFailedAction != null)
                     _onFailedAction(ex);
             });
+
+            _proxy.On("InitilizeComplete", () =>
+            {
+                if (_onInitilizeCompleteAction != null)
+                    _onInitilizeCompleteAction();
+            });
+
             _startConnectionTask = _connection.Start();
         }
 
@@ -45,18 +53,28 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             throw new NotImplementedException();
         }
 
-        public void SubmitChanges(string dataSourcePath, string comment, IEnumerable<Dictionary<string, object>> changedRecords = null, IEnumerable<string> deleted = null,
-            Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null, Action<string, string> onValidationError = null)
+        public void SubmitChanges(string dataSourcePath, string comment,
+            IEnumerable<Dictionary<string, object>> changedRecords = null, IEnumerable<string> deleted = null,
+            Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null,
+            Action<string, string> onValidationError = null)
         {
             _onSuccessAction = onSuccess;
             _onFailedAction = onFail;
+            var tcs = new TaskCompletionSource<object>();
+            var task = tcs.Task;
+            _onInitilizeCompleteAction = () => tcs.SetResult(new object());
+            _proxy.Invoke("InitilizeSubmit", dataSourcePath, comment, changedRecords == null, deleted == null);
+            task.Wait();
+
             if (deleted != null)
-                DeleteServerCall(dataSourcePath, comment, deleted);
+                DeleteServerCall(dataSourcePath, deleted);
             if (changedRecords != null)
-                ChangeRecordsServerCall(dataSourcePath, comment, changedRecords);
+                ChangeRecordsServerCall(dataSourcePath, changedRecords);
+
+            //_proxy.Invoke("CompleteSubmite", dataSourcePath, changedRecords == null, deleted == null);
         }
 
-        private void DeleteServerCall(string dataSourcePath, string comment, IEnumerable<string> deleted = null)
+        private void DeleteServerCall(string dataSourcePath, IEnumerable<string> deleted)
         {
             if (!_startConnectionTask.IsCompleted)
                 _startConnectionTask.Wait();
@@ -64,7 +82,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             {
                 foreach (var keyToDelete in deleted)
                 {
-                    _proxy.Invoke("SubmitChangesDeleteOnNext", dataSourcePath, comment, keyToDelete);
+                    _proxy.Invoke("SubmitChangesDeleteOnNext", dataSourcePath, keyToDelete);
                 }
                 _proxy.Invoke("SubmitChangesDeleteOnComplete",dataSourcePath);
             }
@@ -75,8 +93,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             }
         }
 
-        private void ChangeRecordsServerCall(string dataSourcePath, string comment,
-            IEnumerable<Dictionary<string, object>> changedRecords = null)
+        private void ChangeRecordsServerCall(string dataSourcePath, IEnumerable<Dictionary<string, object>> changedRecords)
         {
             if (!_startConnectionTask.IsCompleted)
                 _startConnectionTask.Wait();
@@ -84,7 +101,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             {
                 foreach (var dataToUpdate in changedRecords)
                 {
-                    _proxy.Invoke("SubmitChangesChangeRecordsOnNext", dataSourcePath, comment, dataToUpdate);
+                    _proxy.Invoke("SubmitChangesChangeRecordsOnNext", dataSourcePath, dataToUpdate);
                 }
                 _proxy.Invoke("SubmitChangesChangeRecordsOnComplete",dataSourcePath);
             }
