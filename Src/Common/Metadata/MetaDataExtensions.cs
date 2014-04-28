@@ -41,24 +41,18 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             return dataSource;
         }
 
-        private static List<FieldInfo> GetParentFields(DataSourceInfo dataSourceInfo, Dictionary<string, DataSourceInfo> dataSources)
+        private static IEnumerable<FieldInfo> GetParentFields(DataSourceInfo dataSourceInfo, Dictionary<string, DataSourceInfo> dataSources)
         {
             var parentFields = new List<FieldInfo>();
-            if (!string.IsNullOrEmpty(dataSourceInfo.ParentDataSourcePath))
-            {
-
-                parentFields.AddRange(
-                    dataSources[dataSourceInfo.ParentDataSourcePath].Fields.Values.Select(f =>
-                    {
-                        var childField = (FieldInfo)f.Clone();
-                        childField.IsParentField = true;
-                        return childField;
-                    }));
-
-                parentFields.AddRange(GetParentFields(dataSources[dataSourceInfo.ParentDataSourcePath], dataSources));
-            }
-
-
+            if (string.IsNullOrEmpty(dataSourceInfo.ParentDataSourcePath)) return parentFields;
+            parentFields.AddRange(
+                dataSources[dataSourceInfo.ParentDataSourcePath].Fields.Values.Select(f =>
+                {
+                    var childField = (FieldInfo)f.Clone();
+                    childField.IsParentField = true;
+                    return childField;
+                }));
+            parentFields.AddRange(GetParentFields(dataSources[dataSourceInfo.ParentDataSourcePath], dataSources));
             return parentFields;
         }
 
@@ -94,14 +88,10 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 Id = aggregatedWorksheet.Id,
                 Name = aggregatedWorksheet.Name,
                 Category = aggregatedWorksheet.Category,
-                Columns = aggregatedWorksheet.GetColumnsFromAgrWs(),
-                DataSourceInfo = aggregatedWorksheet.MakeAggregatedDataSourceInfo()
+                Columns = aggregatedWorksheet.GetColumnsFromAgrWs().Select(x => (ColumnInfo)x.Clone()).ToList(),
+                DataSourceInfoPath = aggregatedWorksheet.DataSourceInfoPath
             };
-            ws.Columns.ForEach(x =>
-            {
-                x.Field = ws.DataSourceInfo.Fields[x.Header];
-                x.FieldName = x.Header;
-            });
+            ws.Columns.ForEach(x => x.FieldName = x.Header);
             return ws;
         }
 
@@ -113,19 +103,19 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             return columns;
         }
 
-        public static DataSourceInfo MakeAggregatedDataSourceInfo(this AggregatedWorksheetInfo aggregatedWorksheet)
+        public static DataSourceInfo MakeAggregatedDataSourceInfo(this AggregatedWorksheetInfo aggregatedWorksheet, DataSourceInfo aggregatedWorksheetDataSource)
         {
             return new DataSourceInfo
             {
-                Category = aggregatedWorksheet.DataSourceInfo.Category,
-                Id = aggregatedWorksheet.DataSourceInfo.Id,
-                Name = aggregatedWorksheet.DataSourceInfo.Name,
+                Category = aggregatedWorksheet.DataSourceInfoPath.GetCategory(),
+                Id = aggregatedWorksheetDataSource.Id,
+                Name = aggregatedWorksheet.DataSourceInfoPath.GetName(),
                 Fields = aggregatedWorksheet.GetColumnsFromAgrWs().ToDictionary(x=>x.Header, x=>new FieldInfo
                 {
-                    DataSourceProviderString = aggregatedWorksheet.DataSourceInfo.DataSourcePath,
+                    DataSourceProviderString = aggregatedWorksheet.DataSourceInfoPath,
                     IsKey = x.FieldName == x.Header,
                     IsNullable = x.FieldName!=x.Header,
-                    DataType = aggregatedWorksheet.DataSourceInfo.Fields[x.FieldName].DataType,
+                    DataType = aggregatedWorksheetDataSource.Fields[x.FieldName].DataType,
                     Name = x.Header,
                     IsParentField = false,
                     IsReadOnly = true

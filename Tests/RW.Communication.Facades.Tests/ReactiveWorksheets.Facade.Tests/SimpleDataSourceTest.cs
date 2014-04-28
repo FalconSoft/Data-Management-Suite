@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
@@ -34,8 +32,7 @@ namespace ReactiveWorksheets.Facade.Tests
             {
                 Category = category,
                 Name = name,
-                Columns = columns,
-                DataSourceInfo = _dataSourceInfo
+                Columns = columns
             };
             _metaDataAdminFacade.CreateWorksheetInfo(worksheet,user.Id);
 

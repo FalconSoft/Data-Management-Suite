@@ -16,19 +16,19 @@ namespace ReactiveWorksheets.Facade.Tests
         private static IFacadesFactory _facadesFactory;
         private const string ConnectionString = @"http://192.168.0.15:8081";
         private static ISecurityFacade _securityFacade;
-        
+
         private static void Main()
         {
             _facadesFactory = GetFacadesFactory("InProcess");
-            
+
             _securityFacade = _facadesFactory.CreateSecurityFacade();
-          
+
 
             var datasource = TestDataFactory.CreateTestDataSourceInfo();
             var user = TestDataFactory.CreateTestUser();
 
             Console.WriteLine("Testing starts...");
-           
+
             user = TestSecurityfacade(user);
 
             Console.WriteLine("\n1. Create DataSource (Customers)");
@@ -37,24 +37,24 @@ namespace ReactiveWorksheets.Facade.Tests
             Console.WriteLine("\n2. Create 3 different worksheets referencing to the same data source with three different columns set and filter rules");
             var firstWorksheetColumns = new List<ColumnInfo>
             {
-                new ColumnInfo(datasource.Fields["CustomerID"]),
-                new ColumnInfo(datasource.Fields["CompanyName"]),
-                new ColumnInfo(datasource.Fields["ContactName"])
+                new ColumnInfo{FieldName = "CustomerID"},
+                new ColumnInfo{FieldName = "CompanyName"},
+                new ColumnInfo{FieldName = "ContactName"}
             };
             var firstWorksheet = dataSourceTest.CreateWorksheetInfo("First Worksheet", "Test", firstWorksheetColumns, user);
-            
+
             var secondWorksheetColumns = new List<ColumnInfo>
             {
-                new ColumnInfo(datasource.Fields["CustomerID"]),
-                new ColumnInfo(datasource.Fields["ContactTitle"]),
-                new ColumnInfo(datasource.Fields["Address"])
+                new ColumnInfo{FieldName = "CustomerID"},
+                new ColumnInfo{FieldName = "ContactTitle"},
+                new ColumnInfo{FieldName = "Address"}
             };
             var secondWorksheet = dataSourceTest.CreateWorksheetInfo("Second Worksheet", "Test", secondWorksheetColumns, user);
-            var thirdWorksheetColumns =  new List<ColumnInfo>
+            var thirdWorksheetColumns = new List<ColumnInfo>
             {
-                new ColumnInfo(datasource.Fields["CustomerID"]),
-                new ColumnInfo(datasource.Fields["City"]),
-                new ColumnInfo(datasource.Fields["Region"])
+                new ColumnInfo{FieldName = "CustomerID"},
+                new ColumnInfo{FieldName = "City"},
+                new ColumnInfo{FieldName = "Region"}
             };
             var thirdWorksheet = dataSourceTest.CreateWorksheetInfo("Third Worksheet", "Test", thirdWorksheetColumns, user);
 
@@ -65,7 +65,7 @@ namespace ReactiveWorksheets.Facade.Tests
 
             Console.WriteLine("\n4. GetData");
             var getData = dataSourceTest.GetData();
-            Console.WriteLine("Saved data count : {0}",getData.Count());
+            Console.WriteLine("Saved data count : {0}", getData.Count());
 
             Console.WriteLine("\n5. Subscribe on changes and submit a few modified rows. Make sure you get proper updates.");
             dataSourceTest.GetDataChanges().Subscribe(GetDataChanges);
@@ -74,11 +74,11 @@ namespace ReactiveWorksheets.Facade.Tests
             data[1]["CompanyName"] = "New value";
             data[2]["CompanyName"] = "New value";
 
-            dataSourceTest.SubmitData("Make changes",data.Take(3));
+            dataSourceTest.SubmitData("Make changes", data.Take(3));
 
             Console.WriteLine("\n6. Check history for modified records");
             var firstRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
-            Console.WriteLine("First Record History count : {0}",firstRecordHistory.Count());
+            Console.WriteLine("First Record History count : {0}", firstRecordHistory.Count());
             var secondRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
             Console.WriteLine("First Record History count : {0}", secondRecordHistory.Count());
             var thirdtRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
@@ -102,16 +102,16 @@ namespace ReactiveWorksheets.Facade.Tests
                 Size = null
             };
 
-            datasource.Fields.Add(addField.Name,addField);
+            datasource.Fields.Add(addField.Name, addField);
             datasource = dataSourceTest.UpdateDataSourceInfo(datasource, user);
 
             Console.WriteLine("\n8. Get Data and see what is there");
             getData = dataSourceTest.GetData();
             Console.WriteLine("Updated dataSource data count : {0}", getData.Count());
             var updatedDatasourceKeys = getData.First().Keys;
-            Console.WriteLine("Data keys {0}",updatedDatasourceKeys.Aggregate("",(cur,key)=>cur + " : ["+key+"]"));
+            Console.WriteLine("Data keys {0}", updatedDatasourceKeys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
             Console.WriteLine("Datasource field keys {0}", datasource.Fields.Keys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
-            
+
             Console.WriteLine("\n7. Make changes to DataSourcenfo remove fields");
             datasource.Fields.Remove("Region");
 
@@ -122,9 +122,9 @@ namespace ReactiveWorksheets.Facade.Tests
             updatedDatasourceKeys = getData.First().Keys;
             Console.WriteLine("Data keys {0}", updatedDatasourceKeys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
             Console.WriteLine("Datasource field keys {0}", datasource.Fields.Keys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
-            
+
             Console.WriteLine("\n9. Delete records");
-            dataSourceTest.RemoveWorksheet(firstWorksheet,user);
+            dataSourceTest.RemoveWorksheet(firstWorksheet, user);
             dataSourceTest.RemoveWorksheet(secondWorksheet, user);
             dataSourceTest.RemoveWorksheet(thirdWorksheet, user);
             var keyFields = datasource.GetKeyFieldsName();
@@ -157,7 +157,7 @@ namespace ReactiveWorksheets.Facade.Tests
             return user;
         }
 
-        private static IFacadesFactory  GetFacadesFactory(string facadeType)
+        private static IFacadesFactory GetFacadesFactory(string facadeType)
         {
             if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
             {
