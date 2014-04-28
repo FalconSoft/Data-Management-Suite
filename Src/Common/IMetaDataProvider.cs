@@ -1,3 +1,4 @@
+using System;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FalconSoft.ReactiveWorksheets.Common.Security;
 
@@ -29,5 +30,6 @@ namespace FalconSoft.ReactiveWorksheets.Common
         void DeleteDataSourceInfo(string dataSourceProviderString, string userId);
 
 
+        Action<DataSourceInfo> OnDataSourceInfoChanged { get; set; }
     }
 }

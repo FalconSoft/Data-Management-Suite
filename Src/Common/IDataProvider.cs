@@ -18,9 +18,6 @@ namespace FalconSoft.ReactiveWorksheets.Common
 
         RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange, 
             IEnumerable<string> recordsToDelete, string comment = null);
-
-        // this method must be removed from here!
-        void UpdateSourceInfo(object sourceInfo);
     }
 
     public class RevisionInfo

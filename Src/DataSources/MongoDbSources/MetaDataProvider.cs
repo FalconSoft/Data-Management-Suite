@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FalconSoft.ReactiveWorksheets.Common.Security;
@@ -18,9 +19,10 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         
         private MongoDatabase _mongoDatabase;
 
-        public MetaDataProvider(string connectionString)
+        public MetaDataProvider(string connectionString, Action<DataSourceInfo> updateSourceInfo)
         {
             _connectionString = connectionString;
+            OnDataSourceInfoChanged = updateSourceInfo;
         }
 
         public DataSourceInfo[] GetAvailableDataSources(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
@@ -70,6 +72,12 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
             dataSource.Id = oldDs.Id;
             oldDs.Update(dataSource);
             collection.Save(oldDs);
+
+            if (OnDataSourceInfoChanged != null)
+            {
+                OnDataSourceInfoChanged(dataSource);    
+            }
+            
         }
 
         public DataSourceInfo CreateDataSourceInfo(DataSourceInfo dataSource, string userId)
@@ -100,6 +108,8 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                           .Remove(Query.And(Query.EQ("Name", dataSourceProviderString.GetName()),
                                             Query.EQ("Category", dataSourceProviderString.GetCategory())));
         }
+
+        public Action<DataSourceInfo> OnDataSourceInfoChanged { get; set; }
 
         private void ConnectToDb()
         {

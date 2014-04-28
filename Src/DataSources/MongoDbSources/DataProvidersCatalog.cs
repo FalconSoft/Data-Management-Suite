@@ -29,13 +29,17 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
             foreach (var dataSource in collectionDs)
             {
+                
+                var dataProvider = new DataProvider(_connectionString, dataSource.ResolveDataSourceParents(collectionDs.ToArray()));
                 var dataProviderContext = new DataProvidersContext
                     {
                         Urn = dataSource.DataSourcePath,
-                        DataProvider = new DataProvider(_connectionString) { DataSourceInfo = dataSource.ResolveDataSourceParents(collectionDs.ToArray()) },
+                        DataProvider = dataProvider,
                         ProviderInfo = dataSource.ResolveDataSourceParents(collectionDs.ToArray()),
-                        MetaDataProvider = new MetaDataProvider(_connectionString)
+                        MetaDataProvider = new MetaDataProvider(_connectionString, dataProvider.UpdateSourceInfo)
+
                     };
+
                 listDataProviders.Add(dataProviderContext);
             }
 
@@ -61,12 +65,15 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
             if (!_mongoDatabase.CollectionExists(historyCollectionName))
                 _mongoDatabase.CreateCollection(historyCollectionName);
 
+            var dataProvider = new DataProvider(_connectionString,
+                dataSource.ResolveDataSourceParents(collection.FindAll().ToArray()));
+            
             var dataProviderContext = new DataProvidersContext
                 {
                     Urn = dataSource.DataSourcePath,
-                    DataProvider = new DataProvider(_connectionString) {DataSourceInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray())},
+                    DataProvider = dataProvider,
                     ProviderInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray()),
-                    MetaDataProvider = new MetaDataProvider(_connectionString)
+                    MetaDataProvider = new MetaDataProvider(_connectionString, dataProvider.UpdateSourceInfo)
                 };
             DataProviderAdded(this, dataProviderContext);
              var ds = collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
