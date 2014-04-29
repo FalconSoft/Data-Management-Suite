@@ -19,10 +19,9 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         
         private MongoDatabase _mongoDatabase;
 
-        public MetaDataProvider(string connectionString, Action<DataSourceInfo> updateSourceInfo)
+        public MetaDataProvider(string connectionString)
         {
             _connectionString = connectionString;
-            OnDataSourceInfoChanged = updateSourceInfo;
         }
 
         public DataSourceInfo[] GetAvailableDataSources(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
