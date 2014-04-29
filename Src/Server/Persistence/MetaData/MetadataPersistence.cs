@@ -16,8 +16,6 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.MetaData
 
         private const string DataSourceCollectionName = "MetaData_DataSourceInfo";
 
-        private const string ServiceSourceCollectionName = "MetaData_ServiceSourceInfo";
-
         public MetaDataPersistence(string connectionString)
         {
             _connectionString = connectionString;
