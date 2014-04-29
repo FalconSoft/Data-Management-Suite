@@ -80,10 +80,13 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.Wait();
             try
             {
+                var count = 0;
                 foreach (var keyToDelete in deleted)
                 {
                     _proxy.Invoke("SubmitChangesDeleteOnNext", dataSourcePath, keyToDelete);
+                    count++;
                 }
+                _proxy.Invoke("SubmitChangesDeleteOnFinish", dataSourcePath, count);
                 _proxy.Invoke("SubmitChangesDeleteOnComplete",dataSourcePath);
             }
             catch (Exception ex)
@@ -99,10 +102,13 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _startConnectionTask.Wait();
             try
             {
+                var count = 0;
                 foreach (var dataToUpdate in changedRecords)
                 {
                     _proxy.Invoke("SubmitChangesChangeRecordsOnNext", dataSourcePath, dataToUpdate);
+                    count++;
                 }
+                _proxy.Invoke("SubmitChangesChangeRecordsOnFinish", dataSourcePath, count);
                 _proxy.Invoke("SubmitChangesChangeRecordsOnComplete",dataSourcePath);
             }
             catch (Exception ex)
