@@ -59,9 +59,10 @@ namespace ReactiveWorksheets.Facade.Tests
             var thirdWorksheet = dataSourceTest.CreateWorksheetInfo("Third Worksheet", "Test", thirdWorksheetColumns, user);
 
             Console.WriteLine("\n3. Submit data (from Tsv)");
-            var data = TestDataFactory.CreateTestData().ToArray();
+            var data = TestDataFactory.CreateTestData("Customers.txt");
 
-            dataSourceTest.SubmitData("test data save", data);
+            var changedData = data as Dictionary<string, object>[] ?? data.ToArray();
+            dataSourceTest.SubmitData("test data save", changedData);
 
             Console.WriteLine("\n4. GetData");
             var getData = dataSourceTest.GetData();
@@ -70,18 +71,18 @@ namespace ReactiveWorksheets.Facade.Tests
             Console.WriteLine("\n5. Subscribe on changes and submit a few modified rows. Make sure you get proper updates.");
             var disposer = dataSourceTest.GetDataChanges().Subscribe(GetDataChanges);
 
-            data[0]["CompanyName"] = "New value";
-            data[1]["CompanyName"] = "New value";
-            data[2]["CompanyName"] = "New value";
+            changedData[0]["CompanyName"] = "New value";
+            changedData[1]["CompanyName"] = "New value";
+            changedData[2]["CompanyName"] = "New value";
 
-            dataSourceTest.SubmitData("Make changes", data.Take(3));
+            dataSourceTest.SubmitData("Make changes", changedData.Take(3));
 
             Console.WriteLine("\n6. Check history for modified records");
-            var firstRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
+            var firstRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + changedData[0][key]));
             Console.WriteLine("First Record History count : {0}", firstRecordHistory.Count());
-            var secondRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
+            var secondRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + changedData[0][key]));
             Console.WriteLine("Second Record History count : {0}", secondRecordHistory.Count());
-            var thirdtRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + data[0][key]));
+            var thirdtRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + changedData[0][key]));
             Console.WriteLine("Third Record History count : {0}", thirdtRecordHistory.Count());
 
             disposer.Dispose();
@@ -129,11 +130,14 @@ namespace ReactiveWorksheets.Facade.Tests
             Console.WriteLine("Datasource field keys {0}", datasource.Fields.Keys.Aggregate("", (cur, key) => cur + " : [" + key + "]"));
 
             Console.WriteLine("\n9. Delete records");
+            
             dataSourceTest.RemoveWorksheet(firstWorksheet, user);
             dataSourceTest.RemoveWorksheet(secondWorksheet, user);
             dataSourceTest.RemoveWorksheet(thirdWorksheet, user);
+            
             var keyFields = datasource.GetKeyFieldsName();
-            var datakeys = data.Select(record => keyFields.Aggregate("", (cur, key) => cur + "|" + record[key]));
+            var datakeys = changedData.Select(record => keyFields.Aggregate("", (cur, key) => cur + "|" + record[key]));
+            
             dataSourceTest.SubmitData("Remove test data", null, datakeys);
             dataSourceTest.RemoveDatasourceInfo(user);
             dataSourceTest.Dispose();

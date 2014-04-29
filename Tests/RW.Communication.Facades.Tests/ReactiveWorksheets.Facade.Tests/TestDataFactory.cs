@@ -232,11 +232,11 @@ namespace ReactiveWorksheets.Facade.Tests
             return TetsWorksheetInfo;
         }
 
-        internal static IEnumerable<Dictionary<string, object>> CreateTestData()
+        internal static IEnumerable<Dictionary<string, object>> CreateTestData(string path)
         {
             var keys = FieldInfos.Select(f => f.Name).ToArray();
             var count = keys.Count();
-            using (var sr = new StreamReader("Customers.txt"))
+            using (var sr = new StreamReader(path))
             {
                 sr.ReadLine();
 
