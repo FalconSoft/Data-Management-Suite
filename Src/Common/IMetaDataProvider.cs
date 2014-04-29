@@ -28,8 +28,6 @@ namespace FalconSoft.ReactiveWorksheets.Common
         /// <param name="dataSourceProviderString">Provider string that indicates data source</param>
         /// <param name="userId">>Id that indicates user who delete data source</param>
         void DeleteDataSourceInfo(string dataSourceProviderString, string userId);
-
-
-        Action<DataSourceInfo> OnDataSourceInfoChanged { get; set; }
+        
     }
 }

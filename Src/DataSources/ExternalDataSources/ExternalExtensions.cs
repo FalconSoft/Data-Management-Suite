@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FieldInfo = FalconSoft.ReactiveWorksheets.Common.Metadata.FieldInfo;
 
@@ -21,6 +19,7 @@ namespace ReactiveWorksheets.ExternalDataSources
                 {
                     Name = p,
                     DataType = ToDataType(t),
+                    DataSourceProviderString = string.Format(@"{0}\{1}", "ExternalDataSource", pocoType.Name),
                     IsNullable = true
                 };
                 if (keyFields.Contains(fieldInfo.Name))
@@ -31,7 +30,7 @@ namespace ReactiveWorksheets.ExternalDataSources
                 fields.Add(fieldInfo);
             },
                 pocoType.GetProperties(), string.Empty);
-            return new DataSourceInfo(fields,true) { Name = pocoType.Name, Id = "-1", Category = "ExternalDataSource" };
+            return new DataSourceInfo(fields, true) { Name = pocoType.Name, Id = "-1", Category = "ExternalDataSource" };
         }
 
         private static void EnumerateProperties(Action<string, Type, object> setPropertyNameAction,
