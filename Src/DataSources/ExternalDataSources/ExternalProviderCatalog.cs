@@ -34,7 +34,7 @@ namespace ReactiveWorksheets.ExternalDataSources
                   ProviderInfo = testDs
               };
               // MYTESTDATA
-              var calcultor = ExternalExtensions.CreateDefaultDataSource(new[] { "Key" }, typeof(Calculator));
+              var calcultor = ExternalExtensions.CreateDefaultDataSource(new[] { "In1", "In2" }, typeof(Calculator));
               var calcContext = new DataProvidersContext
               {
                   Urn = calcultor.DataSourcePath,
