@@ -13,8 +13,6 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
     {
         private const string DataSourceCollectionName = "DataSourceInfo";
 
-        private const string ServiceSourceCollectionName = "ServiceSourceInfo";
-
         private readonly string _connectionString;
         
         private MongoDatabase _mongoDatabase;

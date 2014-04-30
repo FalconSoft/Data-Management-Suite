@@ -30,9 +30,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             if (string.IsNullOrEmpty(dataSourceInfo.ParentDataSourcePath)) return dataSourceInfo;
             var dataSource = (DataSourceInfo)dataSourceInfo.Clone();
 
-            var parentFields = GetParentFields(dataSource,
-                dataSources.ToDictionary(ds => ds.DataSourcePath, ds => ds));
-
+            var parentFields = GetParentFields(dataSource, dataSources.ToDictionary(ds => ds.DataSourcePath, ds => ds));
             foreach (var parentField in parentFields)
             {
                 parentField.IsParentField = true;
