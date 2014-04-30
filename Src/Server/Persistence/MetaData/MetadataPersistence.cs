@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FalconSoft.ReactiveWorksheets.Common.Security;
 using FalconSoft.ReactiveWorksheets.Core;
@@ -118,7 +119,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.MetaData
         {
             ConnectToDb();
             var collection = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName);
-            dataSource.Id = ObjectId.GenerateNewId().ToString();
+            dataSource.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(dataSource);
             return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
                                                                   Query.EQ("Category", dataSource.DataSourcePath.GetCategory())));

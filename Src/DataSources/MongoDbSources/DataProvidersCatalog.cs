@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
-using FalconSoft.ReactiveWorksheets.Server.Core;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -29,35 +27,32 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
             foreach (var dataSource in collectionDs)
             {
-                
-                var dataProvider = new DataProvider(_connectionString, dataSource.ResolveDataSourceParents(collectionDs.ToArray()));
+
+                var dataProvider = new DataProvider(_connectionString, dataSource);
                 var dataProviderContext = new DataProvidersContext
                     {
                         Urn = dataSource.DataSourcePath,
                         DataProvider = dataProvider,
-                        ProviderInfo = dataSource.ResolveDataSourceParents(collectionDs.ToArray()),
-                        MetaDataProvider = new MetaDataProvider(_connectionString, dataProvider.UpdateSourceInfo)
+                        ProviderInfo = dataSource,
                         MetaDataProvider = new MetaDataProvider(_connectionString)
                     };
 
                 var metaDataProvider = dataProviderContext.MetaDataProvider as MetaDataProvider;
-                if (metaDataProvider != null)
-                    metaDataProvider.OnDataSourceInfoChanged = dataProvider.UpdateSourceInfo;
+                if (metaDataProvider != null) metaDataProvider.OnDataSourceInfoChanged = dataProvider.UpdateSourceInfo;
                 listDataProviders.Add(dataProviderContext);
             }
-
             return listDataProviders;
         }
 
         public event EventHandler<DataProvidersContext> DataProviderAdded;
-        
+
         public event EventHandler<StringEventArg> DataProviderRemoved;
 
         public DataSourceInfo CreateDataSource(DataSourceInfo dataSource, string userId)
         {
             ConnectToDb();
             var collection = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName);
-            dataSource.Id = ObjectId.GenerateNewId().ToString();
+            dataSource.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(dataSource);
 
             var dataCollectionName = dataSource.DataSourcePath.ToValidDbString() + "_Data";
@@ -69,24 +64,21 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 _mongoDatabase.CreateCollection(historyCollectionName);
 
             var dataProvider = new DataProvider(_connectionString, dataSource);
-            
+
             var dataProviderContext = new DataProvidersContext
                 {
                     Urn = dataSource.DataSourcePath,
                     DataProvider = dataProvider,
                     ProviderInfo = dataSource,
-                    MetaDataProvider = new MetaDataProvider(_connectionString, dataProvider.UpdateSourceInfo)
-                    ProviderInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray()),
                     MetaDataProvider = new MetaDataProvider(_connectionString)
                 };
 
             var metaDataProvider = dataProviderContext.MetaDataProvider as MetaDataProvider;
-            if (metaDataProvider != null)
-                metaDataProvider.OnDataSourceInfoChanged = dataProvider.UpdateSourceInfo;
+            if (metaDataProvider != null) metaDataProvider.OnDataSourceInfoChanged = dataProvider.UpdateSourceInfo;
 
             DataProviderAdded(this, dataProviderContext);
-             return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
-                                                                  Query.EQ("Category", dataSource.DataSourcePath.GetCategory())));
+            return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
+                                                                 Query.EQ("Category", dataSource.DataSourcePath.GetCategory())));
         }
 
         public void RemoveDataSource(string providerString)
