@@ -85,8 +85,6 @@ namespace ReactiveWorksheets.Facade.Tests
             var thirdtRecordHistory = dataSourceTest.GetHistory(datasource.GetKeyFieldsName().Aggregate("", (cur, key) => cur + "|" + changedData[0][key]));
             Console.WriteLine("Third Record History count : {0}", thirdtRecordHistory.Count());
 
-            disposer.Dispose();
-
             Console.WriteLine("\n7. Make changes to DataSourcenfo add fields");
             var addField = new FieldInfo
             {
@@ -137,7 +135,9 @@ namespace ReactiveWorksheets.Facade.Tests
             
             var keyFields = datasource.GetKeyFieldsName();
             var datakeys = changedData.Select(record => keyFields.Aggregate("", (cur, key) => cur + "|" + record[key]));
-            
+
+            disposer.Dispose();
+
             dataSourceTest.SubmitData("Remove test data", null, datakeys);
             dataSourceTest.RemoveDatasourceInfo(user);
             dataSourceTest.Dispose();
