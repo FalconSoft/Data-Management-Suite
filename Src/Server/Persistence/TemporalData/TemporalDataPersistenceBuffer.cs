@@ -67,7 +67,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                     list.Add(dict);
                 }
             }
-            return list;
+            return list.OrderByDescending(h => h["TimeStamp"]);
 
         }
 
@@ -139,7 +139,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                 var update = Update.Set("RecordKey", recordChangedParam.RecordKey);
                 collection.Update(query, update, UpdateFlags.Multi);
             }
-            var cursor = collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LTE("Current", _buffer), Query.ElemMatch("Data", Query.EQ("TimeStamp", BsonNull.Value))));
+            var cursor = collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LTE("Current", _buffer))); //, Query.ElemMatch("Data", Query.EQ("TimeStamp", BsonNull.Value))
             if (cursor == null)
             {
                 CreateNewDoucument(collection, recordChangedParam);
@@ -165,16 +165,17 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                             }
                             var num = cursor["Current"].AsInt32 + 1;
                             var update = Update.Set(string.Format("Data.{0}", num), bsDoc).Set("Current", num);
-                            var element = cursor["Data"].AsBsonArray.FirstOrDefault(w => w.ToString() != "{ }" && w["TimeStamp"].ToNullableUniversalTime() == null);
-                            if (element == null)
+                            //var element = cursor["Data"].AsBsonArray.FirstOrDefault(w => w.ToString() != "{ }" && w["TimeStamp"].ToNullableUniversalTime() == null);
+                            var element = cursor["Data"].AsBsonArray[num];
+                            if (element.ToString() == "{ }")
                             {
                                 collection.Update(query, update);
                                 break;
                             }
-                            var index = cursor["Data"].AsBsonArray.IndexOf(element);
-                            element["TimeStamp"] = DateTime.Now;
-                            collection.Update(query, Update.Set(string.Format("Data.{0}", index), element));
-                            collection.Update(query, update);
+                            //var index = cursor["Data"].AsBsonArray.IndexOf(element);
+                            //element["TimeStamp"] = DateTime.Now;
+                            //collection.Update(query, Update.Set(string.Format("Data.{0}", index), element));
+                            //collection.Update(query, update);
                             break;
                         }
                     case RecordChangedAction.Removed:
@@ -240,7 +241,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
         void AddStructureFields(ref BsonDocument bsonDocument, string userToken)
         {
             bsonDocument.Add("_id", ObjectId.GenerateNewId());
-            bsonDocument.Add("TimeStamp", BsonNull.Value);
+            bsonDocument.Add("TimeStamp", DateTime.Now);
             bsonDocument.Add("UserId", string.IsNullOrEmpty(userToken) ? string.Empty : userToken);
         }
 
