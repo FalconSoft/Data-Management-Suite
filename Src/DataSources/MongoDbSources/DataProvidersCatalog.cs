@@ -37,7 +37,6 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                         DataProvider = dataProvider,
                         ProviderInfo = dataSource.ResolveDataSourceParents(collectionDs.ToArray()),
                         MetaDataProvider = new MetaDataProvider(_connectionString, dataProvider.UpdateSourceInfo)
-
                     };
 
                 listDataProviders.Add(dataProviderContext);
@@ -65,20 +64,18 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
             if (!_mongoDatabase.CollectionExists(historyCollectionName))
                 _mongoDatabase.CreateCollection(historyCollectionName);
 
-            var dataProvider = new DataProvider(_connectionString,
-                dataSource.ResolveDataSourceParents(collection.FindAll().ToArray()));
+            var dataProvider = new DataProvider(_connectionString, dataSource);
             
             var dataProviderContext = new DataProvidersContext
                 {
                     Urn = dataSource.DataSourcePath,
                     DataProvider = dataProvider,
-                    ProviderInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray()),
+                    ProviderInfo = dataSource,
                     MetaDataProvider = new MetaDataProvider(_connectionString, dataProvider.UpdateSourceInfo)
                 };
             DataProviderAdded(this, dataProviderContext);
-             var ds = collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
+             return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
                                                                   Query.EQ("Category", dataSource.DataSourcePath.GetCategory())));
-            return ds.ResolveDataSourceParents(collection.FindAll().ToArray());
         }
 
         public void RemoveDataSource(string providerString)
