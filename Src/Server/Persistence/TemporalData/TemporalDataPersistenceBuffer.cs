@@ -21,14 +21,17 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         //BUFFER
         private readonly int _buffer = 100 - 1;
+        //ROLLOVER
+        private readonly bool _rollover = false;
 
-        public TemporalDataPersistenceBuffer(string connectionString, DataSourceInfo dataSourceInfo, string userId, int buffer)
+        public TemporalDataPersistenceBuffer(string connectionString, DataSourceInfo dataSourceInfo, string userId, int buffer,bool rollover = false)
         {
             _connectionString = connectionString;
             _dataSourceProviderString = dataSourceInfo.DataSourcePath;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
             _buffer = buffer - 1;
+            _rollover = rollover;
         }
 
         private void ConnectToDb()
@@ -139,7 +142,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                 var update = Update.Set("RecordKey", recordChangedParam.RecordKey);
                 collection.Update(query, update, UpdateFlags.Multi);
             }
-            var cursor = collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LTE("Current", _buffer))); //, Query.ElemMatch("Data", Query.EQ("TimeStamp", BsonNull.Value))
+            var cursor = collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LTE("Current", _buffer))); 
             if (cursor == null)
             {
                 CreateNewDoucument(collection, recordChangedParam);
@@ -155,7 +158,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                             bsDoc.AddRange(recordChangedParam.RecordValues);
                             var query = Query.EQ("_id", cursor["_id"]);
                             //if current == buffer then create new doc
-                            if (cursor["Current"].AsInt32 == _buffer)
+                            if (cursor["Current"].AsInt32 == _buffer && _rollover == true)//ROLLOVER ON
                             {
                                 var doc = cursor["Data"].AsBsonArray.Last();
                                 doc["TimeStamp"] = DateTime.Now;
@@ -163,26 +166,21 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                                 CreateNewDoucument(collection, recordChangedParam);
                                 break;
                             }
-                            var num = cursor["Current"].AsInt32 + 1;
-                            var update = Update.Set(string.Format("Data.{0}", num), bsDoc).Set("Current", num);
-                            //var element = cursor["Data"].AsBsonArray.FirstOrDefault(w => w.ToString() != "{ }" && w["TimeStamp"].ToNullableUniversalTime() == null);
-                            var element = cursor["Data"].AsBsonArray[num];
-                            if (element.ToString() == "{ }")
+                            if (cursor["Current"].AsInt32 == _buffer && _rollover == false)//ROLLOVER OFF
                             {
-                                collection.Update(query, update);
+                                collection.Update(query, Update.Set(string.Format("Data.{0}", _buffer), bsDoc).Set("Current",0));
                                 break;
                             }
-                            //var index = cursor["Data"].AsBsonArray.IndexOf(element);
-                            //element["TimeStamp"] = DateTime.Now;
-                            //collection.Update(query, Update.Set(string.Format("Data.{0}", index), element));
-                            //collection.Update(query, update);
+                            var num = cursor["Current"].AsInt32 + 1;
+                            var update = Update.Set(string.Format("Data.{0}", num), bsDoc).Set("Current", num);
+                            collection.Update(query, update);
                             break;
                         }
                     case RecordChangedAction.Removed:
                         {
-                            var query = Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.ElemMatch("Data", Query.EQ("TimeStamp", BsonNull.Value)));
-                            var index = collection.Find(query).First()["Current"].ToString();
-                            collection.Update(query, Update.Set("Data." + index + ".TimeStamp", DateTime.Now), UpdateFlags.Multi);
+                            //var query = Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey));
+                            //var index = collection.Find(query).First()["Current"].ToString();
+                            //collection.Update(query, Update.Set("Data." + index + ".TimeStamp", DateTime.Now), UpdateFlags.Multi);
                         }
                         break;
                 }
@@ -193,10 +191,9 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
         {
             ConnectToDb();
             var recordsHistory = _mongoDatabase.GetCollection<BsonDocument>(tagInfo.DataSourceProviderString.ToValidDbString() + "_History");
-            var query = Query.EQ("Data.$.TimeStamp", BsonNull.Value);
             tagInfo.Revisions =
-                recordsHistory.Find(query)
-                    .Select(s => s["Data"].AsBsonArray.First(w => w.ToString() != "{ }" && w["TimeStamp"] == BsonNull.Value))
+                recordsHistory.FindAll()
+                    .Select(s => s["Data"].AsBsonArray[s["Current"].AsInt32])
                     .Select(s => s.ToBsonDocument()["_id"].ToString()).ToList();
             var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
             collection.Insert(tagInfo);

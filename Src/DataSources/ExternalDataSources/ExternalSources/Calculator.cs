@@ -26,6 +26,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
                 result["Out2"] = inParam1 - inParam2;
                 result["Out3"] = inParam1 * inParam2;
                 result["Out4"] = (inParam2 != 0.0) ? inParam1 / inParam2 : 0;
+                result["Time"] = DateTime.Now;
 
                 return new[] { result };
             }
@@ -60,5 +61,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
         public double Out3 { get; set; }
 
         public double Out4 { get; set; }
+
+        public DateTime Time { get; set; }
     }
 }
