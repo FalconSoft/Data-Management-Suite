@@ -95,11 +95,13 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         public void SaveTagInfo(TagInfo tagInfo)
         {
             _temporalDataQueryFacade.SaveTagInfo(tagInfo);
+            Clients.Caller.OnComplete();
         }
 
         public void RemoveTagInfo(TagInfo tagInfo)
         {
             _temporalDataQueryFacade.RemoveTagInfo(tagInfo);
+            Clients.Caller.OnComplete();
         }
 
         

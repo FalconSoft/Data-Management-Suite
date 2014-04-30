@@ -16,11 +16,11 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
             if (filterRules != null && filterRules.Length >= 1)
             {
                 double inParam1 = double.Parse(filterRules[0].Value);
-                const double inParam2 = 100; //double.Parse(filterRules[1].Value);
+                double inParam2 = double.Parse(filterRules[1].Value);
 
                 var result = new Dictionary<string, object>();
                 result["in1"] = inParam1;
-               // result["in2"] = inParam1;
+                result["in2"] = inParam1;
 
                 result["Out1"] = inParam1 + inParam2;
                 result["Out2"] = inParam1 - inParam2;
@@ -49,7 +49,9 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
 
     public class Calculator
     {
-        public double Key { get; set; }
+        public double In1 { get; set; }
+        
+        public double In2 { get; set; }
 
         public double Out1 { get; set; }
 

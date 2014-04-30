@@ -59,15 +59,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
                 _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
                     changedRecordsToArray, deleteToArray,
-                    r =>
-                    {
-                        _revisionInfos.Add(_dataSourceInfoPath,r);
-                       // Clients.Client(connectionId.ToString()).OnSuccess(r);
-                    },
-                    ex =>
-                    {
-                        Clients.Client(connectionId.ToString()).OnFail(ex);
-                    });
+                    r => _revisionInfos.Add(_dataSourceInfoPath,r),
+                    ex => Clients.Client(connectionId.ToString()).OnFail(ex));
             }, string.Copy(Context.ConnectionId));
 
             _workingTasks.Add(dataSourceInfoPath,task);

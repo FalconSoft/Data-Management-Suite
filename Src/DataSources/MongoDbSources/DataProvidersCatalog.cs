@@ -37,8 +37,12 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                         DataProvider = dataProvider,
                         ProviderInfo = dataSource.ResolveDataSourceParents(collectionDs.ToArray()),
                         MetaDataProvider = new MetaDataProvider(_connectionString, dataProvider.UpdateSourceInfo)
+                        MetaDataProvider = new MetaDataProvider(_connectionString)
                     };
 
+                var metaDataProvider = dataProviderContext.MetaDataProvider as MetaDataProvider;
+                if (metaDataProvider != null)
+                    metaDataProvider.OnDataSourceInfoChanged = dataProvider.UpdateSourceInfo;
                 listDataProviders.Add(dataProviderContext);
             }
 
@@ -72,7 +76,14 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                     DataProvider = dataProvider,
                     ProviderInfo = dataSource,
                     MetaDataProvider = new MetaDataProvider(_connectionString, dataProvider.UpdateSourceInfo)
+                    ProviderInfo = dataSource.ResolveDataSourceParents(collection.FindAll().ToArray()),
+                    MetaDataProvider = new MetaDataProvider(_connectionString)
                 };
+
+            var metaDataProvider = dataProviderContext.MetaDataProvider as MetaDataProvider;
+            if (metaDataProvider != null)
+                metaDataProvider.OnDataSourceInfoChanged = dataProvider.UpdateSourceInfo;
+
             DataProviderAdded(this, dataProviderContext);
              return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
                                                                   Query.EQ("Category", dataSource.DataSourcePath.GetCategory())));
