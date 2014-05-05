@@ -35,6 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\ReactiveWorksheets-Private\Src\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -71,6 +75,10 @@
     <ProjectReference Include="..\..\Common\ReactiveWorksheets.Common.csproj">
       <Project>{1FB17202-DE2B-4DBE-8E48-C3776F86EFF3}</Project>
       <Name>ReactiveWorksheets.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Communications\InProcess\InProcessServer.Client\ReactiveWorksheets.InProcessServer.Client.csproj">
+      <Project>{94d962b3-abd7-4a74-949a-f5d8a510aa9c}</Project>
+      <Name>ReactiveWorksheets.InProcessServer.Client</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Communications\SignalR\Client.SignalR\ReactiveWorksheets.Client.SignalR.csproj">
       <Project>{750EA2E3-E290-4E44-BBF0-033FF8B9FC9D}</Project>
