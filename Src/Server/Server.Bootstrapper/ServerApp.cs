@@ -136,7 +136,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _dataProvidersCatalogs ??
-                       (_dataProvidersCatalogs = new IDataProvidersCatalog[] { new DataProvidersCatalog(_mongoDataConnectionString), new ExternalProviderCatalog() });
+                       (_dataProvidersCatalogs = new IDataProvidersCatalog[] { new ExternalProviderCatalog(), new DataProvidersCatalog(_mongoDataConnectionString) });
             }
         }
 
@@ -152,7 +152,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
         {
             get
             {
-                return _providersRegistry ?? (_providersRegistry = new ProvidersRegistry {DataProvidersCatalog = DataProvidersCatalogs.First()});
+                return _providersRegistry ?? (_providersRegistry = new ProvidersRegistry {DataProvidersCatalog = DataProvidersCatalogs.Last()});
             }  // TODO
         }
 

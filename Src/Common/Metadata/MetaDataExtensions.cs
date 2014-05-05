@@ -34,7 +34,10 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             foreach (var parentField in parentFields)
             {
                 parentField.IsParentField = true;
-                dataSource.Fields.Add(parentField.Name, parentField);
+                if (dataSource.Fields.ContainsKey(parentField.Name))
+                    dataSource.Fields[parentField.Name] = parentField;
+                else 
+                    dataSource.Fields.Add(parentField.Name, parentField);
             }
             return dataSource;
         }
@@ -119,6 +122,19 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                     IsReadOnly = true
                 })
             };
+        }
+
+        public static DataSourceInfo MakeChildDataSourceWithKeys(this DataSourceInfo dataSourceInfo, DataSourceInfo[] dataSources)
+        {
+            var dataSource = (DataSourceInfo)dataSourceInfo.Clone();
+            foreach (var field in GetParentFields(dataSourceInfo, dataSources.ToDictionary(ds => ds.DataSourcePath, ds => ds)))
+            {
+                if (!field.IsKey) continue;
+                var childField = (FieldInfo)field.Clone();
+                childField.IsParentField = true;
+                dataSource.Fields.Add(childField.Name, childField);
+            }
+            return dataSource;
         }
     }
 }

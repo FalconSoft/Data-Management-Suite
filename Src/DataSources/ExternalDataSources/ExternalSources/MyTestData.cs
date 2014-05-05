@@ -91,7 +91,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
 
         public RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange, IEnumerable<string> recordsToDelete, string comment = null)
         {
-            throw new NotImplementedException();
+            return new RevisionInfo();
         }
     }
 

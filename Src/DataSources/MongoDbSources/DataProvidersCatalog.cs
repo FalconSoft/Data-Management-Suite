@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using MongoDB.Bson;
@@ -22,12 +23,11 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         public IEnumerable<DataProvidersContext> GetProviders()
         {
             ConnectToDb();
-            var collectionDs = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName).FindAll();
+            var collectionDs = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName).FindAll().ToArray();
             var listDataProviders = new List<DataProvidersContext>();
 
             foreach (var dataSource in collectionDs)
             {
-
                 var dataProvider = new DataProvider(_connectionString, dataSource);
                 var dataProviderContext = new DataProvidersContext
                     {
