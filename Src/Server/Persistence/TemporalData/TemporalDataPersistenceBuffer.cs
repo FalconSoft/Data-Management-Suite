@@ -155,7 +155,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                         {
                             var bsDoc = new BsonDocument();
                             AddStructureFields(ref bsDoc, recordChangedParam.UserToken);
-                            bsDoc.AddRange(recordChangedParam.RecordValues);
+                            bsDoc.AddRange(recordChangedParam.RecordValues.ToArray());
                             var query = Query.EQ("_id", cursor["_id"]);
                             //if current == buffer then create new doc
                             if (cursor["Current"].AsInt32 == _buffer && _rollover == true)//ROLLOVER ON
