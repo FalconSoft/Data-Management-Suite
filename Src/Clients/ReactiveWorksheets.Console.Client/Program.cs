@@ -6,6 +6,7 @@ using System.Reactive.Linq;
 using FalconSoft.ReactiveWorksheets.Client.SignalR;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
+using FalconSoft.ReactiveWorksheets.InProcessServer.Client;
 
 namespace FalconSoft.ReactiveWorksheets.Console.Client
 {
@@ -16,6 +17,14 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
             if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
             {
                 return new SignalRFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"]);
+            }
+            else if (facadeType.Equals("Inprocess", StringComparison.OrdinalIgnoreCase))
+            {
+                // this is hardcode for testing only
+                const string metaDataPersistenceConnectionString = "mongodb://localhost/rw_metadata";
+                const string persistenceDataConnectionString = "mongodb://localhost/rw_data";
+                const string mongoDataConnectionString = "mongodb://localhost/MongoData";
+                return new InProcessServerFacadesFactory(metaDataPersistenceConnectionString, persistenceDataConnectionString, mongoDataConnectionString);
             }
             else
             {
@@ -28,15 +37,16 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
         static void Main(string[] args)
         {
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
+            var commandLineParser = new CommandLineParser();
 
             while (true)
             {
                 System.Console.Write(">");
-                string commandLine = System.Console.ReadLine();
+                string[] commandArgs = (args == null || args.Length == 0)? System.Console.ReadLine().Split(' ') : args.ToArray();
 
-                var commandLineParser = new CommandLineParser();
+                args = null;
 
-                if (commandLineParser.Parse(commandLine))
+                if (commandLineParser.Parse(commandArgs))
                 {
                     switch (commandLineParser.Command)
                     {
@@ -82,14 +92,14 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
                         .Subscribe(s =>
                         {
                             if (s.Any())
-                                DumpRecords(s, subscribeArguments);
+                            {
+                                CSVHelper.AppendRecords(s.Select(r => r.RecordValues), subscribeArguments.FileName, subscribeArguments.Separator);
+                            }
                         });
+
+            System.Console.WriteLine(string.Format("Listening updates to [{0}] and writing to [{1}]", subscribeArguments.DataSourceUrn, subscribeArguments.FileName));
         }
 
-        private static void DumpRecords(IEnumerable<RecordChangedParam> recordChangedParams, CommandLineParser.SubscribeParams subscribeArguments)
-        {
-            CSVHelper.WriteRecords(recordChangedParams.Select(r => r.RecordValues) , subscribeArguments.FileName, subscribeArguments.Separator);
-        }
 
         private static void Get(CommandLineParser.GetParams getArguments)
         {
@@ -103,8 +113,7 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
 
             CSVHelper.WriteRecords(data, getArguments.FileName, getArguments.Separator);
             
-            System.Console.WriteLine("get records from data source {0} take {1} seconds", getArguments.DataSourceUrn, executionSpan);
-            
+            System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds.", getArguments.DataSourceUrn, getArguments.FileName, executionSpan);            
         }
 
         private static void Submit(CommandLineParser.SubmitParams submitParams)

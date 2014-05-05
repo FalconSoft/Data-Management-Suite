@@ -35,6 +35,33 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
             return result;
         }
 
+        public static bool AppendRecords(IEnumerable<IDictionary<string, object>> data, string fileName,
+            string separator)
+        {
+            if (data == null || !data.Any())
+                return false;
+
+            StreamWriter fileStream;
+            if (!File.Exists(fileName))
+            {
+                fileStream = File.CreateText(fileName);
+                fileStream.WriteLine("WriteTime" + separator + string.Join(separator, data.First().Keys)); // write header
+            }
+            else
+            {
+                fileStream = File.AppendText(fileName);
+            }
+
+            foreach (var record in data)
+            {
+                fileStream.WriteLine(DateTime.Now.ToString("hhmmss") + separator + string.Join(separator, record.Values));
+            }
+
+            fileStream.Dispose();
+
+            return true;
+        }
+
         public static bool WriteRecords(IEnumerable<IDictionary<string, object>> data, string fileName, string separator, bool append = false)
         {
             var recordsSb = new StringBuilder();

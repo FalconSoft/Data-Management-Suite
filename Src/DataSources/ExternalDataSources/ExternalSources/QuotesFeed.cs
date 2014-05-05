@@ -13,7 +13,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
         private readonly Timer _timer;
         private List<QuotesFeed> _quotesFeedData = new List<QuotesFeed>();
 
-        List<int> _secId = new List<int> { 1, 2, 3, 4, 5, 6, 7 };
+        List<int> _secId = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
         public QuotesFeedDataProvider()
         {
@@ -37,10 +37,10 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
             var rand = new Random();
 
             int count = Math.Min(50, _quotesFeedData.Count);
-            for (int i = 0; i < count; i++) 
+            for (int i = 0; i < count; i++)
             {
-                var index = rand.Next(count);
-                _quotesFeedData[index].Quote = rand.Next(80, 150);
+                var index = i; //rand.Next(count);
+                _quotesFeedData[index].Quote = int.Parse(DateTime.Now.ToString("HHmmss")); //rand.Next(80, 150);
                 if (RecordChangedEvent != null)
                     RecordChangedEvent(this, new ValueChangedEventArgs
                     {

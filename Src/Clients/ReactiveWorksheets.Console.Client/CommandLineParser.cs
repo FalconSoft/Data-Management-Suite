@@ -45,11 +45,9 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
         private SubscribeParams _subscribeArgument = new SubscribeParams();
 
         public CommandType Command { get; set; }
-        
-        public bool Parse(string commadLine)
-        {
-            var commandlineArgs = commadLine.Split(' ');
 
+        public bool Parse(string[] commandlineArgs)
+        {
             switch (commandlineArgs[0])
             {
                 case "get": 
@@ -75,19 +73,6 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
                     return false;
             }
 
-            //_getArgument.DataSourceUrn = @"Demo\Customers";
-            ////_getArgument.DataSourceUrn = @"ExternalDataSource\MyTestData";
-            //_getArgument.FileName = "customers.csv";
-            //_getArgument.Separator = "\t";
-            //_getArgument.FilterRules = string.Empty;
-
-
-            //_submitArgument.UpdateFileName = "customers.csv";
-            //_submitArgument.DeleteFileName = "customerstodelete.csv";
-            //_submitArgument.DataSourceUrn = @"Demo\Customers";
-            //_submitArgument.Comment = "test console app";
-            //_submitArgument.Separator = "\t";
-
             return true;
         }
 
@@ -97,8 +82,8 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
             {
                 _subscribeArgument.DataSourceUrn = commandlineArgs[1];
                 _subscribeArgument.FileName = commandlineArgs[2];
-                _subscribeArgument.FilterRules = commandlineArgs[3];
-                _subscribeArgument.Separator = commandlineArgs[4];
+                _subscribeArgument.FilterRules = (commandlineArgs.Length >= 4)? commandlineArgs[3] : string.Empty;
+                _subscribeArgument.Separator = (commandlineArgs.Length >= 5)? commandlineArgs[4] : "\t";
             }
             catch (Exception)
             {
@@ -114,10 +99,10 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
             try
             {
                 _submitArgument.UpdateFileName = commandlineArgs[1];
-                _submitArgument.DeleteFileName = commandlineArgs[2];
-                _submitArgument.DataSourceUrn = commandlineArgs[3];
-                _submitArgument.Comment = commandlineArgs[4];
-                _submitArgument.Separator = commandlineArgs[5];
+                _submitArgument.DeleteFileName = (commandlineArgs.Length >= 3)? commandlineArgs[2] : string.Empty;
+                _submitArgument.DataSourceUrn = (commandlineArgs.Length >= 4) ? commandlineArgs[3] : string.Empty;
+                _submitArgument.Comment = (commandlineArgs.Length >= 5) ? commandlineArgs[4] : string.Empty;
+                _submitArgument.Separator = (commandlineArgs.Length >= 6)? commandlineArgs[5] : "\t";
             }
             catch (Exception)
             {
@@ -134,8 +119,8 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
             {
                 _getArgument.DataSourceUrn = commandlineArgs[1];
                 _getArgument.FileName = commandlineArgs[2];
-                _getArgument.FilterRules = commandlineArgs[3];
-                _getArgument.Separator = commandlineArgs[4];
+                _getArgument.FilterRules = (commandlineArgs.Length >= 4) ? commandlineArgs[3] : string.Empty;
+                _getArgument.Separator = (commandlineArgs.Length >= 5) ? commandlineArgs[4] : "\t";
             }
             catch (Exception)
             {
