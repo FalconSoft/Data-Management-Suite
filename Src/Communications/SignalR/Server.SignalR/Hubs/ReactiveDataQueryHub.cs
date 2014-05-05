@@ -139,20 +139,26 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null)
         {
-            var connectionId = string.Copy(Context.ConnectionId);
-            var providerString = string.Copy(dataSourcePath);
-            if (!_getDataChangesDisposables.ContainsKey(connectionId))
+            Task.Factory.StartNew(() =>
             {
-                Groups.Add(connectionId, providerString);
+                var connectionId = string.Copy(Context.ConnectionId);
+                var providerString = string.Copy(dataSourcePath);
+                lock (_getDataChangesDisposables)
+                {
+                    if (!_getDataChangesDisposables.ContainsKey(connectionId))
+                    {
+                        Groups.Add(connectionId, providerString);
 
-                var disposable = _reactiveDataQueryFacade.GetDataChanges(providerString,
-                    filterRules.Any() ? filterRules : null)
-                    .Subscribe(r => Clients.Group(providerString).GetDataChangesOnNext(r),
-                        () => Groups.Remove(connectionId, providerString));
-                _getDataChangesDisposables.Add(connectionId, disposable);
-                _dataSourcePathDictionary.Add(connectionId, providerString);
-            }
-            
+                        var disposable = _reactiveDataQueryFacade.GetDataChanges(providerString,
+                            filterRules.Any() ? filterRules : null)
+                            .Subscribe(r => Clients.Group(providerString).GetDataChangesOnNext(r),
+                                () => Groups.Remove(connectionId, providerString));
+                        _getDataChangesDisposables.Add(connectionId, disposable);
+                        _dataSourcePathDictionary.Add(connectionId, providerString);
+                    }
+                }
+            });
+
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam changedRecord)
