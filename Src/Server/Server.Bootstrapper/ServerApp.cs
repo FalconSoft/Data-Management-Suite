@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Configuration;
 using System.Linq;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Core;
-
 using FalconSoft.ReactiveWorksheets.Core.MessageBus;
 using FalconSoft.ReactiveWorksheets.MongoDbSources;
 using FalconSoft.ReactiveWorksheets.Persistence;
@@ -16,8 +14,8 @@ using FalconSoft.ReactiveWorksheets.Persistence.TemporalData;
 using FalconSoft.ReactiveWorksheets.Server.Core;
 using FalconSoft.ReactiveWorksheets.Server.Core.CommandsAggregator;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
+using FalconSoft.ReactiveWorksheets.Server.Core.Infrastructure;
 using FalconSoft.ReactiveWorksheets.Server.Core.ReactiveEngine;
-using ReactiveWorksheets.ExternalDataSources;
 
 namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
 {
@@ -136,7 +134,12 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
             get
             {
                 return _dataProvidersCatalogs ??
-                       (_dataProvidersCatalogs = new IDataProvidersCatalog[] { new ExternalProviderCatalog(), new DataProvidersCatalog(_mongoDataConnectionString) });
+                       (_dataProvidersCatalogs = AppDomainAssemblyTypeScanner.TypesOf(typeof(IDataProvidersCatalog)).Select(
+                           x =>
+                           {
+                               Logger.Info(string.Format("-> Load {0} dll with provider Catalogs", x.Name));
+                               return (IDataProvidersCatalog) Activator.CreateInstance(x);
+                           }).ToArray());
             }
         }
 
@@ -152,8 +155,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
         {
             get
             {
-                return _providersRegistry ?? (_providersRegistry = new ProvidersRegistry {DataProvidersCatalog = DataProvidersCatalogs.Last()});
-            }  // TODO
+                return _providersRegistry ?? (_providersRegistry = new ProvidersRegistry {DataProvidersCatalog = DataProvidersCatalogs.First(x=>x is DataProvidersCatalog)});
+            }
         }
 
         public static ICommandsAggregator CommandAggregator
