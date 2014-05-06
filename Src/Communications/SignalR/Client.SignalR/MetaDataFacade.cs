@@ -159,7 +159,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             if (_startConnectionTask.IsCompleted)
             {
@@ -177,7 +177,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             if (_startConnectionTask.IsCompleted)
             {
@@ -196,7 +196,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             if (_startConnectionTask.IsCompleted)
             {
@@ -269,7 +269,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             if (_startConnectionTask.IsCompleted)
             {
@@ -287,7 +287,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             if (_startConnectionTask.IsCompleted)
             {
@@ -305,7 +305,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             if (_startConnectionTask.IsCompleted)
             {
@@ -350,7 +350,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             if (_startConnectionTask.IsCompleted)
             {
@@ -369,7 +369,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             if (_startConnectionTask.IsCompleted)
             {
@@ -388,7 +388,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             if (_startConnectionTask.IsCompleted)
             {

@@ -141,6 +141,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         {
             var connectionId = string.Copy(Context.ConnectionId);
             var providerString = string.Copy(dataSourcePath);
+
             if (!_getDataChangesDisposables.ContainsKey(connectionId))
             {
                 Groups.Add(connectionId, providerString);
@@ -152,7 +153,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 _getDataChangesDisposables.Add(connectionId, disposable);
                 _dataSourcePathDictionary.Add(connectionId, providerString);
             }
-            
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam changedRecord)
