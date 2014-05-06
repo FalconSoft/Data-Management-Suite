@@ -54,7 +54,7 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
 
             foreach (var record in data)
             {
-                fileStream.WriteLine(DateTime.Now.ToString("hhmmss") + separator + string.Join(separator, record.Values));
+                fileStream.WriteLine(DateTime.Now.ToString("HHmmss") + separator + string.Join(separator, record.Values));
             }
 
             fileStream.Dispose();

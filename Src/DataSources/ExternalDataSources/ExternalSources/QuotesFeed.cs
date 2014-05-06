@@ -14,7 +14,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
         private List<QuotesFeed> _quotesFeedData = new List<QuotesFeed>();
 
         List<int> _secId = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-
+        private int _iterationId = 0;
         public QuotesFeedDataProvider()
         {
             var rand = new Random();
@@ -35,7 +35,6 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
         private void OnElapsed(object sender, ElapsedEventArgs e)
         {
             var rand = new Random();
-
             int count = Math.Min(50, _quotesFeedData.Count);
             for (int i = 0; i < count; i++)
             {
