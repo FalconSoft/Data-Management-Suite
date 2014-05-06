@@ -107,8 +107,8 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
             if (record.Keys.Any(a => a == null))
                 return null;
 
-            var queryList = record.Select(rec => Query.EQ(string.Format("RecordValues.{0}", rec.Key), BsonValue.Create(rec.Value))).ToList();
-            return _collection.FindAs<LiveDataObject>(Query.And(queryList)).SetFields(Fields.Exclude("_id")).ToList();
+            var queryList = record.Select(rec => Query.EQ(string.Format("RecordValues.{0}", rec.Key), BsonValue.Create(rec.Value)));
+            return _collection.FindAs<LiveDataObject>(Query.And(queryList)).SetFields(Fields.Exclude("_id"));
 
             //return _collection.AsQueryable().Cast<LiveDataObject>()
             //        .Where(e => e.RecordValues[foreignFieldName] == recordValue).ToList();
@@ -208,19 +208,19 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
                 switch (condition.Combine)
                 {
                     case CombineState.And:
-                        query += " $and : [{ " + condition.FieldName + " : " +
+                        query += " $and : [{ \"RecordValues."+ condition.FieldName + "\" : " +
                                  ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
                         break;
                     case CombineState.Or:
-                        query += " $or : [{ " + condition.FieldName + " : " +
+                        query += " $or : [{ \"RecordValues." + condition.FieldName + "\" : " +
                                  ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
                         break;
                     default:
-                        query += condition.Combine + " " + condition.FieldName + " : " + ConvertToMongoOperations(condition.Operation, condition.Value) + ",";
+                        query += condition.Combine + " \"RecordValues." + condition.FieldName + "\" : " + ConvertToMongoOperations(condition.Operation, condition.Value) + ",";
                         break;
                 }
             }
-            query.Remove(query.Count() - 2);
+            query = query.Remove(query.Count() - 1);
             query += @"}";
             return query;
         }

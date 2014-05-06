@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace FalconSoft.ReactiveWorksheets.Common.Metadata
@@ -135,6 +136,18 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 dataSource.Fields.Add(childField.Name, childField);
             }
             return dataSource;
+        }
+
+        public static IEnumerable<TSource> DistinctBy<TSource, TKey> (this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        {
+            var seenKeys = new HashSet<TKey>();
+            foreach (var element in source)
+            {
+                if (seenKeys.Add(keySelector(element)))
+                {
+                    yield return element;
+                }
+            }
         }
     }
 }

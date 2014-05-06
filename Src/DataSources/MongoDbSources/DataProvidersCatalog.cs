@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
@@ -15,9 +16,9 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         private readonly string _connectionString;
         private MongoDatabase _mongoDatabase;
 
-        public DataProvidersCatalog(string connectionString)
+        public DataProvidersCatalog()
         {
-            _connectionString = connectionString;
+            _connectionString = ConfigurationManager.AppSettings["MongoDataConnectionString"];
         }
 
         public IEnumerable<DataProvidersContext> GetProviders()
