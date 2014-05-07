@@ -126,8 +126,6 @@ Div & Yield        -> /html[1]/body[1]/div[4]/div[1]/div[3]/div[3]/div[1]/div[1]
 
         #region IDataProviderImplementation
 
-        public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
-
         public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null,
             Action<string, string> onError = null)
         {
@@ -147,20 +145,30 @@ Div & Yield        -> /html[1]/body[1]/div[4]/div[1]/div[3]/div[3]/div[1]/div[1]
                 var symbolsForSearch = list.Except( _cache.Select(s => s).Select(s => s["Symbol"].ToString())).ToList();
                 if (symbolsForSearch.Any())
                 {
-                    Task.Factory.StartNew(() =>
+                    foreach (var symbol in symbolsForSearch)
                     {
-                        foreach (var symbol in symbolsForSearch)
-                        {
-                            YahooEquityRefData yahooObj;
-                            try
-                            {
-                                yahooObj = GetEquityRefData(symbol);
-                            }
-                            catch (Exception)
-                            {
-                                continue;
-                            }
-                            var dict = new Dictionary<string, object>
+                        Task.Factory.StartNew(() => GetEquityRefData(symbol)).ContinueWith((t) => SendEvent(t.Result));
+                    }
+                }
+                return dataInCacheByfilter;
+            }
+            return _cache;
+        }
+
+        public RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange,
+            IEnumerable<string> recordsToDelete, string comment = null)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
+
+        #endregion
+
+        private void SendEvent(YahooEquityRefData yahooObj)
+        {
+            var dict = new Dictionary<string, object>
                             {
                                 {"Symbol", yahooObj.Symbol},
                                 {"Sector", yahooObj.Sector},
@@ -177,34 +185,18 @@ Div & Yield        -> /html[1]/body[1]/div[4]/div[1]/div[3]/div[3]/div[1]/div[1]
                                 {"EPS", yahooObj.EPS},
                                 {"Div_and_Yield", yahooObj.Div_and_Yield}
                             };
-                            _cache.Add(dict);
-                            if (RecordChangedEvent != null)
-                            {
-                                Console.WriteLine("SENDING -> " + yahooObj.Symbol); //sending test
-                                RecordChangedEvent(this, new ValueChangedEventArgs
-                                {
-                                    DataSourceUrn = @"ExternalDataSource\YahooEquityRefData",
-                                    Value = yahooObj,
-                                    ChangedPropertyNames = dict.Keys.ToArray()
-                                });
-                            }
-                        }
-                    });
-                }
-                return dataInCacheByfilter;
-            }
-            return _cache;
+            _cache.Add(dict);
+            if (RecordChangedEvent != null)
+            {
+                RecordChangedEvent(this, new ValueChangedEventArgs
+                {
+                    DataSourceUrn = @"ExternalDataSource\YahooEquityRefData",
+                    Value = yahooObj,
+                    ChangedPropertyNames = dict.Keys.ToArray()
+                });
+            }     
         }
 
-        public RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange,
-            IEnumerable<string> recordsToDelete, string comment = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
-        // *******************************************************************************************************
     }
 
 
