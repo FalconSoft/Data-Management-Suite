@@ -148,7 +148,23 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
                 var disposable = _reactiveDataQueryFacade.GetDataChanges(providerString,
                     filterRules.Any() ? filterRules : null)
-                    .Subscribe(r => Clients.Group(providerString).GetDataChangesOnNext(r),
+                    .Subscribe(r =>
+                    {
+                        var dictionary = new Dictionary<string, object>(r.RecordValues);
+                        var rcp = new RecordChangedParam
+                        {
+                            ChangeSource = r.ChangeSource,
+                            ChangedPropertyNames = r.ChangedPropertyNames.ToArray(),
+                            ChangedAction = r.ChangedAction,
+                            IgnoreWorksheet = r.IgnoreWorksheet,
+                            OriginalRecordKey = r.OriginalRecordKey,
+                            ProviderString = r.ProviderString,
+                            RecordKey = r.RecordKey,
+                            RecordValues = dictionary,
+                            UserToken = r.UserToken
+                        };
+                        Clients.Group(providerString).GetDataChangesOnNext(rcp);
+                    },
                         () => Groups.Remove(connectionId, providerString));
                 _getDataChangesDisposables.Add(connectionId, disposable);
                 _dataSourcePathDictionary.Add(connectionId, providerString);
