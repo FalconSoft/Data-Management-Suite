@@ -41,9 +41,17 @@ namespace ReactiveWorksheets.ExternalDataSources
                   DataProvider = new CalculatorDataProvider(),
                   ProviderInfo = calcultor
               };
+              // YAHOO
+              var yahoo = ExternalExtensions.CreateDefaultDataSource(new[] { "Symbol" }, typeof(YahooEquityRefData));
+              var yahooContext = new DataProvidersContext
+              {
+                  Urn = yahoo.DataSourcePath,
+                  DataProvider = new YahooEquityRefDataProvider(),
+                  ProviderInfo = yahoo
+              };
 
 
-              return new[] { quoteContext, testContext,calcContext };
+            return new[] {quoteContext, testContext, calcContext ,yahooContext};
 
         }
 
