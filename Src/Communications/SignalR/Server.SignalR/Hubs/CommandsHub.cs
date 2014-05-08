@@ -18,9 +18,12 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         private readonly Dictionary<string,Subject<string>>_toDelteSubjects;
         private readonly Dictionary<string, Subject<Dictionary<string, object>>> _toUpdateSubjects;
         private readonly Dictionary<string,Task> _workingTasks;
-        private readonly Dictionary<string, int> _counter;
-        private readonly Dictionary<string, int> _count;
-        private readonly Dictionary<string, bool> _onCompleteCalll;
+        private readonly Dictionary<string, int> _toDeleteCounter;
+        private readonly Dictionary<string, int> _toUpdateCounter;
+        private readonly Dictionary<string, int> _toDeleteCount;
+        private readonly Dictionary<string, int> _toUpdateCount;
+        private readonly Dictionary<string, bool> _onDeleteCompleteCall;
+        private readonly Dictionary<string, bool> _onUpdateCompleteCall;
         private readonly Dictionary<string, RevisionInfo> _revisionInfos;
 
         public CommandsHub(ICommandFacade commandFacade)
@@ -28,9 +31,12 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _toDelteSubjects = new Dictionary<string, Subject<string>>();
             _toUpdateSubjects = new Dictionary<string, Subject<Dictionary<string, object>>>();
             _workingTasks = new Dictionary<string, Task>();
-            _counter = new Dictionary<string, int>();
-            _count = new Dictionary<string, int>();
-            _onCompleteCalll = new Dictionary<string, bool>();
+            _toDeleteCounter = new Dictionary<string, int>();
+            _toUpdateCounter = new Dictionary<string, int>();
+            _toDeleteCount = new Dictionary<string, int>();
+            _toUpdateCount = new Dictionary<string, int>();
+            _onDeleteCompleteCall = new Dictionary<string, bool>();
+            _onUpdateCompleteCall = new Dictionary<string, bool>();
             _revisionInfos = new Dictionary<string, RevisionInfo>();
             _commandFacade = commandFacade;
         }
@@ -39,14 +45,21 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             bool isDeleteDataNull)
         {
             if (!isDeleteDataNull)
+            {
                 _toDelteSubjects.Add(dataSourceInfoPath, new Subject<string>());
+                _toDeleteCounter.Add(dataSourceInfoPath, 0);
+                _toDeleteCount.Add(dataSourceInfoPath, 0);
+                _onDeleteCompleteCall.Add(dataSourceInfoPath, false);
+            }
             if (!isChangeDataNull)
+            {
                 _toUpdateSubjects.Add(dataSourceInfoPath, new Subject<Dictionary<string, object>>());
+                _toUpdateCounter.Add(dataSourceInfoPath, 0);
+                _toUpdateCount.Add(dataSourceInfoPath, 0);
+                _onUpdateCompleteCall.Add(dataSourceInfoPath, false);
+            }
 
-            _counter.Add(dataSourceInfoPath, 0);
-            _count.Add(dataSourceInfoPath, 0);
-            _onCompleteCalll.Add(dataSourceInfoPath, false);
-           var task = Task.Factory.StartNew(connectionId =>
+            var task = Task.Factory.StartNew(connectionId =>
             {
                 var _dataSourceInfoPath = string.Copy(dataSourceInfoPath);
                 var _comment = string.Copy(comment);
@@ -79,7 +92,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void SubmitChangesDeleteOnFinish(string dataSourceInfoPath, int count)
         {
-            _count[dataSourceInfoPath] = count;
+            _toDeleteCount[dataSourceInfoPath] = count;
             SubmitChangesDeleteFinilize(dataSourceInfoPath);
         }
 
@@ -100,7 +113,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void SubmitChangesChangeRecordsOnFinish(string dataSourceInfoPath, int count)
         {
-            _count[dataSourceInfoPath] = count;
+            _toUpdateCount[dataSourceInfoPath] = count;
             SubmitChangesChangeRecordFinilize(dataSourceInfoPath);
         }
 
@@ -115,12 +128,12 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             if (toDeleteKey!=null)
             {
                 _toDelteSubjects[dataSourceInfoPath].OnNext(toDeleteKey);
-                _counter[dataSourceInfoPath]++;
+                _toDeleteCounter[dataSourceInfoPath]++;
                 SubmitChangesDeleteFinilize(dataSourceInfoPath);
             }
             else
             {
-                _onCompleteCalll[dataSourceInfoPath] = true;
+                _onDeleteCompleteCall[dataSourceInfoPath] = true;
                 SubmitChangesDeleteFinilize(dataSourceInfoPath);
             }
         }
@@ -133,20 +146,20 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             {
 
                 _toUpdateSubjects[dataSourceInfoPath].OnNext(changedRecord);
-                _counter[dataSourceInfoPath]++;
+                _toUpdateCounter[dataSourceInfoPath]++;
                 SubmitChangesChangeRecordFinilize(dataSourceInfoPath);
 
             }
             else
             {
-                _onCompleteCalll[dataSourceInfoPath] = true;
+                _onUpdateCompleteCall[dataSourceInfoPath] = true;
                 SubmitChangesChangeRecordFinilize(dataSourceInfoPath);
             }
         }
 
         private void SubmitChangesChangeRecordFinilize(string dataSourceInfoPath)
         {
-            if (_onCompleteCalll[dataSourceInfoPath] && (_counter[dataSourceInfoPath] == _count[dataSourceInfoPath]))
+            if (_onUpdateCompleteCall[dataSourceInfoPath] && (_toUpdateCounter[dataSourceInfoPath] == _toUpdateCount[dataSourceInfoPath]))
             {
                 _toUpdateSubjects[dataSourceInfoPath].OnCompleted();
                 if (!_workingTasks[dataSourceInfoPath].IsCompleted)
@@ -156,15 +169,15 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 _revisionInfos.Remove(dataSourceInfoPath);
                 _workingTasks.Remove(dataSourceInfoPath);
                 _toUpdateSubjects.Remove(dataSourceInfoPath);
-                _onCompleteCalll.Remove(dataSourceInfoPath);
-                _counter.Remove(dataSourceInfoPath);
-                _count.Remove(dataSourceInfoPath);
+                _onUpdateCompleteCall.Remove(dataSourceInfoPath);
+                _toUpdateCounter.Remove(dataSourceInfoPath);
+                _toUpdateCount.Remove(dataSourceInfoPath);
             }
         }
 
         private void SubmitChangesDeleteFinilize(string dataSourceInfoPath)
         {
-            if (_onCompleteCalll[dataSourceInfoPath] && (_counter[dataSourceInfoPath] == _count[dataSourceInfoPath]))
+            if (_onDeleteCompleteCall[dataSourceInfoPath] && (_toDeleteCounter[dataSourceInfoPath] == _toDeleteCount[dataSourceInfoPath]))
             {
                 _toDelteSubjects[dataSourceInfoPath].OnCompleted();
                 if (!_workingTasks[dataSourceInfoPath].IsCompleted)
@@ -174,9 +187,9 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 _revisionInfos.Remove(dataSourceInfoPath);
                 _workingTasks.Remove(dataSourceInfoPath);
                 _toDelteSubjects.Remove(dataSourceInfoPath);
-                _onCompleteCalll.Remove(dataSourceInfoPath);
-                _counter.Remove(dataSourceInfoPath);
-                _count.Remove(dataSourceInfoPath);
+                _onDeleteCompleteCall.Remove(dataSourceInfoPath);
+                _toDeleteCounter.Remove(dataSourceInfoPath);
+                _toDeleteCount.Remove(dataSourceInfoPath);
             }
         }
 
