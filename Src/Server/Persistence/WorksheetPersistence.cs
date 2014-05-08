@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using FalconSoft.ReactiveWorksheets.Common.Security;
@@ -23,6 +24,8 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
 
         private void ConnectToDb()
         {
+            if (_mongoDatabase!=null)
+            Trace.WriteLine(string.Format("   Worksheet MongoDB status {0}",_mongoDatabase.Server.State));
             if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
             {
                 _mongoDatabase = MongoDatabase.Create(_connectionString);
@@ -32,6 +35,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence
         public WorksheetInfo GetWorksheetInfo(string urn)
         {
             ConnectToDb();
+
             return _mongoDatabase.GetCollection<WorksheetInfo>(WorksheetInfoCollectionName)
                     .FindOne(Query.And(Query.EQ("Name", urn.GetName()),
                                                 Query.EQ("Category", urn.GetCategory())));
