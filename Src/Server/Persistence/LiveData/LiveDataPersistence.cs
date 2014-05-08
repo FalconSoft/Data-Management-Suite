@@ -187,6 +187,14 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
 
         private string ConvertToMongoOperations(Operations operation, string value)
         {
+            if (!string.IsNullOrEmpty(value) && value.ToCharArray()[0] != Convert.ToChar("'"))
+            {
+                var t = 0;
+                double d = 0;
+                if (int.TryParse(value, out t) == false || (double.TryParse(value, out d) == false))
+                    value = string.Format("'{0}'", value);
+            }
+
             switch (operation)
             {
                 case Operations.Equal: return value;
