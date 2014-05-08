@@ -25,9 +25,11 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         private readonly Dictionary<string, bool> _onDeleteCompleteCall;
         private readonly Dictionary<string, bool> _onUpdateCompleteCall;
         private readonly Dictionary<string, RevisionInfo> _revisionInfos;
-
+        private readonly Dictionary<string, string> _connectionIDictionary; 
+        
         public CommandsHub(ICommandFacade commandFacade)
         {
+            _connectionIDictionary = new Dictionary<string, string>();
             _toDelteSubjects = new Dictionary<string, Subject<string>>();
             _toUpdateSubjects = new Dictionary<string, Subject<Dictionary<string, object>>>();
             _workingTasks = new Dictionary<string, Task>();
@@ -41,9 +43,31 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _commandFacade = commandFacade;
         }
 
+        public override Task OnDisconnected()
+        {
+            var connectionId = string.Copy(Context.ConnectionId);
+            if (_connectionIDictionary.ContainsKey(connectionId))
+            {
+                var dataSourcePath = _connectionIDictionary[connectionId];
+
+                _connectionIDictionary.Remove(connectionId);
+
+                if (_toDelteSubjects.ContainsKey(dataSourcePath))
+                {
+                    SubmitChangesDeleteFinilize(dataSourcePath);
+                }
+                if (_toUpdateSubjects.ContainsKey(dataSourcePath))
+                {
+                    SubmitChangesChangeRecordFinilize(dataSourcePath);
+                }
+            }
+            return base.OnDisconnected();
+        }
+
         public void InitilizeSubmit(string dataSourceInfoPath, string comment, bool isChangeDataNull,
             bool isDeleteDataNull)
         {
+            _connectionIDictionary.Add(Context.ConnectionId, dataSourceInfoPath);
             if (!isDeleteDataNull)
             {
                 _toDelteSubjects.Add(dataSourceInfoPath, new Subject<string>());
@@ -172,6 +196,9 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 _onUpdateCompleteCall.Remove(dataSourceInfoPath);
                 _toUpdateCounter.Remove(dataSourceInfoPath);
                 _toUpdateCount.Remove(dataSourceInfoPath);
+
+                if (_connectionIDictionary.ContainsKey(Context.ConnectionId))
+                    _connectionIDictionary.Remove(Context.ConnectionId);
             }
         }
 
@@ -190,6 +217,9 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 _onDeleteCompleteCall.Remove(dataSourceInfoPath);
                 _toDeleteCounter.Remove(dataSourceInfoPath);
                 _toDeleteCount.Remove(dataSourceInfoPath);
+
+                if (_connectionIDictionary.ContainsKey(Context.ConnectionId))
+                    _connectionIDictionary.Remove(Context.ConnectionId);
             }
         }
 

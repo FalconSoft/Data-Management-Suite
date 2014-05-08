@@ -34,14 +34,18 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public override Task OnDisconnected()
         {
-            Trace.WriteLine("   Disconnected : " + Context.ConnectionId);
-            if (_getDataChangesDisposables.ContainsKey(Context.ConnectionId))
+            var connectionId = string.Copy(Context.ConnectionId);
+            Trace.WriteLine("   Disconnected : " + connectionId);
+            if (_getDataChangesDisposables.ContainsKey(connectionId))
             {
-                Groups.Remove(Context.ConnectionId, _dataSourcePathDictionary[Context.ConnectionId]);
-                _dataSourcePathDictionary.Remove(Context.ConnectionId);
-                _getDataChangesDisposables[Context.ConnectionId].Dispose();
-                _getDataChangesDisposables.Remove(Context.ConnectionId);
-                _logger.Info("remove subscribe for " + Context.ConnectionId);
+                if (_dataSourcePathDictionary.ContainsKey(connectionId))
+                {
+                    Groups.Remove(Context.ConnectionId, _dataSourcePathDictionary[connectionId]);
+                    _dataSourcePathDictionary.Remove(connectionId);
+                }
+                _getDataChangesDisposables[connectionId].Dispose();
+                _getDataChangesDisposables.Remove(connectionId);
+                _logger.Info("remove subscribe for " + connectionId);
             }
             _logger.InfoFormat("Time {0} | Disconnected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId,
                 Context.User != null ? Context.User.Identity.Name : null);
