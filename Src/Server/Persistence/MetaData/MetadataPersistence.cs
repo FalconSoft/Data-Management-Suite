@@ -36,8 +36,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.MetaData
         public void ClearAllMetaData()
         {
             ConnectToDb();
-            _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName)
-                          .RemoveAll();
+            _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName).RemoveAll();
         }
 
         public DataSourceInfo[] GetAvailableDataSources(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
@@ -63,10 +62,10 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.MetaData
             var childDataSources = oldDataSourceProviderString.GetChildDataSources(collection.FindAll().ToArray());
             if (dataSource.DataSourcePath != oldDs.DataSourcePath)
             {
-                var oldCollName_Data = oldDs.DataSourcePath.ToValidDbString() + "_Data";
-                var oldCollName_History = oldDs.DataSourcePath.ToValidDbString() + "_History";
-                _mongoDatabase.RenameCollection(oldCollName_Data, dataSource.DataSourcePath.ToValidDbString() + "_Data");
-                _mongoDatabase.RenameCollection(oldCollName_History, dataSource.DataSourcePath.ToValidDbString() + "_History");
+                var oldCollNameData = oldDs.DataSourcePath.ToValidDbString() + "_Data";
+                var oldCollNameHistory = oldDs.DataSourcePath.ToValidDbString() + "_History";
+                _mongoDatabase.RenameCollection(oldCollNameData, dataSource.DataSourcePath.ToValidDbString() + "_Data");
+                _mongoDatabase.RenameCollection(oldCollNameHistory, dataSource.DataSourcePath.ToValidDbString() + "_History");
             }
             var dataCollection = _mongoDatabase.GetCollection(dataSource.DataSourcePath.ToValidDbString() + "_Data");
             var historyCollection = _mongoDatabase.GetCollection(dataSource.DataSourcePath.ToValidDbString() + "_History");
@@ -134,7 +133,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.MetaData
             _mongoDatabase.GetCollection(dataSourceProviderString.ToValidDbString() + "_Data").Drop();
             _mongoDatabase.GetCollection(dataSourceProviderString.ToValidDbString() + "_History").Drop();
             _mongoDatabase.GetCollection(DataSourceCollectionName).Remove(Query.And(Query.EQ("Name", dataSourceProviderString.GetName()),
-                                                                       Query.EQ("Category", dataSourceProviderString.GetCategory())));
+                                                                                    Query.EQ("Category", dataSourceProviderString.GetCategory())));
         }
     }
 }
