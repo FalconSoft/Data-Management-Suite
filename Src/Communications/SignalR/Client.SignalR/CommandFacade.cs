@@ -63,7 +63,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onInitilizeCompleteAction = () => tcs.SetResult(new object());
-            _proxy.Invoke("InitilizeSubmit", dataSourcePath, comment, changedRecords == null, deleted == null);
+            _proxy.Invoke("InitilizeSubmit", dataSourcePath, comment, changedRecords==null, deleted==null);
             task.Wait();
 
             if (deleted != null)

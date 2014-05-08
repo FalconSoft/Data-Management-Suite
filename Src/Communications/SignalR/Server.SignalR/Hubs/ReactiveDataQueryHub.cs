@@ -154,7 +154,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                         var rcp = new RecordChangedParam
                         {
                             ChangeSource = r.ChangeSource,
-                            ChangedPropertyNames = r.ChangedPropertyNames.ToArray(),
+                            ChangedPropertyNames = r.ChangedPropertyNames!=null?r.ChangedPropertyNames.ToArray(): new string[0],
                             ChangedAction = r.ChangedAction,
                             IgnoreWorksheet = r.IgnoreWorksheet,
                             OriginalRecordKey = r.OriginalRecordKey,
