@@ -61,7 +61,7 @@ namespace ReactiveWorksheets.Facade.Tests
             return _reactiveDataQueryFacade.GetData(_dataSourceInfo.DataSourcePath, filterRules);
         }
 
-        public IObservable<RecordChangedParam> GetDataChanges(FilterRule[] filterRules = null)
+        public IObservable<RecordChangedParam[]> GetDataChanges(FilterRule[] filterRules = null)
         {
             return _reactiveDataQueryFacade.GetDataChanges(_dataSourceInfo.DataSourcePath, filterRules);
         }

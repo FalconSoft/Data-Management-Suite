@@ -93,7 +93,10 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
                         {
                             if (s.Any())
                             {
-                                CSVHelper.AppendRecords(s.Select(r => r.RecordValues), subscribeArguments.FileName, subscribeArguments.Separator);
+                                foreach (var recordChangedParamse in s)
+                                {
+                                    CSVHelper.AppendRecords(recordChangedParamse.Select(r => r.RecordValues), subscribeArguments.FileName, subscribeArguments.Separator);
+                                }
                             }
                         });
 

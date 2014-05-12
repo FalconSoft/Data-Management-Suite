@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -38,11 +39,11 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         //********************************
 
         // For GetDataChanges method
-        private readonly Subject<RecordChangedParam> _getDataChangesSubject; 
+        private readonly Subject<RecordChangedParam[]> _getDataChangesSubject; 
         //********************************
 
         // For ResolveRecordbyForeignKey method
-        private Action<string, RecordChangedParam> _resolveRecordbyForeignKeySuccessAction;
+        private Action<string, RecordChangedParam[]> _resolveRecordbyForeignKeySuccessAction;
         private Action<string, Exception> _resolveRecordbyForeignKeyFailedAction; 
         //********************************
 
@@ -56,7 +57,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             _connection = new HubConnection(connectionString);
             _proxy = _connection.CreateHubProxy("IReactiveDataQueryFacade");
-           _getDataChangesSubject = new Subject<RecordChangedParam>();
+           _getDataChangesSubject = new Subject<RecordChangedParam[]>();
             // For  method GetAggregatedData
             _proxy.On<Dictionary<string, object>>("GetAggregatedDataOnNext", data =>
             {
@@ -130,7 +131,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             // *********************************
 
             // For GetDataChanges method
-            _proxy.On<RecordChangedParam>("GetDataChangesOnNext", data =>
+            _proxy.On<RecordChangedParam[]>("GetDataChangesOnNext", data =>
             {
                 //Trace.WriteLine(" ********* GetDataChangesOnNext " + datasourceProviderString);
                 _getDataChangesSubject.OnNext(data);
@@ -149,7 +150,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             // *********************************
 
             // For ResolveRecordbyForeignKey method
-            _proxy.On<string, RecordChangedParam>("ResolveRecordbyForeignKeySuccess", (message, data) =>
+            _proxy.On<string, RecordChangedParam[]>("ResolveRecordbyForeignKeySuccess", (message, data) =>
             {
                 //Trace.WriteLine(" ********* ResolveRecordbyForeignKeySuccess " + datasourceProviderString);
                 _resolveRecordbyForeignKeySuccessAction(message, data);
@@ -233,10 +234,10 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         // ***************************************************************************************
 
         // ***************************************************************************************
-        public IObservable<RecordChangedParam> GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null)
+        public IObservable<RecordChangedParam[]> GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null)
         {
-            var subject = new Subject<RecordChangedParam>();
-           _getDataChangesSubject.Where(r => r.ProviderString == dataSourcePath)
+            var subject = new Subject<RecordChangedParam[]>();
+           _getDataChangesSubject.Where(r => r.First().ProviderString == dataSourcePath)
                 .Subscribe( data => subject.OnNext(data), 
                             ex => subject.OnError(ex), 
                             () => subject.OnCompleted());
@@ -251,11 +252,11 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         // ***************************************************************************************
 
         // ***************************************************************************************
-        public void ResolveRecordbyForeignKey(RecordChangedParam changedRecord, Action<string, RecordChangedParam> onSuccess, Action<string, Exception> onFail)
+        public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, Action<string, RecordChangedParam[]> onSuccess, Action<string, Exception> onFail)
         {
             _resolveRecordbyForeignKeySuccessAction = onSuccess;
             _resolveRecordbyForeignKeyFailedAction = onFail;
-            _proxy.Invoke("ResolveRecordbyForeignKey", changedRecord);
+            _proxy.Invoke("ResolveRecordbyForeignKey", changedRecord,dataSourceUrn);
         }
     }
 }
