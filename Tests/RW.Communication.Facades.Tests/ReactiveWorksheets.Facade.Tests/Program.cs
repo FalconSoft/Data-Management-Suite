@@ -147,9 +147,12 @@ namespace ReactiveWorksheets.Facade.Tests
             Console.ReadLine();
         }
 
-        private static void GetDataChanges(RecordChangedParam obj)
+        private static void GetDataChanges(RecordChangedParam[] obj)
         {
-            Console.WriteLine("RecordChangedParam resived RecordKey : {0} OriginalRecordKey : {1} dataDourcePath : {2}", obj.RecordKey, obj.OriginalRecordKey, obj.ProviderString);
+            foreach (var recordChangedParam in obj)
+            {
+                Console.WriteLine("RecordChangedParam resived RecordKey : {0} OriginalRecordKey : {1} dataDourcePath : {2}", recordChangedParam.RecordKey, recordChangedParam.OriginalRecordKey, recordChangedParam.ProviderString);
+            }
         }
 
         private static User TestSecurityfacade(User user)

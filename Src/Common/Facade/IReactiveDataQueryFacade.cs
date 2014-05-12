@@ -51,7 +51,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
         /// <param name="dataSourcePath">Data Source path to listen changes to</param>
         /// <param name="filterRules">Filter rules</param>
         /// <returns>cold observable with changes</returns>
-        IObservable<RecordChangedParam> GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null);
+        IObservable<RecordChangedParam[]> GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null);
 
         /// <summary>
         /// Method to resolve related fields in case when foreign key is changed.
@@ -59,10 +59,11 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
         /// client to recalculate related fields 
         /// </summary>
         /// <param name="changedRecord">Changed record with foreignKey</param>
+        /// <param name="dataSourceUrn">DataSource Urn</param>
         /// <param name="onSuccess">Action called when fields have been resolved</param>
         /// <param name="onFail">Resolve failed</param>
-        void ResolveRecordbyForeignKey(RecordChangedParam changedRecord,
-            Action<string, RecordChangedParam> onSuccess,
+        void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn,
+            Action<string, RecordChangedParam[]> onSuccess,
             Action<string, Exception> onFail);
     }
 }

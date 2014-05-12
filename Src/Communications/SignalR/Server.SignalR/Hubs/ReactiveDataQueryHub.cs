@@ -152,32 +152,16 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
                 var disposable = _reactiveDataQueryFacade.GetDataChanges(providerString,
                     filterRules.Any() ? filterRules : null)
-                    .Subscribe(r =>
-                    {
-                        var dictionary = new Dictionary<string, object>(r.RecordValues);
-                        var rcp = new RecordChangedParam
-                        {
-                            ChangeSource = r.ChangeSource,
-                            ChangedPropertyNames = r.ChangedPropertyNames!=null?r.ChangedPropertyNames.ToArray(): new string[0],
-                            ChangedAction = r.ChangedAction,
-                            IgnoreWorksheet = r.IgnoreWorksheet,
-                            OriginalRecordKey = r.OriginalRecordKey,
-                            ProviderString = r.ProviderString,
-                            RecordKey = r.RecordKey,
-                            RecordValues = dictionary,
-                            UserToken = r.UserToken
-                        };
-                        Clients.Group(providerString).GetDataChangesOnNext(rcp);
-                    },
+                    .Subscribe(recordChangedParams => Clients.Group(providerString).GetDataChangesOnNext(recordChangedParams),
                         () => Groups.Remove(connectionId, providerString));
                 _getDataChangesDisposables.Add(connectionId, disposable);
                 _dataSourcePathDictionary.Add(connectionId, providerString);
             }
         }
 
-        public void ResolveRecordbyForeignKey(RecordChangedParam changedRecord)
+        public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord,string dataSourceUrn)
         {
-            _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecord,
+            _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecord,dataSourceUrn,
                 (str, rcp) => Clients.Caller.ResolveRecordbyForeignKeySuccess(str, rcp),
                 (str, ex) => Clients.Caller.ResolveRecordbyForeignKeyFailed(str, ex));
         }
