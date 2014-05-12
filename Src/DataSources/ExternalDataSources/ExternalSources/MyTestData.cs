@@ -27,6 +27,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
             }
             _timer = new System.Timers.Timer(5000);
             _timer.Elapsed += OnClick;
+            _timer.Start();
         }
 
         private void OnClick(object sender, EventArgs e)
@@ -65,7 +66,6 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
 
         public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
-            _timer.Start();
             var list = new List<Dictionary<string, object>>();
             foreach (var item in _collection)
             {

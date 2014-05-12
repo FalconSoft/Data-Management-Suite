@@ -30,6 +30,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
 
             _timer = new Timer(3000);
             _timer.Elapsed += OnElapsed;
+            _timer.Start();
         }
 
         private void OnElapsed(object sender, ElapsedEventArgs e)
@@ -52,7 +53,6 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
 
         public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
-            _timer.Start();
             var list = new List<Dictionary<string, object>>();
             foreach (var quotesFeed in _quotesFeedData)
             {

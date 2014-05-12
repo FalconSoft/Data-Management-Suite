@@ -201,7 +201,14 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
                 case Operations.NotEqual: return "{ $ne :" + value + " }";
                 case Operations.GreaterThan: return "{ $gt :" + value + " }";
                 case Operations.LessThan: return "{ $lt :" + value + " }";
-                case Operations.In: return "{ $in :" + value.Replace('(', '[').Replace(')', ']').Replace(Convert.ToChar("'"), Convert.ToChar("\"")) + " }";
+                case Operations.In:
+                {
+                    var query = "{ $in :" + 
+                                value.Replace("'(", "[")
+                                    .Replace(")'", "]")
+                                    .Replace(Convert.ToChar("'"), Convert.ToChar("\"")) + " }";
+                    return query;
+                }
                 case Operations.Like: return "/" + value.Replace("'", "") + "/";
             }
             return "";
