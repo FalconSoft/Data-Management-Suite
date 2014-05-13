@@ -230,7 +230,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                     {
                         _allowToRestoreConnection = false;
                         Trace.WriteLine(string.Format("   Client GetDataChanges  ConnectionId : {0} , DataSourceName : {1} , IsBackGround {2}", _connection.ConnectionId, dataSourcePath, Thread.CurrentThread.IsBackground));
-                        _proxy.Invoke("GetDataChanges", providerString, whereCondition);
+                        _proxy.Invoke("GetDataChanges",_connection.ConnectionId, providerString, whereCondition);
                     }
 
                 });
@@ -248,7 +248,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
             CheckConnectionToServer();
 
-            _proxy.Invoke("GetDataChanges", dataSourcePath, filterRules ?? new FilterRule[0]);
+            _proxy.Invoke("GetDataChanges", _connection.ConnectionId, dataSourcePath, filterRules ?? new FilterRule[0]);
             
             return returnObservable;
         }

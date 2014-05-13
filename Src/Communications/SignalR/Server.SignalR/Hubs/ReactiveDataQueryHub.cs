@@ -41,8 +41,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     Groups.Remove(Context.ConnectionId, _dataSourcePathDictionary[connectionId]);
                     _dataSourcePathDictionary.Remove(connectionId);
                 }
-                //_getDataChangesDisposables[connectionId].Dispose();
-                //_getDataChangesDisposables.Remove(connectionId);
+                _getDataChangesDisposables[connectionId].Dispose();
+                _getDataChangesDisposables.Remove(connectionId);
                 _logger.Info("remove subscribe for " + connectionId);
             }
             _logger.InfoFormat("Time {0} | Disconnected: ConnectionId {1}, User {2}", DateTime.Now, Context.ConnectionId,
@@ -136,27 +136,27 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             }, string.Copy(Context.ConnectionId));
         }
 
-        public void GetDataChanges(string dataSourcePath, FilterRule[] filterRules)
+        public void GetDataChanges(string connectionId, string dataSourcePath, FilterRule[] filterRules)
         {
-            Task.Factory.StartNew(connectionId =>
+            Task.Factory.StartNew(() =>
             {
                var providerString = string.Copy(dataSourcePath);
 
-                Groups.Add(connectionId.ToString(), providerString);
-                _dataSourcePathDictionary[connectionId.ToString()] = providerString;
+                Groups.Add(connectionId, providerString);
+                _dataSourcePathDictionary[connectionId] = providerString;
 
                 Trace.WriteLine(
                     string.Format("   GetDataChanges  ConnectionId : {0} , DataSourceName : {1} , IsBackGround {2}",
                         connectionId, dataSourcePath, Thread.CurrentThread.IsBackground));
 
-                if (!_getDataChangesDisposables.ContainsKey(connectionId.ToString()))
-                    _getDataChangesDisposables.Add(connectionId.ToString(),new CompositeDisposable());
+                if (!_getDataChangesDisposables.ContainsKey(connectionId))
+                    _getDataChangesDisposables.Add(connectionId,new CompositeDisposable());
                     var disposable = _reactiveDataQueryFacade.GetDataChanges(providerString,
                         filterRules.Any() ? filterRules : null)
                         .Subscribe(recordChangedParams => Clients.Client(connectionId.ToString()).GetDataChangesOnNext(recordChangedParams));
-                _getDataChangesDisposables[connectionId.ToString()].Add(disposable);
+                _getDataChangesDisposables[connectionId].Add(disposable);
 
-            }, string.Copy(Context.ConnectionId));
+            });
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord,string dataSourceUrn)
