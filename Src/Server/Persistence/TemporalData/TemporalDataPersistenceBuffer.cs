@@ -149,6 +149,16 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
             }
             else
             {
+                if (recordChangedParam.ChangeSource != recordChangedParam.ProviderString)
+                {
+                    var bsDoc = new BsonDocument();
+                    AddStructureFields(ref bsDoc, recordChangedParam.UserToken);
+                    bsDoc.AddRange(recordChangedParam.RecordValues.ToArray());
+                    var query = Query.EQ("_id", cursor["_id"]);
+                    var update = Update.Set(string.Format("Data.{0}", cursor["Current"]), bsDoc);
+                    collection.Update(query, update);
+                    return;
+                }
                 switch (recordChangedParam.ChangedAction)
                 {
                     case RecordChangedAction.AddedOrUpdated:

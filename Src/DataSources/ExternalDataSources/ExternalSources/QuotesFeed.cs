@@ -28,7 +28,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
                 });
             }
 
-            _timer = new Timer(3000);
+            _timer = new Timer(2000);
             _timer.Elapsed += OnElapsed;
             _timer.Start();
         }
