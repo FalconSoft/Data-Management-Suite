@@ -12,9 +12,10 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class TemporalDataQueryFacade : ITemporalDataQueryFacade
     {
-        private readonly HubConnection _connection;
-        private readonly IHubProxy _proxy;
-        private readonly Task _startConnectionTask;
+        private readonly string _connectionString;
+        private HubConnection _connection;
+        private IHubProxy _proxy;
+        private Task _startConnectionTask;
 
         //for GetRecordsHistory method
         private Action<Dictionary<string, object>> _getRecordsHistoryOnNextAction;
@@ -41,7 +42,14 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         
         private Action _onCompleteAction;
         private Action<Exception> _onFailedAction;
+
         public TemporalDataQueryFacade(string connectionString)
+        {
+            _connectionString = connectionString;
+            InitialiseConnection(connectionString);
+        }
+
+        private void InitialiseConnection(string connectionString)
         {
             _connection = new HubConnection(connectionString);
             _proxy = _connection.CreateHubProxy("ITemporalDataQueryFacade");
@@ -137,10 +145,20 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             });
             _startConnectionTask = _connection.Start();
         }
-        public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)
+
+        private void CheckConnectionToServer()
         {
+            if (_connection.State == ConnectionState.Disconnected)
+            {
+                InitialiseConnection(_connectionString);
+            }
             if (!_startConnectionTask.IsCompleted)
                 _startConnectionTask.Wait();
+        }
+
+        public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)
+        {
+            CheckConnectionToServer();
 
             var subject = new Subject<Dictionary<string, object>>();
             _getRecordsHistoryOnNextAction = data => subject.OnNext(data);
@@ -154,8 +172,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public IEnumerable<Dictionary<string, object>> GetDataHistoryByTag(DataSourceInfo dataSourceInfo, TagInfo tagInfo)
         {
-            if (!_startConnectionTask.IsCompleted)
-                _startConnectionTask.Wait();
+            CheckConnectionToServer();
 
             var subject = new Subject<Dictionary<string, object>>();
             _getDataHistoryByTagOnNextAction = data => subject.OnNext(data);
@@ -169,8 +186,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public IEnumerable<Dictionary<string, object>> GetRecordsAsOf(DataSourceInfo dataSourceInfo, DateTime timeStamp)
         {
-            if (!_startConnectionTask.IsCompleted)
-                _startConnectionTask.Wait();
+            CheckConnectionToServer();
 
             var subject = new Subject<Dictionary<string, object>>();
             _getRecordsAsOfOnNextAction = data => subject.OnNext(data);
@@ -184,8 +200,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public IEnumerable<TagInfo> GeTagInfos()
         {
-            if (!_startConnectionTask.IsCompleted)
-                _startConnectionTask.Wait();
+            CheckConnectionToServer();
 
             var subject = new Subject<TagInfo>();
             _geTagInfosOnNextAction = data => subject.OnNext(data);
@@ -203,10 +218,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             var task = tcs.Task;
             _onCompleteAction = () => tcs.SetResult(new object());
 
-            if (_startConnectionTask.IsCompleted)
-                _proxy.Invoke("SaveTagInfo", tagInfo);
-            else 
-                _startConnectionTask.ContinueWith(t=>_proxy.Invoke("SaveTagInfo", tagInfo));
+            CheckConnectionToServer();
+            _proxy.Invoke("SaveTagInfo", tagInfo);
+           
             task.Wait();
         }
 
@@ -216,10 +230,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             var task = tcs.Task;
             _onCompleteAction = () => tcs.SetResult(new object());
 
-            if (_startConnectionTask.IsCompleted)
-                _proxy.Invoke("RemoveTagInfo", tagInfo);
-            else
-                _startConnectionTask.ContinueWith(t => _proxy.Invoke("RemoveTagInfo", tagInfo));
+            CheckConnectionToServer();
+            _proxy.Invoke("RemoveTagInfo", tagInfo);
+         
             task.Wait();
         }
 

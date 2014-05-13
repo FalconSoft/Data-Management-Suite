@@ -9,11 +9,18 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class SearchFacade : ISearchFacade
     {
-        private readonly HubConnection _connection;
-        private readonly IHubProxy _proxy;
-        private readonly Task _startConnectionTask;
+        private readonly string _connectionString;
+        private HubConnection _connection;
+        private IHubProxy _proxy;
+        private Task _startConnectionTask;
 
         public SearchFacade(string connectionString)
+        {
+            _connectionString = connectionString;
+            InitialiseConnection(connectionString);
+        }
+
+        private void InitialiseConnection(string connectionString)
         {
             _connection = new HubConnection(connectionString);
             _proxy = _connection.CreateHubProxy("ISearchFacade");
@@ -23,6 +30,18 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             _connection.Closed += OnClosed;
 
             _startConnectionTask = _connection.Start();
+        }
+
+        private void CheckConnectionToServer()
+        {
+
+            if (_connection.State == ConnectionState.Disconnected)
+            {
+                InitialiseConnection(_connectionString);
+            }
+            if (!_startConnectionTask.IsCompleted)
+                _startConnectionTask.Wait();
+
         }
 
         private void OnClosed()
@@ -44,11 +63,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public SearchData[] Search(string searchString)
         {
-            if (_startConnectionTask.IsCompleted)
-            {
-                return SearchServerCall(searchString);
-            }
-            _startConnectionTask.Wait();
+            CheckConnectionToServer();
             return SearchServerCall(searchString);
         }
 
@@ -72,11 +87,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public HeaderInfo[] GetSearchableWorksheets(SearchData searchData)
         {
-            if (_startConnectionTask.IsCompleted)
-            {
-                return GetSearchableWorksheetsServerCall(searchData);
-            }
-            _startConnectionTask.Wait();
+            CheckConnectionToServer();
             return GetSearchableWorksheetsServerCall(searchData);
         }
 

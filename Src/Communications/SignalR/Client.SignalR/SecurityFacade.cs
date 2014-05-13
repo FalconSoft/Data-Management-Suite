@@ -11,16 +11,23 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class SecurityFacade : ISecurityFacade
     {
-        private readonly HubConnection _connection;
-        private readonly IHubProxy _proxy;
-        private readonly Task _startConnectionTask;
+        private readonly string _connectionString;
+        private HubConnection _connection;
+        private IHubProxy _proxy;
+        private Task _startConnectionTask;
         private Action _onCompleteAction;
 
         public SecurityFacade(string connectionString)
         {
+            _connectionString = connectionString;
+            InitialiseConnection(connectionString);
+        }
+
+        private void InitialiseConnection(string connectionString)
+        {
             _connection = new HubConnection(connectionString);
             _proxy = _connection.CreateHubProxy("ISecurityFacade");
-            
+
             _connection.Reconnecting += OnReconnecting;
             _connection.Reconnected += OnReconnected;
             _connection.Closed += OnClosed;
@@ -32,6 +39,18 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             });
 
             _startConnectionTask = _connection.Start();
+        }
+
+        private void CheckConnectionToServer()
+        {
+
+            if (_connection.State == ConnectionState.Disconnected)
+            {
+                InitialiseConnection(_connectionString);
+            }
+            if (!_startConnectionTask.IsCompleted)
+                _startConnectionTask.Wait();
+
         }
 
         private void OnClosed()
@@ -51,25 +70,13 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public List<User> GetUsers()
         {
-            if (_startConnectionTask.IsCompleted)
-            {
-                var tcs = new TaskCompletionSource<List<User>>();
-                var task = tcs.Task;
-                _proxy.Invoke<List<User>>("GetUsers")
-                    .ContinueWith(t => tcs.SetResult(t.Result));
+            CheckConnectionToServer();
+            var tcs = new TaskCompletionSource<List<User>>();
+            var task = tcs.Task;
+            _proxy.Invoke<List<User>>("GetUsers")
+                .ContinueWith(t => tcs.SetResult(t.Result));
 
-                return task.Result;
-            }
-            else
-            {
-                var tcs = new TaskCompletionSource<List<User>>();
-                var task = tcs.Task;
-                _startConnectionTask.ContinueWith(t =>
-                    _proxy.Invoke<List<User>>("GetUsers")
-                        .ContinueWith(t1 => tcs.SetResult(t1.Result)));
-
-                return task.Result;
-            }
+            return task.Result;
         }
 
         public void SaveNewUser(User user)
@@ -78,15 +85,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             var task = tcs.Task;
             _onCompleteAction = () => tcs.SetResult(new object());
 
-            if (_startConnectionTask.IsCompleted)
-            {
-                _proxy.Invoke("SaveNewUser", user);
-            }
-            else
-            {
-                _startConnectionTask.Wait();
-                _proxy.Invoke("SaveNewUser", user);
-            }
+            CheckConnectionToServer();
+            _proxy.Invoke("SaveNewUser", user);
+            
             task.Wait();
         }
 
@@ -96,15 +97,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             var task = tcs.Task;
             _onCompleteAction = () => tcs.SetResult(new object());
 
-            if (_startConnectionTask.IsCompleted)
-            {
-                _proxy.Invoke("UpdateUser", user);
-            }
-            else
-            {
-                _startConnectionTask.ContinueWith(t =>
-                _proxy.Invoke("UpdateUser", user));
-            }
+            CheckConnectionToServer();
+            _proxy.Invoke("UpdateUser", user);
+           
             task.Wait();
         }
 
@@ -113,15 +108,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onCompleteAction = () => tcs.SetResult(new object());
-            if (_startConnectionTask.IsCompleted)
-            {
-                _proxy.Invoke("RemoveUser", user);
-            }
-            else
-            {
-                _startConnectionTask.ContinueWith(t =>
-                _proxy.Invoke("RemoveUser", user));
-            }
+            CheckConnectionToServer();
+            _proxy.Invoke("RemoveUser", user);
+            
             task.Wait();
         }
 

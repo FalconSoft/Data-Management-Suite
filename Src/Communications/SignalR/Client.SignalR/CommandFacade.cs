@@ -10,14 +10,22 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class CommandFacade : ICommandFacade
     {
-        private readonly HubConnection _connection;
-        private readonly IHubProxy _proxy;
-        private readonly Task _startConnectionTask;
+        private readonly string _connectionString;
+
+        private HubConnection _connection;
+        private IHubProxy _proxy;
+        private Task _startConnectionTask;
         private Action<RevisionInfo> _onSuccessAction;
         private Action<Exception> _onFailedAction;
         private Action _onInitilizeCompleteAction;
 
         public CommandFacade(string connectionString)
+        {
+            _connectionString = connectionString;
+            InitialiseConnection(connectionString);
+        }
+
+        private void InitialiseConnection(string connectionString)
         {
             _connection = new HubConnection(connectionString);
             _proxy = _connection.CreateHubProxy("ICommandFacade");
@@ -26,6 +34,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 if (_onSuccessAction != null)
                     _onSuccessAction(revisionInfo);
             });
+
             _proxy.On<Exception>("OnFail", ex =>
             {
                 if (_onFailedAction != null)
@@ -63,6 +72,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onInitilizeCompleteAction = () => tcs.SetResult(new object());
+            
+            CheckConnectionToServer();
+
             _proxy.Invoke("InitilizeSubmit", dataSourcePath, comment, changedRecords==null, deleted==null);
             task.Wait();
 
@@ -70,14 +82,11 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 DeleteServerCall(dataSourcePath, deleted);
             if (changedRecords != null)
                 ChangeRecordsServerCall(dataSourcePath, changedRecords);
-
-            //_proxy.Invoke("CompleteSubmite", dataSourcePath, changedRecords == null, deleted == null);
         }
 
         private void DeleteServerCall(string dataSourcePath, IEnumerable<string> deleted)
         {
-            if (!_startConnectionTask.IsCompleted)
-                _startConnectionTask.Wait();
+            CheckConnectionToServer();
             try
             {
                 var count = 0;
@@ -92,14 +101,13 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             catch (Exception ex)
             {
                 _proxy.Invoke("SubmitChangesDeleteOnError",dataSourcePath,ex);
-                throw ex;
+                throw;
             }
         }
 
         private void ChangeRecordsServerCall(string dataSourcePath, IEnumerable<Dictionary<string, object>> changedRecords)
         {
-            if (!_startConnectionTask.IsCompleted)
-                _startConnectionTask.Wait();
+            CheckConnectionToServer();
             try
             {
                 var count = 0;
@@ -114,8 +122,18 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             catch (Exception ex)
             {
                 _proxy.Invoke("SubmitChangesChangeRecordsOnError",dataSourcePath, ex);
-                throw ex;
+                throw;
             }
+        }
+
+        private void CheckConnectionToServer()
+        {
+            if (_connection.State == ConnectionState.Disconnected)
+            {
+                InitialiseConnection(_connectionString);
+            }
+            if (!_startConnectionTask.IsCompleted)
+                _startConnectionTask.Wait();
         }
     }
 }
