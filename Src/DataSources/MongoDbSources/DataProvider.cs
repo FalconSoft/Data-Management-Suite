@@ -223,7 +223,10 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 
         private bool Equal(IEnumerable<BsonElement> doc, IDictionary<string, object> record)
         {
-            return doc.Where(x=>x.Name!="_id").All(element => element.Value == ToBsonValue(record[element.Name] != null ? record[element.Name].ToString() : string.Empty, element.Name));
+            return !doc.Select(x=>x.Name).Any(x=>!record.ContainsKey(x)) 
+                && doc.Where(x=>x.Name!="_id")
+                .All(element => element.Value == ToBsonValue(record[element.Name] != null ? 
+                    record[element.Name].ToString() : string.Empty, element.Name));
         }
     }
 }
