@@ -8,6 +8,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
+using MongoDB.Driver.Linq;
 
 namespace FalconSoft.ReactiveWorksheets.MongoDbSources
 {
@@ -191,8 +192,18 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 {
                     queryDoc.Add(rec.Key, ToBsonValue(rec.Value != null ? rec.Value.ToString() : string.Empty, rec.Key));
                 }
-                collection.Save(queryDoc); // TODO need to TEST this, if some problems then remove save and add Update & Insert 
-                
+                var result = collection.Find(CreateFindKeyQuery(records));
+                if (!result.Any())
+                {
+                    collection.Insert(queryDoc);
+                }
+                else if (!Equal(result.First(), records))
+                {
+                    foreach (var q in queryDoc)
+                    {
+                        collection.Update(CreateFindKeyQuery(records), Update.Set(q.Name, q.Value));
+                    }
+                }
             }
         }
 
@@ -203,6 +214,16 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 throw new InvalidDataException("No collection with such name exists!!!");
             var collection = db.GetCollection(name);
             return collection;
+        }
+
+        private IMongoQuery CreateFindKeyQuery(IDictionary<string, object> record)
+        {
+            return Query.And(DataSourceInfo.GetKeyFieldsName().Select(key => Query.EQ(key, ToBsonValue(record[key] != null ? record[key].ToString() : string.Empty, key))));
+        }
+
+        private bool Equal(IEnumerable<BsonElement> doc, IDictionary<string, object> record)
+        {
+            return doc.Where(x=>x.Name!="_id").All(element => element.Value == ToBsonValue(record[element.Name] != null ? record[element.Name].ToString() : string.Empty, element.Name));
         }
     }
 }
