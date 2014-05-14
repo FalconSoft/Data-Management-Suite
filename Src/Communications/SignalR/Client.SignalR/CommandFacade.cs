@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
@@ -18,6 +20,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private Action<RevisionInfo> _onSuccessAction;
         private Action<Exception> _onFailedAction;
         private Action _onInitilizeCompleteAction;
+        private readonly object _initializationLock = new object();
 
         public CommandFacade(string connectionString)
         {
@@ -45,6 +48,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             {
                 if (_onInitilizeCompleteAction != null)
                     _onInitilizeCompleteAction();
+                Trace.WriteLine("   Inite complete return");
             });
 
             _startConnectionTask = _connection.Start();
@@ -67,24 +71,31 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null,
             Action<string, string> onValidationError = null)
         {
-            _onSuccessAction = onSuccess;
-            _onFailedAction = onFail;
-            var tcs = new TaskCompletionSource<object>();
-            var task = tcs.Task;
-            _onInitilizeCompleteAction = () => tcs.SetResult(new object());
-            
-            CheckConnectionToServer();
+            if (deleted != null || changedRecords != null)
+            {
+                lock (_initializationLock)
+                {
+                    _onSuccessAction = onSuccess;
+                    _onFailedAction = onFail;
+                    var are = new AutoResetEvent(false);
+                    
+                    _onInitilizeCompleteAction = () => are.Set();
 
-            _proxy.Invoke("InitilizeSubmit", dataSourcePath, comment, changedRecords==null, deleted==null);
-            task.Wait();
+                    CheckConnectionToServer();
 
-            if (deleted != null)
-                DeleteServerCall(dataSourcePath, deleted);
-            if (changedRecords != null)
-                ChangeRecordsServerCall(dataSourcePath, changedRecords);
+                    _proxy.Invoke("InitilizeSubmit", _connection.ConnectionId, dataSourcePath, comment,
+                        changedRecords == null, deleted == null);
+                    are.WaitOne();
+
+                    if (deleted != null)
+                        DeleteServerCall(_connection.ConnectionId, dataSourcePath, deleted);
+                    if (changedRecords != null)
+                        ChangeRecordsServerCall(_connection.ConnectionId, dataSourcePath, changedRecords);
+                }
+            }
         }
 
-        private void DeleteServerCall(string dataSourcePath, IEnumerable<string> deleted)
+        private void DeleteServerCall(string connectionId, string dataSourcePath, IEnumerable<string> deleted)
         {
             CheckConnectionToServer();
             try
@@ -92,11 +103,11 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 var count = 0;
                 foreach (var keyToDelete in deleted)
                 {
-                    _proxy.Invoke("SubmitChangesDeleteOnNext", dataSourcePath, keyToDelete);
+                    _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, dataSourcePath, keyToDelete);
                     count++;
                 }
-                _proxy.Invoke("SubmitChangesDeleteOnFinish", dataSourcePath, count);
-                _proxy.Invoke("SubmitChangesDeleteOnComplete",dataSourcePath);
+                _proxy.Invoke("SubmitChangesDeleteOnFinish", connectionId, dataSourcePath, count);
+                _proxy.Invoke("SubmitChangesDeleteOnComplete", connectionId, dataSourcePath);
             }
             catch (Exception ex)
             {
@@ -105,7 +116,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             }
         }
 
-        private void ChangeRecordsServerCall(string dataSourcePath, IEnumerable<Dictionary<string, object>> changedRecords)
+        private void ChangeRecordsServerCall(string connectionId, string dataSourcePath, IEnumerable<Dictionary<string, object>> changedRecords)
         {
             CheckConnectionToServer();
             try
@@ -113,11 +124,11 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 var count = 0;
                 foreach (var dataToUpdate in changedRecords)
                 {
-                    _proxy.Invoke("SubmitChangesChangeRecordsOnNext", dataSourcePath, dataToUpdate);
+                    _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, dataSourcePath, dataToUpdate);
                     count++;
                 }
-                _proxy.Invoke("SubmitChangesChangeRecordsOnFinish", dataSourcePath, count);
-                _proxy.Invoke("SubmitChangesChangeRecordsOnComplete",dataSourcePath);
+                _proxy.Invoke("SubmitChangesChangeRecordsOnFinish", connectionId, dataSourcePath, count);
+                _proxy.Invoke("SubmitChangesChangeRecordsOnComplete", connectionId, dataSourcePath);
             }
             catch (Exception ex)
             {

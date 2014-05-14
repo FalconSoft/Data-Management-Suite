@@ -106,9 +106,9 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         }
 
-        public void GetData(string dataSourcePath, FilterRule[] filterRules)
+        public void GetData(string connectionId, string dataSourcePath, FilterRule[] filterRules)
         {
-            Task.Factory.StartNew(connectionId =>
+            Task.Factory.StartNew(()=>
             {
                 Trace.WriteLine("   GetData Start connection Id : " + connectionId);
                 try
@@ -119,21 +119,21 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     var i = 0;
                     foreach (var d in data)
                     {
-                        Clients.Client(connectionId.ToString()).GetDataOnNext(d);
+                        Clients.Client(connectionId).GetDataOnNext(d);
                         Console.Write(" \r{0}", i++);
                     }
 
 
-                    Clients.Client(connectionId.ToString()).GetDataOnComplete();
+                    Clients.Client(connectionId).GetDataOnComplete();
                     Trace.WriteLine("   GetData Complete connection Id : " + connectionId);
                 }
                 catch (Exception ex)
                 {
-                    Clients.Client(connectionId.ToString()).GetDataOnError(ex);
+                    Clients.Client(connectionId).GetDataOnError(ex);
                     Trace.WriteLine("   GetData Failed connection Id : " + connectionId);
                     throw;
                 }
-            }, string.Copy(Context.ConnectionId));
+            });
         }
 
         public void GetDataChanges(string connectionId, string dataSourcePath, FilterRule[] filterRules)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
@@ -17,11 +18,19 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private IHubProxy _proxy;
         private Task _startConnectionTask;
         private Action _onCompleteAction;
+        private Timer _keepAliveTimer;
 
         public MetaDataFacade(string connectionString)
         {
             _connectionString = connectionString;
             InitialiseConnection(connectionString);
+
+            _keepAliveTimer = new Timer(OnTick,null,5000,3000);
+        }
+
+        private void OnTick(object state)
+        {
+            CheckConnectionToServer();
         }
 
         private void InitialiseConnection(string connectionString)
@@ -363,6 +372,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public void Dispose()
         {
+            _keepAliveTimer.Dispose();
             _connection.Stop();
         }
     }

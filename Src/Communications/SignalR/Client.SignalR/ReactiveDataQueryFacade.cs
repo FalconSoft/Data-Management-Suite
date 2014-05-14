@@ -146,13 +146,15 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 // For ResolveRecordbyForeignKey method
                 _proxy.On<string, RecordChangedParam[]>("ResolveRecordbyForeignKeySuccess", (message, data) =>
                 {
-                    _resolveRecordbyForeignKeySuccessAction(message, data);
+                    if (_resolveRecordbyForeignKeySuccessAction!=null)
+                        _resolveRecordbyForeignKeySuccessAction(message, data);
 
                 });
 
                 _proxy.On<string, Exception>("ResolveRecordbyForeignKeyFailed", (message, ex) =>
                 {
-                    _resolveRecordbyForeignKeyFailedAction(message, ex);
+                    if (_resolveRecordbyForeignKeyFailedAction!=null)
+                        _resolveRecordbyForeignKeyFailedAction(message, ex);
                 });
 
                 _startConnectionTask = _connection.Start();
@@ -203,7 +205,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
             CheckConnectionToServer();
 
-            _proxy.Invoke("GetData", dataSourcePath, filterRules ?? new FilterRule[0]);
+            _proxy.Invoke("GetData",_connection.ConnectionId, dataSourcePath, filterRules ?? new FilterRule[0]);
             return subject.ToEnumerable();
         }
 
