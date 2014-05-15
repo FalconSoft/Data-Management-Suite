@@ -73,8 +73,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             if (deleted != null || changedRecords != null)
             {
-                lock (_initializationLock)
-                {
+                
                     _onSuccessAction = onSuccess;
                     _onFailedAction = onFail;
                     var are = new AutoResetEvent(false);
@@ -91,7 +90,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                         DeleteServerCall(_connection.ConnectionId, dataSourcePath, deleted);
                     if (changedRecords != null)
                         ChangeRecordsServerCall(_connection.ConnectionId, dataSourcePath, changedRecords);
-                }
+                
             }
         }
 

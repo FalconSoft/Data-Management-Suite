@@ -60,11 +60,30 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
                 if (_toDelteSubjects.ContainsKey(dataSourcePath))
                 {
-                    SubmitChangesDeleteFinilize(connectionId, dataSourcePath);
+                    if (_workingTasks.ContainsKey(dataSourcePath))
+                        _workingTasks.Remove(dataSourcePath);
+                    _toDelteSubjects.Remove(dataSourcePath);
+                    _onDeleteCompleteCall.Remove(dataSourcePath);
+                    _toDeleteCounter.Remove(dataSourcePath);
+                    _toDeleteCount.Remove(dataSourcePath);
+                    _onDeleteNextCall.Remove(dataSourcePath);
+
+                    if (_connectionIDictionary.ContainsKey(connectionId))
+                        _connectionIDictionary.Remove(connectionId);
                 }
+
                 if (_toUpdateSubjects.ContainsKey(dataSourcePath))
                 {
-                    SubmitChangesChangeRecordFinilize(connectionId, dataSourcePath);
+                    if (_workingTasks.ContainsKey(dataSourcePath))
+                        _workingTasks.Remove(dataSourcePath);
+                    _toUpdateSubjects.Remove(dataSourcePath);
+                    _onUpdateCompleteCall.Remove(dataSourcePath);
+                    _toUpdateCounter.Remove(dataSourcePath);
+                    _toUpdateCount.Remove(dataSourcePath);
+                    _onUpdateNextCall.Remove(dataSourcePath);
+
+                    if (_connectionIDictionary.ContainsKey(connectionId))
+                        _connectionIDictionary.Remove(connectionId);
                 }
             }
             return base.OnDisconnected();
@@ -73,11 +92,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         public void InitilizeSubmit(string connectionId, string dataSourceInfoPath, string comment, bool isChangeDataNull,
             bool isDeleteDataNull)
         {
-            lock (_initializeLock)
-            {
-                Trace.WriteLine("   Init complete");
-                Trace.WriteLine("");
-                _connectionIDictionary.Add(connectionId, dataSourceInfoPath);
+           _connectionIDictionary.Add(connectionId, dataSourceInfoPath);
                 if (!isDeleteDataNull)
                 {
                     _toDelteSubjects.Add(dataSourceInfoPath, new Subject<string>());
@@ -101,27 +116,25 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     var _comment = string.Copy(comment);
                     var _isDeleteDataNull = isDeleteDataNull;
                     var _isChangeDataNull = isChangeDataNull;
-                    var deleteEnumerator = _isDeleteDataNull
-                        ? null
-                        : _toDelteSubjects[_dataSourceInfoPath].ToEnumerable();
+                    var deleteEnumerator = _isDeleteDataNull ? null : _toDelteSubjects[_dataSourceInfoPath].ToEnumerable();
                     var changeRecord = _isChangeDataNull ? null : _toUpdateSubjects[_dataSourceInfoPath].ToEnumerable();
                     var deleteToArray = deleteEnumerator != null ? deleteEnumerator.ToArray() : null;
                     var changedRecordsToArray = changeRecord != null ? changeRecord.ToArray() : null;
 
                     _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
                         changedRecordsToArray, deleteToArray,
-                        r => _revisionInfos.Add(_dataSourceInfoPath, r),
+                        r => Clients.Client(connectionId).OnSuccess(r),
                         ex => Clients.Client(connectionId.ToString()).OnFail(ex));
                 });
 
                 _workingTasks.Add(dataSourceInfoPath, task);
                 Clients.Client(connectionId).InitilizeComplete();
-            }
+            
         }
 
         public void SubmitChangesDeleteOnNext(string connectionId, string dataSourceInfoPath, string toDeleteKey)
         {
-            LockSubmitChangesDeleteCall(dataSourceInfoPath, toDeleteKey);
+            LockSubmitChangesDeleteCall(connectionId, dataSourceInfoPath, toDeleteKey);
         }
 
         public void SubmitChangesDeleteOnComplete(string connectionId, string dataSourceInfoPath)
@@ -142,19 +155,16 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void SubmitChangesChangeRecordsOnNext(string connectionId, string dataSourceInfoPath, Dictionary<string, object> changedRecord)
         {
-            Trace.WriteLine("   On next");
             LockSubmitChangesChangeRecordCall(connectionId, dataSourceInfoPath,changedRecord);
         }
 
         public void SubmitChangesChangeRecordsOnComplete(string connectionId, string dataSourceInfoPath)
         {
-            Trace.WriteLine("   On Coplete");
             LockSubmitChangesChangeRecordCall(connectionId, dataSourceInfoPath);
         }
 
         public void SubmitChangesChangeRecordsOnFinish(string connectionId, string dataSourceInfoPath, int count)
         {
-            Trace.WriteLine("   On Finish");
             _toUpdateCount[dataSourceInfoPath] = count;
             SubmitChangesChangeRecordFinilize(connectionId, dataSourceInfoPath);
         }
@@ -187,7 +197,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         {
             if (changedRecord != null)
             {
-
                 _toUpdateSubjects[dataSourceInfoPath].OnNext(changedRecord);
                 _toUpdateCounter[dataSourceInfoPath]++;
                 _onUpdateNextCall[dataSourceInfoPath] = true;
@@ -207,21 +216,21 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             {
                 _toUpdateSubjects[dataSourceInfoPath].OnCompleted();
                 if (!_workingTasks[dataSourceInfoPath].IsCompleted)
-                    _workingTasks[dataSourceInfoPath].Wait();
-                Clients.Client(connectionId).OnSuccess(_revisionInfos[dataSourceInfoPath]);
+                    _workingTasks[dataSourceInfoPath].ContinueWith(t =>
+                    {
+                        //Clients.Client(connectionId).OnSuccess(_revisionInfos[dataSourceInfoPath]);
 
-                _revisionInfos.Remove(dataSourceInfoPath);
-                _workingTasks.Remove(dataSourceInfoPath);
-                _toUpdateSubjects.Remove(dataSourceInfoPath);
-                _onUpdateCompleteCall.Remove(dataSourceInfoPath);
-                _toUpdateCounter.Remove(dataSourceInfoPath);
-                _toUpdateCount.Remove(dataSourceInfoPath);
-                _onUpdateNextCall.Remove(dataSourceInfoPath);
+                        //_revisionInfos.Remove(dataSourceInfoPath);
+                        _workingTasks.Remove(dataSourceInfoPath);
+                        _toUpdateSubjects.Remove(dataSourceInfoPath);
+                        _onUpdateCompleteCall.Remove(dataSourceInfoPath);
+                        _toUpdateCounter.Remove(dataSourceInfoPath);
+                        _toUpdateCount.Remove(dataSourceInfoPath);
+                        _onUpdateNextCall.Remove(dataSourceInfoPath);
 
-                if (_connectionIDictionary.ContainsKey(connectionId))
-                    _connectionIDictionary.Remove(connectionId);
-                Trace.WriteLine("   Submit Finilized");
-                Trace.WriteLine("");
+                        if (_connectionIDictionary.ContainsKey(connectionId))
+                            _connectionIDictionary.Remove(connectionId);
+                    });
             }
         }
 
@@ -231,18 +240,20 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             {
                 _toDelteSubjects[dataSourceInfoPath].OnCompleted();
                 if (!_workingTasks[dataSourceInfoPath].IsCompleted)
-                    _workingTasks[dataSourceInfoPath].Wait();
-                Clients.Client(connectionId).OnSuccess(_revisionInfos[dataSourceInfoPath]);
-                
-                _revisionInfos.Remove(dataSourceInfoPath);
-                _workingTasks.Remove(dataSourceInfoPath);
-                _toDelteSubjects.Remove(dataSourceInfoPath);
-                _onDeleteCompleteCall.Remove(dataSourceInfoPath);
-                _toDeleteCounter.Remove(dataSourceInfoPath);
-                _toDeleteCount.Remove(dataSourceInfoPath);
+                    _workingTasks[dataSourceInfoPath].ContinueWith(t =>
+                    {
+                        //Clients.Client(connectionId).OnSuccess(_revisionInfos[dataSourceInfoPath]);
 
-                if (_connectionIDictionary.ContainsKey(connectionId))
-                    _connectionIDictionary.Remove(connectionId);
+                        //_revisionInfos.Remove(dataSourceInfoPath);
+                        _workingTasks.Remove(dataSourceInfoPath);
+                        _toDelteSubjects.Remove(dataSourceInfoPath);
+                        _onDeleteCompleteCall.Remove(dataSourceInfoPath);
+                        _toDeleteCounter.Remove(dataSourceInfoPath);
+                        _toDeleteCount.Remove(dataSourceInfoPath);
+                        _onDeleteNextCall.Remove(dataSourceInfoPath);
+                        if (_connectionIDictionary.ContainsKey(connectionId))
+                            _connectionIDictionary.Remove(connectionId);
+                    });
             }
         }
 
