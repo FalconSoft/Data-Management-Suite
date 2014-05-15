@@ -267,7 +267,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
         {
             if (fieldName == "RecordKey") return bsonValue.ToString();
             var dataType = _dataSourceInfo.Fields.First(f => f.Key == fieldName).Value.DataType;
-            if (string.IsNullOrEmpty(bsonValue.ToString())) return null;
+            if (string.IsNullOrEmpty(bsonValue.ToString()) || bsonValue.ToString() == "BsonNull") return null;
             switch (dataType)
             {
                 case DataTypes.Int:
