@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace FalconSoft.ReactiveWorksheets.Common.Metadata
@@ -41,6 +42,20 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                     dataSource.Fields.Add(parentField.Name, parentField);
             }
             return dataSource;
+        }
+
+        public static IEnumerable<string> ResolveDataSourceParentUrnsRevers(this string dataSourceUrn, DataSourceInfo[] dataSources)
+        {
+            if (string.IsNullOrEmpty(dataSources.First(x=>x.DataSourcePath == dataSourceUrn).ParentDataSourcePath)) return new[]{dataSourceUrn};
+            var list = new List<string> {dataSourceUrn};
+            var ds = (DataSourceInfo)dataSources.First(x => x.DataSourcePath == dataSourceUrn).Clone();
+            while (!string.IsNullOrEmpty(ds.ParentDataSourcePath))
+            {
+                ds = (DataSourceInfo) dataSources.First(x => x.DataSourcePath == ds.ParentDataSourcePath).Clone();
+                list.Add(ds.DataSourcePath);
+            }
+            list.Reverse();
+            return list;
         }
 
         private static IEnumerable<FieldInfo> GetParentFields(DataSourceInfo dataSourceInfo, Dictionary<string, DataSourceInfo> dataSources)

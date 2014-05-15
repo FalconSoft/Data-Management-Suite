@@ -39,7 +39,7 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 cursor = collection.FindAs<BsonDocument>(qwraper);
             }
             var data = cursor.SetFields(Fields.Exclude("_id"));
-            var listOfRecords = data.Select( bsdocumnet =>
+            var listOfRecords = data.Select(bsdocumnet =>
                     bsdocumnet.ToDictionary(doc => doc.Name, doc => ToStrongTypedObject(doc.Value, doc.Name)))
                     .ToList();
             return listOfRecords;
@@ -67,12 +67,15 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         /// <param name="comment">Some Nice Comment :-)</param>
         /// <returns></returns>
         private RevisionInfo SubmitChangesHelper(IEnumerable<Dictionary<string, object>> recordsToChange,
-            IEnumerable<string> recordsToDelete,string providerString, string comment = null)
+            IEnumerable<string> recordsToDelete, string providerString, string comment = null)
         {
             var collection = GetCollection(providerString.ToValidDbString() + "_Data");
-            UpdateRecords(recordsToChange, collection);
-            DeleteRecords(recordsToDelete, collection);
-            return  new RevisionInfo();
+            var isDeleted = DeleteRecords(recordsToDelete, collection);
+            var isUpdated = UpdateRecords(recordsToChange, collection);
+            return new RevisionInfo
+            {
+                IsSuccessfull = isUpdated || isDeleted
+            };
         }
         private string ConvertToMongoOperations(Operations operation, string value)
         {
@@ -123,7 +126,6 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
             return query;
         }
 
-
         private object ToStrongTypedObject(BsonValue bsonValue, string fieldName)
         {
             var dataType = DataSourceInfo.Fields.First(f => f.Key == fieldName).Value.DataType;
@@ -170,21 +172,27 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
             }
         }
 
-        private void DeleteRecords(IEnumerable<string> recordsToDelete, MongoCollection<BsonDocument> collection)
+        private bool DeleteRecords(IEnumerable<string> recordsToDelete, MongoCollection<BsonDocument> collection)
         {
+            var isSuccessful = false;
             foreach (var record in recordsToDelete)
             {
                 var queryDoc = new QueryDocument();
                 foreach (var keyFieldName in DataSourceInfo.GetKeyFieldsName())
                 {
-                    queryDoc.Add(keyFieldName, ToBsonValue(record.Replace("|",""),keyFieldName)); //TODO TEST this
+                    queryDoc.Add(keyFieldName, ToBsonValue(record.Replace("|", ""), keyFieldName)); //TODO TEST this
                 }
+                var result = collection.Find(queryDoc);
+                if (!result.Any()) continue;
+                isSuccessful = true;
                 collection.Remove(queryDoc);
             }
+            return isSuccessful;
         }
 
-        private void UpdateRecords(IEnumerable<IDictionary<string, object>> recordsToUpdate, MongoCollection<BsonDocument> collection)
+        private bool UpdateRecords(IEnumerable<IDictionary<string, object>> recordsToUpdate, MongoCollection<BsonDocument> collection)
         {
+            var isSuccessful = false;
             foreach (var records in recordsToUpdate)
             {
                 var queryDoc = new QueryDocument();
@@ -196,6 +204,7 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 if (!result.Any())
                 {
                     collection.Insert(queryDoc);
+                    isSuccessful = true;
                 }
                 else if (!Equal(result.First(), records))
                 {
@@ -203,8 +212,10 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                     {
                         collection.Update(CreateFindKeyQuery(records), Update.Set(q.Name, q.Value));
                     }
+                    isSuccessful = true;
                 }
             }
+            return isSuccessful;
         }
 
         private MongoCollection<BsonDocument> GetCollection(string name)
@@ -220,12 +231,12 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         {
             return Query.And(DataSourceInfo.GetKeyFieldsName().Select(key => Query.EQ(key, ToBsonValue(record[key] != null ? record[key].ToString() : string.Empty, key))));
         }
-
+        
         private bool Equal(IEnumerable<BsonElement> doc, IDictionary<string, object> record)
         {
-            return !doc.Select(x=>x.Name).Any(x=>!record.ContainsKey(x)) 
-                && doc.Where(x=>x.Name!="_id")
-                .All(element => element.Value == ToBsonValue(record[element.Name] != null ? 
+            return !doc.Select(x => x.Name).Any(x => !record.ContainsKey(x))
+                && doc.Where(x => x.Name != "_id")
+                .All(element => element.Value == ToBsonValue(record[element.Name] != null ?
                     record[element.Name].ToString() : string.Empty, element.Name));
         }
     }

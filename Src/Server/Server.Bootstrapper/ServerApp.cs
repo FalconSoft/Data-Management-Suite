@@ -137,7 +137,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
                        (_dataProvidersCatalogs = AppDomainAssemblyTypeScanner.TypesOf(typeof(IDataProvidersCatalog)).Select(
                            x =>
                            {
-                               Logger.Info(string.Format("-> Load {0} dll with provider Catalogs", x.Name));
+                               Logger.Info(string.Format("-> Load {0} dll with provider Catalogs", x.FullName));
                                return (IDataProvidersCatalog) Activator.CreateInstance(x);
                            }).ToArray());
             }
