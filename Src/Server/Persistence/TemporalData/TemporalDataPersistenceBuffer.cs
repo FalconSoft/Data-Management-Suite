@@ -65,7 +65,10 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                     foreach (var data in bsondocument.ToBsonDocument())
                     {
                         if (_dbfields.All(a => a != data.Name))
+                        {
+                            if (!_dataSourceInfo.Fields.ContainsKey(data.Name)) continue;
                             dict.Add(data.Name, ToStrongTypedObject(data.Value, data.Name));
+                        }
                     }
                     list.Add(dict);
                 }
@@ -98,7 +101,10 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                     foreach (var data in bsondocument.ToBsonDocument())
                     {
                         if (_dbfields.All(a => a != data.Name))
+                        {
+                            if (!_dataSourceInfo.Fields.ContainsKey(data.Name)) continue;
                             dict.Add(data.Name, ToStrongTypedObject(data.Value, data.Name));
+                        }
                     }
                     list.Add(dict);
                 }
@@ -122,7 +128,10 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                     foreach (var data in j1.ToBsonDocument())
                     {
                         if (exceptfields.All(a => a != data.Name))
+                        {
+                            if(!_dataSourceInfo.Fields.ContainsKey(data.Name)) continue;
                             dict.Add(data.Name, ToStrongTypedObject(data.Value, data.Name));
+                        }
                     }
                     list.Add(dict);
                     return j2;
