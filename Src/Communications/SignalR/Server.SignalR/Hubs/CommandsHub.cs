@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
-using FalconSoft.ReactiveWorksheets.Common;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
@@ -26,10 +24,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         private readonly Dictionary<string, bool> _onDeleteCompleteCall;
         private readonly Dictionary<string, bool> _onUpdateCompleteCall;
         private readonly Dictionary<string, bool> _onUpdateNextCall;
-        private readonly Dictionary<string, bool> _onDeleteNextCall; 
-        private readonly Dictionary<string, RevisionInfo> _revisionInfos;
-        private readonly Dictionary<string, string> _connectionIDictionary; 
-        private readonly object _initializeLock = new object();
+        private readonly Dictionary<string, bool> _onDeleteNextCall;
+        private readonly Dictionary<string, string> _connectionIDictionary;
 
         public CommandsHub(ICommandFacade commandFacade)
         {
@@ -45,7 +41,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _onUpdateCompleteCall = new Dictionary<string, bool>();
             _onUpdateNextCall = new Dictionary<string, bool>();
             _onDeleteNextCall = new Dictionary<string, bool>();
-            _revisionInfos = new Dictionary<string, RevisionInfo>();
             _commandFacade = commandFacade;
         }
 
@@ -124,12 +119,11 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
                         changedRecordsToArray, deleteToArray,
                         r => Clients.Client(connectionId).OnSuccess(r),
-                        ex => Clients.Client(connectionId.ToString()).OnFail(ex));
+                        ex => Clients.Client(connectionId).OnFail(ex));
                 });
 
                 _workingTasks.Add(dataSourceInfoPath, task);
                 Clients.Client(connectionId).InitilizeComplete();
-            
         }
 
         public void SubmitChangesDeleteOnNext(string connectionId, string dataSourceInfoPath, string toDeleteKey)
@@ -218,9 +212,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 if (!_workingTasks[dataSourceInfoPath].IsCompleted)
                     _workingTasks[dataSourceInfoPath].ContinueWith(t =>
                     {
-                        //Clients.Client(connectionId).OnSuccess(_revisionInfos[dataSourceInfoPath]);
-
-                        //_revisionInfos.Remove(dataSourceInfoPath);
                         _workingTasks.Remove(dataSourceInfoPath);
                         _toUpdateSubjects.Remove(dataSourceInfoPath);
                         _onUpdateCompleteCall.Remove(dataSourceInfoPath);
@@ -242,9 +233,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 if (!_workingTasks[dataSourceInfoPath].IsCompleted)
                     _workingTasks[dataSourceInfoPath].ContinueWith(t =>
                     {
-                        //Clients.Client(connectionId).OnSuccess(_revisionInfos[dataSourceInfoPath]);
-
-                        //_revisionInfos.Remove(dataSourceInfoPath);
                         _workingTasks.Remove(dataSourceInfoPath);
                         _toDelteSubjects.Remove(dataSourceInfoPath);
                         _onDeleteCompleteCall.Remove(dataSourceInfoPath);

@@ -138,25 +138,25 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void GetDataChanges(string connectionId, string dataSourcePath, FilterRule[] filterRules)
         {
-            Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(localConnectionId =>
             {
                var providerString = string.Copy(dataSourcePath);
 
-                Groups.Add(connectionId, providerString);
-                _dataSourcePathDictionary[connectionId] = providerString;
+               Groups.Add(localConnectionId.ToString(), providerString);
+                _dataSourcePathDictionary[localConnectionId.ToString()] = providerString;
 
                 Trace.WriteLine(
                     string.Format("   GetDataChanges  ConnectionId : {0} , DataSourceName : {1} , IsBackGround {2}",
-                        connectionId, dataSourcePath, Thread.CurrentThread.IsBackground));
+                        localConnectionId.ToString(), dataSourcePath, Thread.CurrentThread.IsBackground));
 
-                if (!_getDataChangesDisposables.ContainsKey(connectionId))
-                    _getDataChangesDisposables.Add(connectionId,new CompositeDisposable());
+                if (!_getDataChangesDisposables.ContainsKey(localConnectionId.ToString()))
+                    _getDataChangesDisposables.Add(localConnectionId.ToString(), new CompositeDisposable());
                     var disposable = _reactiveDataQueryFacade.GetDataChanges(providerString,
                         filterRules.Any() ? filterRules : null)
-                        .Subscribe(recordChangedParams => Clients.Client(connectionId.ToString()).GetDataChangesOnNext(recordChangedParams));
-                _getDataChangesDisposables[connectionId].Add(disposable);
+                        .Subscribe(recordChangedParams => Clients.Client(localConnectionId.ToString()).GetDataChangesOnNext(recordChangedParams));
+                    _getDataChangesDisposables[localConnectionId.ToString()].Add(disposable);
 
-            });
+            },string.Copy(connectionId));
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord,string dataSourceUrn)
@@ -165,6 +165,21 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 (str, rcp) => Clients.Caller.ResolveRecordbyForeignKeySuccess(str, rcp),
                 (str, ex) => Clients.Caller.ResolveRecordbyForeignKeyFailed(str, ex));
         }
-       
+
+        private RecordChangedParam CopyRecordChangedParam(RecordChangedParam param)
+        {
+            return new RecordChangedParam
+            {
+                ChangeSource = param.ChangeSource,
+                ChangedAction = param.ChangedAction,
+                ChangedPropertyNames = param.ChangedPropertyNames,
+                IgnoreWorksheet = param.IgnoreWorksheet,
+                OriginalRecordKey = param.OriginalRecordKey,
+                ProviderString = param.ProviderString,
+                RecordKey = param.RecordKey,
+                RecordValues = new Dictionary<string, object>(param.RecordValues),
+                UserToken = param.UserToken
+            };
+        }
     }
 }
