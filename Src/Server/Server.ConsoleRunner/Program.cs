@@ -52,7 +52,7 @@ namespace ReactiveWorksheets.Server.ConsoleRunner
             GlobalHost.DependencyResolver.Register(typeof(MetaDataHub), () => metaDataHub);
             GlobalHost.DependencyResolver.Register(typeof(ReactiveDataQueryHub), () => reactiveDataQueryHub);
             GlobalHost.DependencyResolver.Register(typeof(TemporalDataQueryHub), () => temporalDataQueryHub);
-            GlobalHost.DependencyResolver.Register(typeof(SearchHub), () => searchHub);
+            GlobalHost.DependencyResolver.Register(typeof(SearchHub), () => searchHub); 
             GlobalHost.DependencyResolver.Register(typeof(SecurityHub), () => securityHub);
             
             var hubConfiguration = new HubConfiguration { EnableDetailedErrors = true, EnableCrossDomain = true};
