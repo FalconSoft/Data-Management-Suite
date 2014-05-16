@@ -164,5 +164,22 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 }
             }
         }
+
+        public static RecordChangedParam Clone(this RecordChangedParam recordChangedParam)
+        {
+            var changedParam = new RecordChangedParam()
+            {
+                ChangeSource = recordChangedParam.ChangeSource,
+                UserToken = recordChangedParam.UserToken,
+                RecordValues = new Dictionary<string, object>(recordChangedParam.RecordValues),
+                ChangedAction = recordChangedParam.ChangedAction,
+                RecordKey = recordChangedParam.RecordKey,
+                ProviderString = recordChangedParam.ProviderString,
+                ChangedPropertyNames = new List<string>(recordChangedParam.ChangedPropertyNames).ToArray(),
+                IgnoreWorksheet = recordChangedParam.IgnoreWorksheet,
+                OriginalRecordKey = recordChangedParam.OriginalRecordKey,
+            };
+            return changedParam;
+        }
     }
 }
