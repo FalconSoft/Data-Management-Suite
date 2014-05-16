@@ -44,7 +44,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private Action<Exception> _getDataOnErrorAction;
 
         // For GetDataChanges method
-        private readonly Subject<RecordChangedParam[]> _getDataChangesSubject;
+        private readonly Subject<RecordChangedParam> _getDataChangesSubject;
 
         // For ResolveRecordbyForeignKey method
         private Action<string, RecordChangedParam[]> _resolveRecordbyForeignKeySuccessAction;
@@ -55,7 +55,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             if (_initialiseLock == null)
                 _initialiseLock = new object();
 
-            _getDataChangesSubject = new Subject<RecordChangedParam[]>();
+            _getDataChangesSubject = new Subject<RecordChangedParam>();
             _connectionString = connectionString;
             InitialiseConnection(connectionString);
         }
@@ -128,7 +128,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 });
 
                 // For GetDataChanges method
-                _proxy.On<RecordChangedParam[]>("GetDataChangesOnNext", data =>
+                _proxy.On<RecordChangedParam>("GetDataChangesOnNext", data =>
                 {
                     _getDataChangesSubject.OnNext(data);
                 });
@@ -211,7 +211,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public IObservable<RecordChangedParam[]> GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null)
         {
-            var subject = new Subject<RecordChangedParam[]>();
+            var subject = new Subject<RecordChangedParam>();
             _getDataChangesSubject.Subscribe(data => subject.OnNext(data),
                 ex => subject.OnError(ex),
                 () => subject.OnCompleted());
@@ -219,7 +219,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             var func = new Func<IObserver<RecordChangedParam[]>, IDisposable>(subj =>
             {
                 var providerString = string.Copy(dataSourcePath);
-                var disp = subject.Subscribe(subj);
+                var disp = subject.Buffer(TimeSpan.FromMilliseconds(200))
+                    .Select(items=>items.ToArray())
+                    .Subscribe(subj);
                 
                 var whereCondition = filterRules != null
                     ? filterRules.Select(CopyFilterRule).ToArray()

@@ -21,7 +21,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         private readonly ILogger _logger;
         private readonly Dictionary<string, CompositeDisposable> _getDataChangesDisposables;
         private readonly Dictionary<string, string> _dataSourcePathDictionary;
-        private readonly object _getDataChangesLock = new object();
+
         public override Task OnConnected()
         {
             Trace.WriteLine("   Connected : " + Context.ConnectionId);
@@ -34,13 +34,9 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         {
             var connectionId = string.Copy(Context.ConnectionId);
             Trace.WriteLine("   Disconnected : " + connectionId);
-            if (_dataSourcePathDictionary.ContainsKey(connectionId))
+            if (_getDataChangesDisposables.ContainsKey(connectionId))
             {
-                if (_dataSourcePathDictionary.ContainsKey(connectionId))
-                {
-                    Groups.Remove(Context.ConnectionId, _dataSourcePathDictionary[connectionId]);
-                    _dataSourcePathDictionary.Remove(connectionId);
-                }
+                
                 _getDataChangesDisposables[connectionId].Dispose();
                 _getDataChangesDisposables.Remove(connectionId);
                 _logger.Info("remove subscribe for " + connectionId);
@@ -140,10 +136,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         {
             Task.Factory.StartNew(localConnectionId =>
             {
-               var providerString = string.Copy(dataSourcePath);
-
-               Groups.Add(localConnectionId.ToString(), providerString);
-                _dataSourcePathDictionary[localConnectionId.ToString()] = providerString;
+                var providerString = string.Copy(dataSourcePath);
 
                 Trace.WriteLine(
                     string.Format("   GetDataChanges  ConnectionId : {0} , DataSourceName : {1} , IsBackGround {2}",
@@ -151,12 +144,20 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
                 if (!_getDataChangesDisposables.ContainsKey(localConnectionId.ToString()))
                     _getDataChangesDisposables.Add(localConnectionId.ToString(), new CompositeDisposable());
-                    var disposable = _reactiveDataQueryFacade.GetDataChanges(providerString,
-                        filterRules.Any() ? filterRules : null)
-                        .Subscribe(recordChangedParams => Clients.Client(localConnectionId.ToString()).GetDataChangesOnNext(recordChangedParams));
-                    _getDataChangesDisposables[localConnectionId.ToString()].Add(disposable);
 
-            },string.Copy(connectionId));
+                var disposable = _reactiveDataQueryFacade.GetDataChanges(providerString,
+                    filterRules.Any() ? filterRules : null)
+                    .Subscribe(recordChangedParams =>
+                    {
+                        foreach (var recordChangedParam in recordChangedParams)
+                        {
+                            Clients.Client(localConnectionId.ToString()).GetDataChangesOnNext(recordChangedParam);
+                        }
+                    });
+
+                _getDataChangesDisposables[localConnectionId.ToString()].Add(disposable);
+
+            }, string.Copy(connectionId));
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord,string dataSourceUrn)
