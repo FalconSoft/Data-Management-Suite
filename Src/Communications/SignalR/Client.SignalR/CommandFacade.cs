@@ -101,15 +101,15 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 var count = 0;
                 foreach (var keyToDelete in deleted)
                 {
-                    _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, dataSourcePath, keyToDelete);
+                    _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, keyToDelete);
                     ++count;
                 }
-                _proxy.Invoke("SubmitChangesDeleteOnFinish", connectionId, dataSourcePath, count);
-                _proxy.Invoke("SubmitChangesDeleteOnComplete", connectionId, dataSourcePath);
+                _proxy.Invoke("SubmitChangesDeleteOnFinish", connectionId, count);
+                _proxy.Invoke("SubmitChangesDeleteOnComplete", connectionId);
             }
             catch (Exception ex)
             {
-                _proxy.Invoke("SubmitChangesDeleteOnError",dataSourcePath,ex);
+                _proxy.Invoke("SubmitChangesDeleteOnError", connectionId, ex);
                 throw;
             }
         }
@@ -122,15 +122,15 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 var count = 0;
                 foreach (var dataToUpdate in changedRecords)
                 {
-                    _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, dataSourcePath, dataToUpdate);
+                    _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, dataToUpdate);
                     ++count;
                 }
-                _proxy.Invoke("SubmitChangesChangeRecordsOnFinish", connectionId, dataSourcePath, count);
-                _proxy.Invoke("SubmitChangesChangeRecordsOnComplete", connectionId, dataSourcePath);
+                _proxy.Invoke("SubmitChangesChangeRecordsOnFinish", connectionId,  count);
+                _proxy.Invoke("SubmitChangesChangeRecordsOnComplete", connectionId);
             }
             catch (Exception ex)
             {
-                _proxy.Invoke("SubmitChangesChangeRecordsOnError",dataSourcePath, ex);
+                _proxy.Invoke("SubmitChangesChangeRecordsOnError", connectionId, ex);
                 throw;
             }
         }
