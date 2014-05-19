@@ -56,29 +56,29 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
                 _connectionIDictionary.Remove(connectionId);
 
-                if (_toDelteSubjects.ContainsKey(dataSourcePath))
+                if (_toDelteSubjects.ContainsKey(connectionId))
                 {
-                    if (_workingTasks.ContainsKey(dataSourcePath))
-                        _workingTasks.Remove(dataSourcePath);
-                    _toDelteSubjects.Remove(dataSourcePath);
-                    _onDeleteCompleteCall.Remove(dataSourcePath);
-                    _toDeleteCounter.Remove(dataSourcePath);
-                    _toDeleteCount.Remove(dataSourcePath);
-                    _onDeleteNextCall.Remove(dataSourcePath);
+                    if (_workingTasks.ContainsKey(connectionId))
+                        _workingTasks.Remove(connectionId);
+                    _toDelteSubjects.Remove(connectionId);
+                    _onDeleteCompleteCall.Remove(connectionId);
+                    _toDeleteCounter.Remove(connectionId);
+                    _toDeleteCount.Remove(connectionId);
+                    _onDeleteNextCall.Remove(connectionId);
 
                     if (_connectionIDictionary.ContainsKey(connectionId))
                         _connectionIDictionary.Remove(connectionId);
                 }
 
-                if (_toUpdateSubjects.ContainsKey(dataSourcePath))
+                if (_toUpdateSubjects.ContainsKey(connectionId))
                 {
-                    if (_workingTasks.ContainsKey(dataSourcePath))
-                        _workingTasks.Remove(dataSourcePath);
-                    _toUpdateSubjects.Remove(dataSourcePath);
-                    _onUpdateCompleteCall.Remove(dataSourcePath);
-                    _toUpdateCounter.Remove(dataSourcePath);
-                    _toUpdateCount.Remove(dataSourcePath);
-                    _onUpdateNextCall.Remove(dataSourcePath);
+                    if (_workingTasks.ContainsKey(connectionId))
+                        _workingTasks.Remove(connectionId);
+                    _toUpdateSubjects.Remove(connectionId);
+                    _onUpdateCompleteCall.Remove(connectionId);
+                    _toUpdateCounter.Remove(connectionId);
+                    _toUpdateCount.Remove(connectionId);
+                    _onUpdateNextCall.Remove(connectionId);
 
                     if (_connectionIDictionary.ContainsKey(connectionId))
                         _connectionIDictionary.Remove(connectionId);
@@ -94,19 +94,19 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _connectionIDictionary.Add(connectionId, dataSourceInfoPath);
             if (!isDeleteDataNull)
             {
-                _toDelteSubjects.Add(dataSourceInfoPath, new Subject<string>());
-                _toDeleteCounter.Add(dataSourceInfoPath, 0);
-                _toDeleteCount.Add(dataSourceInfoPath, 0);
-                _onDeleteCompleteCall.Add(dataSourceInfoPath, false);
-                _onDeleteNextCall.Add(dataSourceInfoPath, false);
+                _toDelteSubjects.Add(connectionId, new Subject<string>());
+                _toDeleteCounter.Add(connectionId, 0);
+                _toDeleteCount.Add(connectionId, 0);
+                _onDeleteCompleteCall.Add(connectionId, false);
+                _onDeleteNextCall.Add(connectionId, false);
             }
             if (!isChangeDataNull)
             {
-                _toUpdateSubjects.Add(dataSourceInfoPath, new Subject<Dictionary<string, object>>());
-                _toUpdateCounter.Add(dataSourceInfoPath, 0);
-                _toUpdateCount.Add(dataSourceInfoPath, 0);
-                _onUpdateCompleteCall.Add(dataSourceInfoPath, false);
-                _onUpdateNextCall.Add(dataSourceInfoPath, false);
+                _toUpdateSubjects.Add(connectionId, new Subject<Dictionary<string, object>>());
+                _toUpdateCounter.Add(connectionId, 0);
+                _toUpdateCount.Add(connectionId, 0);
+                _onUpdateCompleteCall.Add(connectionId, false);
+                _onUpdateNextCall.Add(connectionId, false);
             }
 
 
@@ -115,8 +115,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             var _isDeleteDataNull = isDeleteDataNull;
             var _isChangeDataNull = isChangeDataNull;
 
-            var deleteEnumerator = _isDeleteDataNull ? null : _toDelteSubjects[_dataSourceInfoPath].ToEnumerable();
-            var changeRecord = _isChangeDataNull ? null : _toUpdateSubjects[_dataSourceInfoPath].ToEnumerable();
+            var deleteEnumerator = _isDeleteDataNull ? null : _toDelteSubjects[connectionId].ToEnumerable();
+            var changeRecord = _isChangeDataNull ? null : _toUpdateSubjects[connectionId].ToEnumerable();
 
             var task = Task.Factory.StartNew(() =>
             {
@@ -131,133 +131,133 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     ex => Clients.Client(connectionId).OnFail(ex));
             });
 
-            _workingTasks.Add(dataSourceInfoPath, task);
+            _workingTasks.Add(connectionId, task);
             Clients.Client(connectionId).InitilizeComplete();
         }
 
-        public void SubmitChangesDeleteOnNext(string connectionId, string dataSourceInfoPath, string toDeleteKey)
+        public void SubmitChangesDeleteOnNext(string connectionId, string toDeleteKey)
         {
-            LockSubmitChangesDeleteCall(connectionId, dataSourceInfoPath, toDeleteKey);
+            LockSubmitChangesDeleteCall(connectionId, toDeleteKey);
         }
 
-        public void SubmitChangesDeleteOnComplete(string connectionId, string dataSourceInfoPath)
+        public void SubmitChangesDeleteOnComplete(string connectionId)
         {
-            LockSubmitChangesDeleteCall(connectionId, dataSourceInfoPath);
+            LockSubmitChangesDeleteCall(connectionId, connectionId);
         }
 
-        public void SubmitChangesDeleteOnFinish(string connectionId, string dataSourceInfoPath, int count)
+        public void SubmitChangesDeleteOnFinish(string connectionId, int count)
         {
-            _toDeleteCount[dataSourceInfoPath] = count;
-            SubmitChangesDeleteFinilize(connectionId, dataSourceInfoPath);
+            _toDeleteCount[connectionId] = count;
+            SubmitChangesDeleteFinilize(connectionId);
         }
 
-        public void SubmitChangesDeleteOnError(string dataSourceInfoPath, Exception ex)
+        public void SubmitChangesDeleteOnError(string connectionId, Exception ex)
         {
-            _toDelteSubjects[dataSourceInfoPath].OnError(ex);
+            _toDelteSubjects[connectionId].OnError(ex);
         }
 
-        public void SubmitChangesChangeRecordsOnNext(string connectionId, string dataSourceInfoPath, Dictionary<string, object> changedRecord)
+        public void SubmitChangesChangeRecordsOnNext(string connectionId, Dictionary<string, object> changedRecord)
         {
-            LockSubmitChangesChangeRecordCall(connectionId, dataSourceInfoPath,changedRecord);
+            LockSubmitChangesChangeRecordCall(connectionId,changedRecord);
         }
 
-        public void SubmitChangesChangeRecordsOnComplete(string connectionId, string dataSourceInfoPath)
+        public void SubmitChangesChangeRecordsOnComplete(string connectionId)
         {
-            LockSubmitChangesChangeRecordCall(connectionId, dataSourceInfoPath);
+            LockSubmitChangesChangeRecordCall(connectionId);
         }
 
-        public void SubmitChangesChangeRecordsOnFinish(string connectionId, string dataSourceInfoPath, int count)
+        public void SubmitChangesChangeRecordsOnFinish(string connectionId, int count)
         {
-            _toUpdateCount[dataSourceInfoPath] = count;
-            SubmitChangesChangeRecordFinilize(connectionId, dataSourceInfoPath);
+            _toUpdateCount[connectionId] = count;
+            SubmitChangesChangeRecordFinilize(connectionId);
         }
 
-        public void SubmitChangesChangeRecordsOnError(string dataSourceInfoPath, Exception ex)
+        public void SubmitChangesChangeRecordsOnError(string connectionId, Exception ex)
         {
-            _toUpdateSubjects[dataSourceInfoPath].OnError(ex);
+            _toUpdateSubjects[connectionId].OnError(ex);
         }
 
 
-        private void LockSubmitChangesDeleteCall(string connectionId, string dataSourceInfoPath, string toDeleteKey = null)
+        private void LockSubmitChangesDeleteCall(string connectionId, string toDeleteKey = null)
         {
             if (toDeleteKey!=null)
             {
                 lock (_onDeleteCounterLock)
                 {
-                    _toDelteSubjects[dataSourceInfoPath].OnNext(toDeleteKey);
-                    ++_toDeleteCounter[dataSourceInfoPath];
-                    _onDeleteNextCall[dataSourceInfoPath] = true;
-                    SubmitChangesDeleteFinilize(connectionId, dataSourceInfoPath);
+                    _toDelteSubjects[connectionId].OnNext(toDeleteKey);
+                    ++_toDeleteCounter[connectionId];
+                    _onDeleteNextCall[connectionId] = true;
+                    SubmitChangesDeleteFinilize(connectionId);
                 }
             }
             else
             {
-                _onDeleteCompleteCall[dataSourceInfoPath] = true;
-                SubmitChangesDeleteFinilize(connectionId, dataSourceInfoPath);
+                _onDeleteCompleteCall[connectionId] = true;
+                SubmitChangesDeleteFinilize(connectionId);
             }
         }
 
 
-        private void LockSubmitChangesChangeRecordCall(string connectionId, string dataSourceInfoPath,
+        private void LockSubmitChangesChangeRecordCall(string connectionId,
             Dictionary<string, object> changedRecord = null)
         {
             if (changedRecord != null)
             {
                 lock (_onUpdateCounterLock)
                 {
-                    _toUpdateSubjects[dataSourceInfoPath].OnNext(changedRecord);
-                    ++_toUpdateCounter[dataSourceInfoPath];
-                    _onUpdateNextCall[dataSourceInfoPath] = true;
-                    SubmitChangesChangeRecordFinilize(connectionId, dataSourceInfoPath);
+                    _toUpdateSubjects[connectionId].OnNext(changedRecord);
+                    ++_toUpdateCounter[connectionId];
+                    _onUpdateNextCall[connectionId] = true;
+                    SubmitChangesChangeRecordFinilize(connectionId);
                 }
             }
             else
             {
-                _onUpdateCompleteCall[dataSourceInfoPath] = true;
-                SubmitChangesChangeRecordFinilize(connectionId, dataSourceInfoPath);
+                _onUpdateCompleteCall[connectionId] = true;
+                SubmitChangesChangeRecordFinilize(connectionId);
             }
         }
 
-        private void SubmitChangesChangeRecordFinilize(string connectionId, string dataSourceInfoPath)
+        private void SubmitChangesChangeRecordFinilize(string connectionId)
         {
-            if (_onUpdateNextCall[dataSourceInfoPath] &&
-                _onUpdateCompleteCall[dataSourceInfoPath] &&
-                (_toUpdateCounter[dataSourceInfoPath] == _toUpdateCount[dataSourceInfoPath]))
+            if (_onUpdateNextCall[connectionId] &&
+                _onUpdateCompleteCall[connectionId] &&
+                (_toUpdateCounter[connectionId] == _toUpdateCount[connectionId]))
             {
-                _toUpdateSubjects[dataSourceInfoPath].OnCompleted();
-                if (!_workingTasks[dataSourceInfoPath].IsCompleted)
-                    _workingTasks[dataSourceInfoPath].Wait();
+                _toUpdateSubjects[connectionId].OnCompleted();
+                if (!_workingTasks[connectionId].IsCompleted)
+                    _workingTasks[connectionId].Wait();
 
-                if (_workingTasks.ContainsKey(dataSourceInfoPath))
-                    _workingTasks.Remove(dataSourceInfoPath);
-                _toUpdateSubjects.Remove(dataSourceInfoPath);
-                _onUpdateCompleteCall.Remove(dataSourceInfoPath);
-                _toUpdateCounter.Remove(dataSourceInfoPath);
-                _toUpdateCount.Remove(dataSourceInfoPath);
-                _onUpdateNextCall.Remove(dataSourceInfoPath);
+                if (_workingTasks.ContainsKey(connectionId))
+                    _workingTasks.Remove(connectionId);
+                _toUpdateSubjects.Remove(connectionId);
+                _onUpdateCompleteCall.Remove(connectionId);
+                _toUpdateCounter.Remove(connectionId);
+                _toUpdateCount.Remove(connectionId);
+                _onUpdateNextCall.Remove(connectionId);
 
                 if (_connectionIDictionary.ContainsKey(connectionId))
                     _connectionIDictionary.Remove(connectionId);
             }
         }
 
-        private void SubmitChangesDeleteFinilize(string connectionId, string dataSourceInfoPath)
+        private void SubmitChangesDeleteFinilize(string connectionId)
         {
-            if (_toDelteSubjects.ContainsKey(dataSourceInfoPath) && _onDeleteNextCall[dataSourceInfoPath] &&
-                _onDeleteCompleteCall[dataSourceInfoPath] &&
-                (_toDeleteCounter[dataSourceInfoPath] == _toDeleteCount[dataSourceInfoPath]))
+            if (_toDelteSubjects.ContainsKey(connectionId) && _onDeleteNextCall[connectionId] &&
+                _onDeleteCompleteCall[connectionId] &&
+                (_toDeleteCounter[connectionId] == _toDeleteCount[connectionId]))
             {
-                _toDelteSubjects[dataSourceInfoPath].OnCompleted();
-                if (!_workingTasks[dataSourceInfoPath].IsCompleted)
-                    _workingTasks[dataSourceInfoPath].Wait();
+                _toDelteSubjects[connectionId].OnCompleted();
+                if (!_workingTasks[connectionId].IsCompleted)
+                    _workingTasks[connectionId].Wait();
 
-                if (_workingTasks.ContainsKey(dataSourceInfoPath))
-                    _workingTasks.Remove(dataSourceInfoPath);
-                _toDelteSubjects.Remove(dataSourceInfoPath);
-                _onDeleteCompleteCall.Remove(dataSourceInfoPath);
-                _toDeleteCounter.Remove(dataSourceInfoPath);
-                _toDeleteCount.Remove(dataSourceInfoPath);
-                _onDeleteNextCall.Remove(dataSourceInfoPath);
+                if (_workingTasks.ContainsKey(connectionId))
+                    _workingTasks.Remove(connectionId);
+                _toDelteSubjects.Remove(connectionId);
+                _onDeleteCompleteCall.Remove(connectionId);
+                _toDeleteCounter.Remove(connectionId);
+                _toDeleteCount.Remove(connectionId);
+                _onDeleteNextCall.Remove(connectionId);
                 if (_connectionIDictionary.ContainsKey(connectionId))
                     _connectionIDictionary.Remove(connectionId);
             }
