@@ -112,11 +112,9 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     var data = _reactiveDataQueryFacade.GetData(dataSourcePath,
                         filterRules.Any() ? filterRules : null);
 
-                    var i = 0;
                     foreach (var d in data)
                     {
                         Clients.Client(connectionId).GetDataOnNext(d);
-                        Console.Write(" \r{0}", i++);
                     }
 
 

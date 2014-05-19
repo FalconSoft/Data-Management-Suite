@@ -48,7 +48,6 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             {
                 if (_onInitilizeCompleteAction != null)
                     _onInitilizeCompleteAction();
-                Trace.WriteLine("   Inite complete return");
             });
 
             _startConnectionTask = _connection.Start();
@@ -103,7 +102,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 foreach (var keyToDelete in deleted)
                 {
                     _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, dataSourcePath, keyToDelete);
-                    count++;
+                    ++count;
                 }
                 _proxy.Invoke("SubmitChangesDeleteOnFinish", connectionId, dataSourcePath, count);
                 _proxy.Invoke("SubmitChangesDeleteOnComplete", connectionId, dataSourcePath);
@@ -124,7 +123,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 foreach (var dataToUpdate in changedRecords)
                 {
                     _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, dataSourcePath, dataToUpdate);
-                    count++;
+                    ++count;
                 }
                 _proxy.Invoke("SubmitChangesChangeRecordsOnFinish", connectionId, dataSourcePath, count);
                 _proxy.Invoke("SubmitChangesChangeRecordsOnComplete", connectionId, dataSourcePath);

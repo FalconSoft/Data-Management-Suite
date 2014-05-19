@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -27,6 +27,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         private readonly Dictionary<string, bool> _onUpdateNextCall;
         private readonly Dictionary<string, bool> _onDeleteNextCall;
         private readonly Dictionary<string, string> _connectionIDictionary;
+        private readonly object _onUpdateCounterLock = new object();
+        private readonly object _onDeleteCounterLock = new object();
 
         public CommandsHub(ICommandFacade commandFacade)
         {
@@ -122,7 +124,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator.ToArray() : null);
                 var changedRecordsToArray = changeRecordsTask.Result;
                 var deleteToArray = deleteToArrayTask.Result;
-
+                   
                 _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
                     changedRecordsToArray, deleteToArray,
                     r => Clients.Client(connectionId).OnSuccess(r),
@@ -180,10 +182,13 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         {
             if (toDeleteKey!=null)
             {
-                _toDelteSubjects[dataSourceInfoPath].OnNext(toDeleteKey);
-                _toDeleteCounter[dataSourceInfoPath]++;
-                _onDeleteNextCall[dataSourceInfoPath] = true;
-                SubmitChangesDeleteFinilize(connectionId, dataSourceInfoPath);
+                lock (_onDeleteCounterLock)
+                {
+                    _toDelteSubjects[dataSourceInfoPath].OnNext(toDeleteKey);
+                    ++_toDeleteCounter[dataSourceInfoPath];
+                    _onDeleteNextCall[dataSourceInfoPath] = true;
+                    SubmitChangesDeleteFinilize(connectionId, dataSourceInfoPath);
+                }
             }
             else
             {
@@ -198,12 +203,13 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         {
             if (changedRecord != null)
             {
-                Console.WriteLine("     Count : " + changedRecord.Count);
-                _toUpdateSubjects[dataSourceInfoPath].OnNext(changedRecord);
-                _toUpdateCounter[dataSourceInfoPath]++;
-                _onUpdateNextCall[dataSourceInfoPath] = true;
-                SubmitChangesChangeRecordFinilize(connectionId, dataSourceInfoPath);
-
+                lock (_onUpdateCounterLock)
+                {
+                    _toUpdateSubjects[dataSourceInfoPath].OnNext(changedRecord);
+                    ++_toUpdateCounter[dataSourceInfoPath];
+                    _onUpdateNextCall[dataSourceInfoPath] = true;
+                    SubmitChangesChangeRecordFinilize(connectionId, dataSourceInfoPath);
+                }
             }
             else
             {
@@ -214,7 +220,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         private void SubmitChangesChangeRecordFinilize(string connectionId, string dataSourceInfoPath)
         {
-            if (_toUpdateSubjects.ContainsKey(dataSourceInfoPath) && _onUpdateNextCall[dataSourceInfoPath] &&
+            if (_onUpdateNextCall[dataSourceInfoPath] &&
                 _onUpdateCompleteCall[dataSourceInfoPath] &&
                 (_toUpdateCounter[dataSourceInfoPath] == _toUpdateCount[dataSourceInfoPath]))
             {
