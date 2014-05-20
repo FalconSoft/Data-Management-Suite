@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.ReactiveWorksheets.Common;
@@ -20,7 +19,6 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private Action<RevisionInfo> _onSuccessAction;
         private Action<Exception> _onFailedAction;
         private Action _onInitilizeCompleteAction;
-        private readonly object _initializationLock = new object();
 
         public CommandFacade(string connectionString)
         {
@@ -60,40 +58,41 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public void SubmitChanges<T>(string dataSourcePath, string comment, IEnumerable<T> changedRecords = null,
             IEnumerable<string> deleted = null, Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null,
-            Action<string, string> onValidationError = null)
-        {
-            throw new NotImplementedException();
-        }
+            Action<string, string> onNotification = null) { }
 
         public void SubmitChanges(string dataSourcePath, string comment,
             IEnumerable<Dictionary<string, object>> changedRecords = null, IEnumerable<string> deleted = null,
             Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null,
-            Action<string, string> onValidationError = null)
+            Action<string, string> onNotification = null)
         {
             if (deleted != null || changedRecords != null)
             {
-                
-                    _onSuccessAction = onSuccess;
-                    _onFailedAction = onFail;
-                    var are = new AutoResetEvent(false);
-                    
-                    _onInitilizeCompleteAction = () => are.Set();
 
-                    CheckConnectionToServer();
+                _onSuccessAction = onSuccess;
+                _onFailedAction = onFail;
+                var are = new AutoResetEvent(false);
 
-                    _proxy.Invoke("InitilizeSubmit", _connection.ConnectionId, dataSourcePath, comment,
-                        changedRecords == null, deleted == null);
-                    are.WaitOne();
+                _onInitilizeCompleteAction = () => are.Set();
 
-                    if (deleted != null)
-                        DeleteServerCall(_connection.ConnectionId, dataSourcePath, deleted);
-                    if (changedRecords != null)
-                        ChangeRecordsServerCall(_connection.ConnectionId, dataSourcePath, changedRecords);
-                
+                CheckConnectionToServer();
+
+                _proxy.Invoke("InitilizeSubmit", _connection.ConnectionId, dataSourcePath, comment,
+                    changedRecords == null, deleted == null);
+                are.WaitOne();
+                if (onNotification != null)
+                {
+                    onNotification("Info", "Finished Transfering");
+                }
+
+                if (deleted != null)
+                    DeleteServerCall(_connection.ConnectionId, deleted);
+                if (changedRecords != null)
+                    ChangeRecordsServerCall(_connection.ConnectionId, changedRecords);
+
             }
         }
 
-        private void DeleteServerCall(string connectionId, string dataSourcePath, IEnumerable<string> deleted)
+        private void DeleteServerCall(string connectionId, IEnumerable<string> deleted)
         {
             CheckConnectionToServer();
             try
@@ -114,7 +113,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             }
         }
 
-        private void ChangeRecordsServerCall(string connectionId, string dataSourcePath, IEnumerable<Dictionary<string, object>> changedRecords)
+        private void ChangeRecordsServerCall(string connectionId, IEnumerable<Dictionary<string, object>> changedRecords)
         {
             CheckConnectionToServer();
             try
@@ -125,7 +124,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                     _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, dataToUpdate);
                     ++count;
                 }
-                _proxy.Invoke("SubmitChangesChangeRecordsOnFinish", connectionId,  count);
+                _proxy.Invoke("SubmitChangesChangeRecordsOnFinish", connectionId, count);
                 _proxy.Invoke("SubmitChangesChangeRecordsOnComplete", connectionId);
             }
             catch (Exception ex)

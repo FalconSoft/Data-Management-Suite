@@ -73,7 +73,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.SearchIndexes
         public void UpdateIsSearchableProperty(string dataSourceUrn, string fieldName, bool value)
         {
             var query = Query.And(Query.EQ("DataSourceUrn", dataSourceUrn), Query.EQ("FieldName", fieldName));
-            var update = Update.Set("IsSearchable", value);
+            var update = Update.Set("IsSearchable", value.ToString());
             _collection.Update(query, update, UpdateFlags.Multi);
         }
 
@@ -84,7 +84,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.SearchIndexes
 
         private static IMongoUpdate GenerateUpdate(SearchData searchData)
         {
-            return Update<SearchData>.Combine(searchData.GetType().GetProperties().Select(x=>Update.Set(x.Name, x.GetValue(searchData,null).ToString())));
+            return Update<SearchData>.Combine(searchData.GetType().GetProperties().Select(x => Update.Set(x.Name, x.GetValue(searchData, null).ToString())));
         }
     }
 }

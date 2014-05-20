@@ -18,8 +18,9 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
         /// <param name="deleted">RecordKeys to delete</param>
         /// <param name="onSuccess">Action called when on success, where string is a RecordKey and Revision</param>
         /// <param name="onFail">Action called on fail</param>
-        /// <param name="onValidationError">
-        /// Action will be called each time record doesn't pass validation.
+        /// <param name="onNotifcation">
+        /// Action will be called ezch time we want to notify about something:
+        /// for example - record doesn't pass validation.
         /// Signature: string : RecordKey, string: errorMessage
         /// </param>
         void SubmitChanges<T>(string dataSourcePath, string comment,
@@ -27,7 +28,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
             IEnumerable<string> deleted = null,
             Action<RevisionInfo> onSuccess = null,
             Action<Exception> onFail = null,
-            Action<string, string> onValidationError = null);
+            Action<string, string> onNotifcation = null);
 
         /// <summary>
         /// Submit changed records to ReactiveWorksheets server, which will update original source as well as Data Repository
@@ -38,8 +39,9 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
         /// <param name="deleted">records to delete</param>
         /// <param name="onSuccess">Action called when on success, where string is a RecordKey and Revision</param>
         /// <param name="onFail">Action called on fail</param>
-        /// <param name="onValidationError">
-        /// Action will be called each time record doesn't pass validation.
+        /// <param name="onNotifcation">
+        /// Action will be called ezch time we want to notify about something:
+        /// for example - record doesn't pass validation.
         /// Signature: string : RecordKey, string: errorMessage
         /// </param>
         void SubmitChanges(string dataSourcePath, string comment,
@@ -47,6 +49,6 @@ namespace FalconSoft.ReactiveWorksheets.Common.Facade
             IEnumerable<string> deleted = null,
             Action<RevisionInfo> onSuccess = null,
             Action<Exception> onFail = null,
-            Action<string, string> onValidationError = null);
+            Action<string, string> onNotifcation = null);
     }
 }
