@@ -193,6 +193,7 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
         private bool UpdateRecords(IEnumerable<IDictionary<string, object>> recordsToUpdate, MongoCollection<BsonDocument> collection)
         {
             var isSuccessful = false;
+            var itemsToInsert = new List<QueryDocument>();
             foreach (var records in recordsToUpdate)
             {
                 var queryDoc = new QueryDocument();
@@ -203,7 +204,8 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                 var result = collection.Find(CreateFindKeyQuery(records));
                 if (!result.Any())
                 {
-                    collection.Insert(queryDoc);
+                    itemsToInsert.Add(queryDoc);
+                    //collection.Insert(queryDoc);
                     isSuccessful = true;
                 }
                 else if (!Equal(result.First(), records))
@@ -214,6 +216,12 @@ namespace FalconSoft.ReactiveWorksheets.MongoDbSources
                     }
                     isSuccessful = true;
                 }
+            }
+
+            if (itemsToInsert.Any())
+            {
+                collection.InsertBatch(itemsToInsert);
+                isSuccessful = true;
             }
             return isSuccessful;
         }
