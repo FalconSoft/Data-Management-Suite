@@ -98,10 +98,24 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             try
             {
                 var count = 0;
+                var counter = 0;
+                var list = new List<string>();
                 foreach (var keyToDelete in deleted)
                 {
-                    _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, keyToDelete);
+                    ++counter;
+                    list.Add(keyToDelete);
+                    if (counter == 20)
+                    {
+                        counter = 0;
+                        _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, list);
+                        list.Clear();
+                    }
                     ++count;
+                }
+                if (counter != 0)
+                {
+                    _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, list);
+                    list.Clear();
                 }
                 _proxy.Invoke("SubmitChangesDeleteOnFinish", connectionId, count);
                 _proxy.Invoke("SubmitChangesDeleteOnComplete", connectionId);
@@ -119,10 +133,24 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             try
             {
                 var count = 0;
+                var counter = 0;
+                var list = new List<Dictionary<string, object>>();
                 foreach (var dataToUpdate in changedRecords)
                 {
-                    _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, dataToUpdate);
+                    ++counter;
+                    list.Add(dataToUpdate);
+                    if (counter == 20)
+                    {
+                        counter = 0;
+                        _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, list);
+                        list.Clear();
+                    }
                     ++count;
+                }
+                if (counter != 0)
+                {
+                    _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, list);
+                    list.Clear();
                 }
                 _proxy.Invoke("SubmitChangesChangeRecordsOnFinish", connectionId, count);
                 _proxy.Invoke("SubmitChangesChangeRecordsOnComplete", connectionId);

@@ -14,6 +14,7 @@ using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Hubs;
+using Newtonsoft.Json;
 
 namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
@@ -108,15 +109,17 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 });
 
                 // For GetData method
-                _proxy.On<Dictionary<string, object>>("GetDataOnNext", data =>
+                _proxy.On<Dictionary<string, object>[]>("GetDataOnNext", data =>
                 {
                     if (_getDataOnNextAction != null)
-                        _getDataOnNextAction(data);
+                        foreach (var dictionary in data)
+                            _getDataOnNextAction(dictionary);
 
                 });
 
-                _proxy.On("GetDataOnComplete", () =>
+                _proxy.On<int>("GetDataOnComplete", count =>
                 {
+                    Trace.WriteLine("   Sended messages count : " + count);
                     if (_getDataOnCompleteAction != null)
                         _getDataOnCompleteAction();
                 });
@@ -198,13 +201,19 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         public IEnumerable<Dictionary<string, object>> GetData(string dataSourcePath, FilterRule[] filterRules = null)
         {
             var subject = new Subject<Dictionary<string, object>>();
+            var sw = new Stopwatch();
 
             _getDataOnNextAction = data => subject.OnNext(data);
-            _getDataOnCompleteAction = () => subject.OnCompleted();
+            _getDataOnCompleteAction = () =>
+            {
+                subject.OnCompleted();
+                sw.Stop();
+                Trace.WriteLine("GetData execute time :" + sw.Elapsed);
+            };
             _getDataOnErrorAction = ex => subject.OnError(ex);
 
             CheckConnectionToServer();
-
+            sw.Start();
             _proxy.Invoke("GetData",_connection.ConnectionId, dataSourcePath, filterRules ?? new FilterRule[0]);
             return subject.ToEnumerable();
         }

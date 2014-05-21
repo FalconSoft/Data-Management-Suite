@@ -120,11 +120,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
             var task = Task.Factory.StartNew(() =>
             {
+                var sw = new Stopwatch();
+                sw.Start();
                 var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord.ToArray() : null);
                 var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator.ToArray() : null);
                 var changedRecordsToArray = changeRecordsTask.Result;
                 var deleteToArray = deleteToArrayTask.Result;
-                   
+                sw.Stop();
+               Trace.WriteLine(string.Format("      Time elapse while data is transfering  : {0}", sw.Elapsed));
                 _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
                     changedRecordsToArray, deleteToArray,
                     r => Clients.Client(connectionId).OnSuccess(r),
@@ -135,14 +138,14 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             Clients.Client(connectionId).InitilizeComplete();
         }
 
-        public void SubmitChangesDeleteOnNext(string connectionId, string toDeleteKey)
+        public void SubmitChangesDeleteOnNext(string connectionId, string[] toDeleteKey)
         {
             LockSubmitChangesDeleteCall(connectionId, toDeleteKey);
         }
 
         public void SubmitChangesDeleteOnComplete(string connectionId)
         {
-            LockSubmitChangesDeleteCall(connectionId, connectionId);
+            LockSubmitChangesDeleteCall(connectionId);
         }
 
         public void SubmitChangesDeleteOnFinish(string connectionId, int count)
@@ -156,7 +159,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _toDelteSubjects[connectionId].OnError(ex);
         }
 
-        public void SubmitChangesChangeRecordsOnNext(string connectionId, Dictionary<string, object> changedRecord)
+        public void SubmitChangesChangeRecordsOnNext(string connectionId, Dictionary<string, object>[] changedRecord)
         {
             LockSubmitChangesChangeRecordCall(connectionId,changedRecord);
         }
@@ -178,16 +181,19 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         }
 
 
-        private void LockSubmitChangesDeleteCall(string connectionId, string toDeleteKey = null)
+        private void LockSubmitChangesDeleteCall(string connectionId, string[] toDeleteKey = null)
         {
             if (toDeleteKey!=null)
             {
                 lock (_onDeleteCounterLock)
                 {
-                    _toDelteSubjects[connectionId].OnNext(toDeleteKey);
-                    ++_toDeleteCounter[connectionId];
-                    _onDeleteNextCall[connectionId] = true;
-                    SubmitChangesDeleteFinilize(connectionId);
+                    foreach (var recordKey in toDeleteKey)
+                    {
+                        _toDelteSubjects[connectionId].OnNext(recordKey);
+                        ++_toDeleteCounter[connectionId];
+                        _onDeleteNextCall[connectionId] = true;
+                        SubmitChangesDeleteFinilize(connectionId);
+                    }
                 }
             }
             else
@@ -199,16 +205,19 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
 
         private void LockSubmitChangesChangeRecordCall(string connectionId,
-            Dictionary<string, object> changedRecord = null)
+            Dictionary<string, object> [] changedRecord = null)
         {
             if (changedRecord != null)
             {
                 lock (_onUpdateCounterLock)
                 {
-                    _toUpdateSubjects[connectionId].OnNext(changedRecord);
-                    ++_toUpdateCounter[connectionId];
-                    _onUpdateNextCall[connectionId] = true;
-                    SubmitChangesChangeRecordFinilize(connectionId);
+                    foreach (var dictionary in changedRecord)
+                    {
+                        _toUpdateSubjects[connectionId].OnNext(dictionary);
+                        ++_toUpdateCounter[connectionId];
+                        _onUpdateNextCall[connectionId] = true;
+                        SubmitChangesChangeRecordFinilize(connectionId);
+                    }
                 }
             }
             else

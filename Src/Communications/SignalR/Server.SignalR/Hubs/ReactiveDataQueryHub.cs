@@ -111,14 +111,29 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                 {
                     var data = _reactiveDataQueryFacade.GetData(dataSourcePath,
                         filterRules.Any() ? filterRules : null);
-
+                    var counter = 0;
+                    var count = 0;
+                    var list = new List<Dictionary<string, object>>(); 
                     foreach (var d in data)
                     {
-                        Clients.Client(connectionId).GetDataOnNext(d);
+                        ++counter;
+                        list.Add(d);
+                        if (counter == 20)
+                        {
+                            counter = 0;
+                            Clients.Client(connectionId).GetDataOnNext(list.ToArray());
+                            list.Clear();
+                        }
+                        ++count;
+                    }
+                    if (counter != 0)
+                    {
+                        Clients.Client(connectionId).GetDataOnNext(list.ToArray());
+                        list.Clear();
                     }
 
 
-                    Clients.Client(connectionId).GetDataOnComplete();
+                    Clients.Client(connectionId).GetDataOnComplete(count);
                     Trace.WriteLine("   GetData Complete connection Id : " + connectionId);
                 }
                 catch (Exception ex)
