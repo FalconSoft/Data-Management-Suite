@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using FalconSoft.ReactiveWorksheets.Client.SignalR;
@@ -125,9 +126,12 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
             var metaDataFacade = FacadesFactory.CreateMetaDataFacade();
             var dsInfo = metaDataFacade.GetDataSourceInfo(submitParams.DataSourceUrn);
 
+            var sw = new Stopwatch();
+            Trace.WriteLine("   Parsing start");
+            
             var recordsToUpdate = CSVHelper.ReadRecords(dsInfo, submitParams.UpdateFileName, submitParams.Separator);
             var recordsToDelete = CSVHelper.ReadRecordsToDelete(submitParams.DeleteFileName);
-
+            
             var commandFacade = FacadesFactory.CreateCommandFacade();
             commandFacade.SubmitChanges(submitParams.DataSourceUrn, "console", recordsToUpdate);
         }

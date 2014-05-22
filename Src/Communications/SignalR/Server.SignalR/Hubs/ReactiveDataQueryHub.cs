@@ -104,7 +104,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void GetData(string connectionId, string dataSourcePath, FilterRule[] filterRules)
         {
-            Task.Factory.StartNew(()=>
+            //Task.Factory.StartNew(()=>
             {
                 Trace.WriteLine("   GetData Start connection Id : " + connectionId);
                 try
@@ -118,7 +118,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     {
                         ++counter;
                         list.Add(d);
-                        if (counter == 20)
+                        if (counter == 100)
                         {
                             counter = 0;
                             Clients.Client(connectionId).GetDataOnNext(list.ToArray());
@@ -142,7 +142,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     Trace.WriteLine("   GetData Failed connection Id : " + connectionId);
                     throw;
                 }
-            });
+            }//);
         }
 
         public void GetDataChanges(string connectionId, string dataSourcePath, FilterRule[] filterRules)

@@ -104,17 +104,17 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 {
                     ++counter;
                     list.Add(keyToDelete);
-                    if (counter == 20)
+                    if (counter == 100)
                     {
                         counter = 0;
-                        _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, list);
+                        _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, list.ToArray());
                         list.Clear();
                     }
                     ++count;
                 }
                 if (counter != 0)
                 {
-                    _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, list);
+                    _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, list.ToArray());
                     list.Clear();
                 }
                 _proxy.Invoke("SubmitChangesDeleteOnFinish", connectionId, count);
@@ -139,17 +139,17 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 {
                     ++counter;
                     list.Add(dataToUpdate);
-                    if (counter == 20)
+                    if (counter == 100)
                     {
                         counter = 0;
-                        _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, list);
+                        _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, list.ToArray());
                         list.Clear();
                     }
                     ++count;
                 }
                 if (counter != 0)
                 {
-                    _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, list);
+                    _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, list.ToArray());
                     list.Clear();
                 }
                 _proxy.Invoke("SubmitChangesChangeRecordsOnFinish", connectionId, count);

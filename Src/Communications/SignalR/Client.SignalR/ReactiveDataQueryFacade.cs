@@ -26,15 +26,13 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private IHubProxy _proxy;
         private Task _startConnectionTask;
         private bool _allowToRestoreConnection;
-        private readonly object _connectionLock = new object();
-        private readonly object _keepAliveTimerLock = new object();
         private static object _initialiseLock;
         // For  method GetAggregatedData
         private Action<Dictionary<string, object>> _getAggregatedDataOnNextAction;
         private Action _getAggregatedDataOnCompletetAction;
         private Action<Exception> _getAggregatedDataOnErrorAction;
 
-        // For etGenericData method
+        // For GetGenericData method
         private Action<object> _getGenericDataOnNextAction;
         private Action _getGenericDataOnCompleteAction;
         private Action<Exception> _getGenericDataOnErrorAction;
@@ -43,6 +41,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private Action<Dictionary<string, object>> _getDataOnNextAction;
         private Action _getDataOnCompleteAction;
         private Action<Exception> _getDataOnErrorAction;
+        private int _getDataCount;
+        private int _getDataCounter;
+        private readonly object _getDataLock = new object();
 
         // For GetDataChanges method
         private readonly Subject<RecordChangedParam> _getDataChangesSubject;
@@ -111,16 +112,29 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 // For GetData method
                 _proxy.On<Dictionary<string, object>[]>("GetDataOnNext", data =>
                 {
-                    if (_getDataOnNextAction != null)
-                        foreach (var dictionary in data)
-                            _getDataOnNextAction(dictionary);
+                    //lock (_getDataLock)
+                    {
+                        if (_getDataOnNextAction != null)
+                            foreach (var dictionary in data)
+                            {
 
+                                _getDataOnNextAction(dictionary);
+                                ++_getDataCounter;
+
+                            }
+
+                        if (_getDataCounter != 0 && _getDataCount != 0 && (_getDataCount == _getDataCounter) &&
+                            _getDataOnCompleteAction != null)
+                            _getDataOnCompleteAction();
+                    }
                 });
 
                 _proxy.On<int>("GetDataOnComplete", count =>
                 {
                     Trace.WriteLine("   Sended messages count : " + count);
-                    if (_getDataOnCompleteAction != null)
+                    _getDataCount = count;
+                    if (_getDataCounter != 0 && _getDataCount != 0 && (_getDataCount == _getDataCounter) &&  
+                        _getDataOnCompleteAction != null)
                         _getDataOnCompleteAction();
                 });
 
@@ -202,7 +216,8 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var subject = new Subject<Dictionary<string, object>>();
             var sw = new Stopwatch();
-
+            _getDataCounter = 0;
+            _getDataCount = 0;
             _getDataOnNextAction = data => subject.OnNext(data);
             _getDataOnCompleteAction = () =>
             {

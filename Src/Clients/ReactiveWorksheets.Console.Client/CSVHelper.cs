@@ -12,8 +12,6 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
     {
         public static IEnumerable<Dictionary<string, object>> ReadRecords(DataSourceInfo dsInfo, string fileName, string separator)
         {
-            var result = new List<Dictionary<string, object>>();
-            
             using (var parser = new TextFieldParser(fileName))
             {
                 parser.SetDelimiters(new[] { separator });
@@ -29,10 +27,9 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
                     {
                         dict.Add(header[i], TryConvert(fields[i], dsInfo.Fields[header[i]].DataType));
                     }
-                    result.Add(dict);
+                    yield return dict;
                 }
             }
-            return result;
         }
 
         public static bool AppendRecords(IEnumerable<IDictionary<string, object>> data, string fileName,
@@ -118,28 +115,36 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
 
         private static object ConvertFromDataType(string value, DataTypes type)
         {
-            try
-            {
+            
                 switch (type)
                 {
                     case DataTypes.String:
                         return value;
                     case DataTypes.Int:
-                        return Convert.ToInt32(value);
+                        int i;
+                        if (int.TryParse(value,out i))
+                        return i;
+                        return value;
                     case DataTypes.Double:
-                        return Convert.ToDouble(value);
+                        double d;
+                        if (double.TryParse(value, out d))
+                        return d;
+                        return value;
                     case DataTypes.Date:
                     case DataTypes.DateTime:
-                        return Convert.ToDateTime(value);
+                        DateTime dt;
+                        if (DateTime.TryParse(value,out dt))
+                        return dt;
+                        return value;
                     case DataTypes.Bool:
-                        return Convert.ToBoolean(value);
+                        bool b;
+                        if (bool.TryParse(value, out b))
+                        return b;
+                        return value;
                     default:
                         throw new ArgumentOutOfRangeException("type");
                 }
-            }
-            catch (InvalidCastException) { }
-            catch (FormatException) { }
-            catch (OverflowException) { }
+           
             return value;
         }
     }

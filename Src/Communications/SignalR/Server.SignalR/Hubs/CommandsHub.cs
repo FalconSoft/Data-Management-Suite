@@ -122,8 +122,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             {
                 var sw = new Stopwatch();
                 sw.Start();
-                var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord.ToArray() : null);
-                var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator.ToArray() : null);
+                var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord : null);
+                var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator : null);
                 var changedRecordsToArray = changeRecordsTask.Result;
                 var deleteToArray = deleteToArrayTask.Result;
                 sw.Stop();
