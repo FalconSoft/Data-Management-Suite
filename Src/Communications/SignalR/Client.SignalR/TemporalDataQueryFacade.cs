@@ -90,6 +90,10 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                     _getRecordsHistoryCount == _getRecordsHistoryCounter
                     && _getRecordsHistoryOnCompleteAction != null)
                     _getRecordsHistoryOnCompleteAction();
+
+                if (count == 0 &&
+                    _getRecordsHistoryOnCompleteAction != null)
+                    _getRecordsHistoryOnCompleteAction();
             });
 
             _proxy.On("GetRecordsHistoryOnError", ex =>
@@ -126,6 +130,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                     _getDataHistoryByTagCount == _getDataHistoryByTagCounter &&
                     _getDataHistoryByTagOnCompleteAction != null)
                     _getDataHistoryByTagOnCompleteAction();
+                if (count == 0 &&
+                    _getDataHistoryByTagOnCompleteAction != null)
+                    _getDataHistoryByTagOnCompleteAction();
             });
 
             _proxy.On("GetDataHistoryByTagOnError", ex =>
@@ -157,7 +164,13 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             _proxy.On<int>("GetRecordsAsOfOnComplete", count =>
             {
                 _getRecordsAsOfCount = count;
-                if (_getRecordsAsOfOnCompleteAction != null)
+                if (_getRecordsAsOfCount != 0 &&
+                    _getRecordsAsOfCounter != 0 &&
+                    _getRecordsAsOfCounter == _getRecordsAsOfCount &&
+                    _getRecordsAsOfOnCompleteAction != null)
+                    _getRecordsAsOfOnCompleteAction();
+                if (count == 0 &&
+                    _getRecordsAsOfOnCompleteAction != null)
                     _getRecordsAsOfOnCompleteAction();
             });
 
@@ -193,6 +206,10 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 if (_geTagInfosCount != 0 &&
                     _geTagInfosCounter != 0 &&
                     _geTagInfosCount == _geTagInfosCounter &&
+                    _geTagInfosOnCompleteAction != null)
+                    _geTagInfosOnCompleteAction();
+
+                if (count != 0 &&
                     _geTagInfosOnCompleteAction != null)
                     _geTagInfosOnCompleteAction();
             });
