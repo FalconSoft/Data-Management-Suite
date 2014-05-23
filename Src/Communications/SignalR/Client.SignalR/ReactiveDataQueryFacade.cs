@@ -101,6 +101,10 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                         (_getAggregateDataCount == _getAggregateDataCounter) &&
                         _getAggregatedDataOnCompletetAction != null)
                         _getAggregatedDataOnCompletetAction();
+                    if (count == 0 &&
+                        _getAggregatedDataOnCompletetAction != null)
+                        _getAggregatedDataOnCompletetAction();
+
 
                 });
 
@@ -139,6 +143,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                         (_getGenericDataCount == _getAggregateDataCounter) &&
                         _getGenericDataOnCompleteAction != null)
                         _getGenericDataOnCompleteAction();
+                    if (count == 0 &&
+                        _getGenericDataOnCompleteAction != null)
+                        _getGenericDataOnCompleteAction();
                 });
 
                 _proxy.On<Exception>("GetGenericDataOnError", ex =>
@@ -170,6 +177,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                     Trace.WriteLine("   Sended messages count : " + count);
                     _getDataCount = count;
                     if (_getDataCounter != 0 && _getDataCount != 0 && (_getDataCount == _getDataCounter) &&  
+                        _getDataOnCompleteAction != null)
+                        _getDataOnCompleteAction();
+                    if (count == 0 &&
                         _getDataOnCompleteAction != null)
                         _getDataOnCompleteAction();
                 });
