@@ -1,90 +1,89 @@
 ﻿using System;
 using System.Configuration;
+using System.ServiceProcess;
 using FalconSoft.ReactiveWorksheets.Server.Bootstrapper;
-using FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs;
-using Microsoft.AspNet.SignalR;
-using Microsoft.AspNet.SignalR.Hubs;
 using Microsoft.Owin.Hosting;
-using Owin;
+using ReactiveWorksheets.Server.ConsoleRunner.Service;
 
 namespace ReactiveWorksheets.Server.ConsoleRunner
 {
     internal class Program
     {
-        private static void Main()
+        private static void Main(string[] arguments)
         {
-            AppDomain.CurrentDomain.UnhandledException += (sender, args) => ServerApp.Logger.Error("UnhandledException -> ", (Exception)args.ExceptionObject);
-            ServerApp.Logger.InfoFormat("Server...");
-            try
+            //arguments = new[] {"-u"};
+            //foreach (var argument in arguments)
+            //{
+            //    switch (argument)
+            //    {
+            //        case "-istart":
+            //            //Installs and starts the service "Data Management Suite Server Service"
+            //            ServiceInstaller.InstallAndStart("DMSServer", "DMSServer", Path.GetFullPath(Assembly.GetEntryAssembly().Location));
+            //            return;
+            //        case "-u":
+            //            //Removes the service
+            //            ServiceInstaller.Uninstall("DMSServer");
+            //            Console.WriteLine("DMSServer is Uninstalled");
+            //            Console.ReadLine();
+            //            return;
+            //        case "-status":
+            //            //Checks the status of the service
+            //            Console.WriteLine("Status - {0}", ServiceInstaller.GetServiceStatus("DMSServer"));
+            //            Console.ReadLine();
+            //            return;
+            //        case "-start":
+            //            //Starts the service
+            //            ServiceInstaller.StartService("DMSServer");
+            //            Console.WriteLine("DMSServer is Started");
+            //            Console.ReadLine();
+            //            return;
+            //        case "-stop":
+            //            //Stops the service
+            //            ServiceInstaller.StopService("DMSServer");
+            //            Console.WriteLine("DMSServer is Stopped");
+            //            Console.ReadLine();
+            //            return;
+            //        case "-isinstalled":
+            //            //Check if service is installed
+            //            Console.WriteLine("Is Instaled - {0}", ServiceInstaller.ServiceIsInstalled("DMSServer"));
+            //            Console.ReadLine();
+            //            return;
+            //    }
+            //}
+
+            if (Environment.UserInteractive)
             {
-                var bootstrapper = new Bootstrapper();
-                bootstrapper.Configure(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MongoDataConnectionString"]);
-                bootstrapper.Run();
+                AppDomain.CurrentDomain.UnhandledException += (sender, args) => ServerApp.Logger.Error("UnhandledException -> ", (Exception)args.ExceptionObject);
+                ServerApp.Logger.Info("Server...");
+
+                try
+                {
+                    var bootstrapper = new Bootstrapper();
+                    bootstrapper.Configure(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MongoDataConnectionString"]);
+                    ServerApp.Logger.Info("Bootstrapper configured...");
+                    bootstrapper.Run();
+                    ServerApp.Logger.Info("Bootstrapper started running...");
+                }
+                catch (Exception ex)
+                {
+                    ServerApp.Logger.Error("Failed to Configure and Run Bootstrapper", ex);
+                    throw;
+                }
+
+                using (WebApp.Start<HubServer>(ConfigurationManager.AppSettings["ConnectionString"]))
+                {
+                    ServerApp.Logger.InfoFormat("Server is running, on address {0} Press <Enter> to stop", ConfigurationManager.AppSettings["ConnectionString"]);
+                    Console.ReadLine();
+                }
             }
-            catch (Exception ex)
+            else
             {
-                ServerApp.Logger.Error("Failed to Configure and Run Bootstrapper", ex);
-                throw;
+                var servicesToRun = new ServiceBase[]
+                {
+                    new ServerService()
+                };
+                ServiceBase.Run(servicesToRun);
             }
-
-            using (WebApp.Start<HubServer>(ConfigurationManager.AppSettings["ConnectionString"]))
-            {
-                Console.WriteLine("Server is running, Press <Enter> to stop");
-                Console.ReadLine();
-            }
-        }
-    }
-
-    internal class HubServer
-    {
-        public void Configuration(IAppBuilder app)
-        {
-            var commandHub = new CommandsHub(ServerApp.CommandFacade);
-            var metaDataHub = new MetaDataHub(ServerApp.MetaDataFacade);
-            var reactiveDataQueryHub = new ReactiveDataQueryHub(ServerApp.ReactiveDataQueryFacade, ServerApp.Logger);
-            var temporalDataQueryHub = new TemporalDataQueryHub(ServerApp.TemporalQueryFacade);
-            var searchHub = new SearchHub(ServerApp.SearchFacade);
-
-            var securityHub = new SecurityHub(ServerApp.SecurityFacade);
-
-            GlobalHost.DependencyResolver.Register(typeof(CommandsHub), () => commandHub);
-            GlobalHost.DependencyResolver.Register(typeof(MetaDataHub), () => metaDataHub);
-            GlobalHost.DependencyResolver.Register(typeof(ReactiveDataQueryHub), () => reactiveDataQueryHub);
-            GlobalHost.DependencyResolver.Register(typeof(TemporalDataQueryHub), () => temporalDataQueryHub);
-            GlobalHost.DependencyResolver.Register(typeof(SearchHub), () => searchHub); 
-            GlobalHost.DependencyResolver.Register(typeof(SecurityHub), () => securityHub);
-            
-            var hubConfiguration = new HubConfiguration { EnableDetailedErrors = true, EnableCrossDomain = true};
-
-            GlobalHost.HubPipeline.AddModule(new LoggingPipelineModule());
-            
-            app.MapHubs(hubConfiguration);
-        }
-    }
-
-    internal class LoggingPipelineModule : HubPipelineModule
-    {
-        protected override void OnIncomingError(Exception ex, IHubIncomingInvokerContext context)
-        {
-            Console.WriteLine("=>" + DateTime.Now.ToString("HH:mm:ss") + " Invoking " + context.MethodDescriptor.Name + " on hub " + context.MethodDescriptor.Hub.Name);
-            base.OnIncomingError(ex, context);
-        }
-
-        protected override bool OnBeforeConnect(IHub hub)
-        {
-            Console.WriteLine("=>" + DateTime.Now.ToString("HH:mm:ss") + " OnBeforeConnect " + hub.Context.QueryString);
-            return base.OnBeforeConnect(hub);
-        }
-
-        protected override bool OnBeforeIncoming(IHubIncomingInvokerContext context)
-        {
-            Console.WriteLine("=>" + DateTime.Now.ToString("HH:mm:ss") + " Invoking " + context.MethodDescriptor.Name + " on hub " + context.MethodDescriptor.Hub.Name);
-            return base.OnBeforeIncoming(context);
-        }
-        protected override bool OnBeforeOutgoing(IHubOutgoingInvokerContext context)
-        {
-            Console.WriteLine("<=" + DateTime.Now.ToString("HH:mm:ss") + " Invoking " + context.Invocation.Method + " on client hub " + context.Invocation.Hub);
-            return base.OnBeforeOutgoing(context);
         }
     }
 }
