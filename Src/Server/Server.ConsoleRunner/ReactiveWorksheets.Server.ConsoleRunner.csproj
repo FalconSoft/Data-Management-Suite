@@ -100,19 +100,21 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\HubServer.cs" />
     <Compile Include="Service\LoggingPipelineModule.cs" />
-    <Compile Include="Service\ProjectInstaller.cs">
+    <Compile Include="Installers\ProjectInstaller.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Service\ServerService.cs">
+    <Compile Include="Installers\ServerService.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Service\ServiceInstaller.cs" />
+    <Compile Include="Installers\ServiceInstaller.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
     <None Include="app.manifest" />
+    <None Include="Installers\InstallService.bat" />
+    <None Include="Installers\UnInstallService.bat" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
@@ -166,7 +168,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Service\ProjectInstaller.resx">
+    <EmbeddedResource Include="Installers\ProjectInstaller.resx">
       <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
