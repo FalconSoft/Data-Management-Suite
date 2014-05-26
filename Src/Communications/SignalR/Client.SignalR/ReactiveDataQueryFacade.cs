@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Mime;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -14,7 +13,6 @@ using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Hubs;
-using Newtonsoft.Json;
 
 namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
@@ -27,15 +25,22 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private Task _startConnectionTask;
         private bool _allowToRestoreConnection;
         private static object _initialiseLock;
+
         // For  method GetAggregatedData
         private Action<Dictionary<string, object>> _getAggregatedDataOnNextAction;
         private Action _getAggregatedDataOnCompletetAction;
         private Action<Exception> _getAggregatedDataOnErrorAction;
+        private int _getAggregateDataCount;
+        private int _getAggregateDataCounter;
+        private readonly object _getAggregateDataLock = new object();
 
         // For GetGenericData method
         private Action<object> _getGenericDataOnNextAction;
         private Action _getGenericDataOnCompleteAction;
         private Action<Exception> _getGenericDataOnErrorAction;
+        private int _getGenericDataCount;
+        private int _getGenericDataCounter;
+        private readonly object _getGenericDataLock = new object();
 
         // For GetData method
         private Action<Dictionary<string, object>> _getDataOnNextAction;
@@ -47,6 +52,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         // For GetDataChanges method
         private readonly Subject<RecordChangedParam> _getDataChangesSubject;
+        private readonly object _getDataChangesLock = new object();
 
         // For ResolveRecordbyForeignKey method
         private Action<string, RecordChangedParam[]> _resolveRecordbyForeignKeySuccessAction;
@@ -70,16 +76,35 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 _proxy = _connection.CreateHubProxy("IReactiveDataQueryFacade");
 
                 // For  method GetAggregatedData
-                _proxy.On<Dictionary<string, object>>("GetAggregatedDataOnNext", data =>
+                _proxy.On<Dictionary<string, object>[]>("GetAggregatedDataOnNext", data =>
                 {
-                    if (_getAggregatedDataOnNextAction != null)
-                        _getAggregatedDataOnNextAction(data);
+                    lock (_getAggregateDataLock)
+                    {
+                        if (_getAggregatedDataOnNextAction != null)
+                            foreach (var dictionary in data)
+                            {
+                                ++_getAggregateDataCounter;
+                                _getAggregatedDataOnNextAction(dictionary);
+                            }
+
+                        if (_getAggregateDataCount!=0 && _getAggregateDataCounter!=0 && (_getAggregateDataCount == _getAggregateDataCounter)
+                            && _getAggregatedDataOnCompletetAction!=null)
+                            _getAggregatedDataOnCompletetAction();
+                    }
                 });
 
-                _proxy.On("GetAggregatedDataOnComplete", () =>
+                _proxy.On<int>("GetAggregatedDataOnComplete", count =>
                 {
-                    if (_getAggregatedDataOnCompletetAction != null)
+                    _getAggregateDataCount = count;
+                    if (_getAggregateDataCount != 0 &&
+                        _getAggregateDataCounter != 0 &&
+                        (_getAggregateDataCount == _getAggregateDataCounter) &&
+                        _getAggregatedDataOnCompletetAction != null)
                         _getAggregatedDataOnCompletetAction();
+                    if (count == 0 &&
+                        _getAggregatedDataOnCompletetAction != null)
+                        _getAggregatedDataOnCompletetAction();
+
 
                 });
 
@@ -90,16 +115,36 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 });
 
                 // For GetGenericData method
-                _proxy.On<object>("GetGenericDataOnNext", data =>
+                _proxy.On<object[]>("GetGenericDataOnNext", data =>
                 {
-                    if (_getGenericDataOnNextAction != null)
-                        _getGenericDataOnNextAction(data);
+                    lock (_getGenericDataLock)
+                    {
+                        if (_getGenericDataOnNextAction != null)
+                            foreach (var o in data)
+                            {
+                                ++_getGenericDataCounter;
+                                _getGenericDataOnNextAction(o);
+                            }
+
+                        if (_getGenericDataCount != 0 &&
+                            _getGenericDataCounter != 0 &&
+                            (_getGenericDataCount == _getAggregateDataCounter) &&
+                            _getGenericDataOnCompleteAction != null)
+                            _getGenericDataOnCompleteAction();
+                    }
 
                 });
 
-                _proxy.On("GetGenericDataOnComplete", () =>
+                _proxy.On<int>("GetGenericDataOnComplete", count =>
                 {
-                    if (_getGenericDataOnCompleteAction != null)
+                    _getGenericDataCount = count;
+                    if (_getGenericDataCount != 0 &&
+                        _getGenericDataCounter != 0 &&
+                        (_getGenericDataCount == _getAggregateDataCounter) &&
+                        _getGenericDataOnCompleteAction != null)
+                        _getGenericDataOnCompleteAction();
+                    if (count == 0 &&
+                        _getGenericDataOnCompleteAction != null)
                         _getGenericDataOnCompleteAction();
                 });
 
@@ -112,15 +157,13 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 // For GetData method
                 _proxy.On<Dictionary<string, object>[]>("GetDataOnNext", data =>
                 {
-                    //lock (_getDataLock)
+                    lock (_getDataLock)
                     {
                         if (_getDataOnNextAction != null)
                             foreach (var dictionary in data)
                             {
-
-                                _getDataOnNextAction(dictionary);
                                 ++_getDataCounter;
-
+                                _getDataOnNextAction(dictionary);
                             }
 
                         if (_getDataCounter != 0 && _getDataCount != 0 && (_getDataCount == _getDataCounter) &&
@@ -136,6 +179,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                     if (_getDataCounter != 0 && _getDataCount != 0 && (_getDataCount == _getDataCounter) &&  
                         _getDataOnCompleteAction != null)
                         _getDataOnCompleteAction();
+                    if (count == 0 &&
+                        _getDataOnCompleteAction != null)
+                        _getDataOnCompleteAction();
                 });
 
                 _proxy.On<Exception>("GetDataOnError", ex =>
@@ -145,9 +191,15 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 });
 
                 // For GetDataChanges method
-                _proxy.On<RecordChangedParam>("GetDataChangesOnNext", data =>
+                _proxy.On<RecordChangedParam[]>("GetDataChangesOnNext", data =>
                 {
-                    _getDataChangesSubject.OnNext(data);
+                    lock (_getDataChangesLock)
+                    {
+                        foreach (var recordChangedParam in data)
+                        {
+                            _getDataChangesSubject.OnNext(recordChangedParam);
+                        }
+                    }
                 });
 
                 _proxy.On("GetDataChangesOnComplete", () =>
@@ -187,6 +239,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)
         {
             var subject = new Subject<Dictionary<string, object>>();
+            
+            _getAggregateDataCount = 0;
+            _getAggregateDataCounter = 0;
 
             _getAggregatedDataOnNextAction = subject.OnNext;
             _getAggregatedDataOnCompletetAction = subject.OnCompleted;
@@ -202,6 +257,9 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         {
             var subject = new Subject<object>();
 
+            _getGenericDataCount = 0;
+            _getGenericDataCounter = 0;
+
             _getGenericDataOnNextAction = data => subject.OnNext(data);
             _getGenericDataOnCompleteAction = () => subject.OnCompleted();
             _getGenericDataOnErrorAction = ex => subject.OnError(ex);
@@ -215,20 +273,16 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         public IEnumerable<Dictionary<string, object>> GetData(string dataSourcePath, FilterRule[] filterRules = null)
         {
             var subject = new Subject<Dictionary<string, object>>();
-            var sw = new Stopwatch();
+            
             _getDataCounter = 0;
             _getDataCount = 0;
+            
             _getDataOnNextAction = data => subject.OnNext(data);
-            _getDataOnCompleteAction = () =>
-            {
-                subject.OnCompleted();
-                sw.Stop();
-                Trace.WriteLine("GetData execute time :" + sw.Elapsed);
-            };
+            _getDataOnCompleteAction = () => subject.OnCompleted();
             _getDataOnErrorAction = ex => subject.OnError(ex);
 
             CheckConnectionToServer();
-            sw.Start();
+    
             _proxy.Invoke("GetData",_connection.ConnectionId, dataSourcePath, filterRules ?? new FilterRule[0]);
             return subject.ToEnumerable();
         }

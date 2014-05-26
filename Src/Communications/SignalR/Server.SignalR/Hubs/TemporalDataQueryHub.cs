@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using FalconSoft.ReactiveWorksheets.Common.Facade;
 using FalconSoft.ReactiveWorksheets.Common.Metadata;
 using Microsoft.AspNet.SignalR;
@@ -9,6 +10,8 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
     [HubName("ITemporalDataQueryFacade")]
     public class TemporalDataQueryHub : Hub
     {
+        private const int Limit = 100;
+
         private readonly ITemporalDataQueryFacade _temporalDataQueryFacade;
 
         public TemporalDataQueryHub(ITemporalDataQueryFacade temporalDataQueryFacade)
@@ -21,12 +24,29 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             try
             {
                 var enumerator = _temporalDataQueryFacade.GetRecordsHistory(dataSourceInfo, recordKey);
+                var list = new List<Dictionary<string, object>>();
+                var counter = 0;
+                var count = 0;
                 foreach (var data in enumerator)
                 {
-                    Clients.Caller.GetRecordsHistoryOnNext(data);
+                    ++counter;
+                    ++count;
+                    list.Add(data);
+                    if (counter == Limit)
+                    {
+                        counter = 0;
+                        Clients.Caller.GetRecordsHistoryOnNext(list.ToArray());
+                        list.Clear();
+                    }
                 }
 
-                Clients.Caller.GetRecordsHistoryOnComplete();
+                if (counter != 0)
+                {
+                    Clients.Caller.GetRecordsHistoryOnNext(list.ToArray());
+                    list.Clear();
+                }
+
+                Clients.Caller.GetRecordsHistoryOnComplete(count);
             }
             catch (Exception ex)
             {
@@ -40,12 +60,29 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             try
             {
                 var enumerator = _temporalDataQueryFacade.GetDataHistoryByTag(dataSourceInfo, tagInfo);
+                var list = new List<Dictionary<string, object>>();
+                var counter = 0;
+                var count = 0;
                 foreach (var data in enumerator)
                 {
-                    Clients.Caller.GetDataHistoryByTagOnNext(data);
+                    ++counter;
+                    ++count;
+                    list.Add(data);
+                    if (counter == Limit)
+                    {
+                        counter = 0;
+                        Clients.Caller.GetDataHistoryByTagOnNext(list.ToArray());
+                        list.Clear();
+                    }
                 }
 
-                Clients.Caller.GetDataHistoryByTagOnComplete();
+                if (counter != 0)
+                {
+                    Clients.Caller.GetDataHistoryByTagOnNext(list.ToArray());
+                    list.Clear();
+                }
+
+                Clients.Caller.GetDataHistoryByTagOnComplete(count);
             }
             catch (Exception ex)
             {
@@ -59,12 +96,29 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             try
             {
                 var enumerator = _temporalDataQueryFacade.GetRecordsAsOf(dataSourceInfo, timeStamp);
+                var list = new List<Dictionary<string, object>>();
+                var counter = 0;
+                var count = 0;
                 foreach (var data in enumerator)
                 {
-                    Clients.Caller.GetRecordsAsOfOnNext(data);
+                    ++counter;
+                    ++count;
+                    list.Add(data);
+                    if (counter == Limit)
+                    {
+                        counter = 0;
+                        Clients.Caller.GetRecordsAsOfOnNext(list.ToArray());
+                        list.Clear();
+                    }
                 }
 
-                Clients.Caller.GetRecordsAsOfOnComplete();
+                if (counter != 0)
+                {
+                    Clients.Caller.GetRecordsAsOfOnNext(list.ToArray());
+                    list.Clear();
+                }
+
+                Clients.Caller.GetRecordsAsOfOnComplete(count);
             }
             catch (Exception ex)
             {
@@ -78,12 +132,30 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             try
             {
                 var enumerator = _temporalDataQueryFacade.GeTagInfos();
+                var list = new List<TagInfo>();
+                var counter = 0;
+                var count = 0;
+                
                 foreach (var data in enumerator)
                 {
-                    Clients.Caller.GeTagInfosOnNext(data);
+                    ++counter;
+                    ++count;
+                    list.Add(data);
+                    if (counter == Limit)
+                    {
+                        counter = 0;
+                        Clients.Caller.GeTagInfosOnNext(list.ToArray());
+                        list.Clear();
+                    }
                 }
 
-                Clients.Caller.GeTagInfosOnComplete();
+                if (counter != 0)
+                {
+                    Clients.Caller.GeTagInfosOnNext(list.ToArray());
+                    list.Clear();
+                }
+
+                Clients.Caller.GeTagInfosOnComplete(count);
             }
             catch (Exception ex)
             {

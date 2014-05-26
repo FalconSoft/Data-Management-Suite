@@ -11,6 +11,8 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 {
     internal class CommandFacade : ICommandFacade
     {
+        private const int Limit = 100;
+
         private readonly string _connectionString;
 
         private HubConnection _connection;
@@ -104,7 +106,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 {
                     ++counter;
                     list.Add(keyToDelete);
-                    if (counter == 100)
+                    if (counter == Limit)
                     {
                         counter = 0;
                         _proxy.Invoke("SubmitChangesDeleteOnNext", connectionId, list.ToArray());
@@ -139,7 +141,7 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 {
                     ++counter;
                     list.Add(dataToUpdate);
-                    if (counter == 100)
+                    if (counter == Limit)
                     {
                         counter = 0;
                         _proxy.Invoke("SubmitChangesChangeRecordsOnNext", connectionId, list.ToArray());

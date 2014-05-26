@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -52,8 +51,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             var connectionId = string.Copy(Context.ConnectionId);
             if (_connectionIDictionary.ContainsKey(connectionId))
             {
-                var dataSourcePath = _connectionIDictionary[connectionId];
-
                 _connectionIDictionary.Remove(connectionId);
 
                 if (_toDelteSubjects.ContainsKey(connectionId))
@@ -120,14 +117,11 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
             var task = Task.Factory.StartNew(() =>
             {
-                var sw = new Stopwatch();
-                sw.Start();
                 var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord : null);
                 var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator : null);
                 var changedRecordsToArray = changeRecordsTask.Result;
                 var deleteToArray = deleteToArrayTask.Result;
-                sw.Stop();
-               Trace.WriteLine(string.Format("      Time elapse while data is transfering  : {0}", sw.Elapsed));
+                
                 _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
                     changedRecordsToArray, deleteToArray,
                     r => Clients.Client(connectionId).OnSuccess(r),

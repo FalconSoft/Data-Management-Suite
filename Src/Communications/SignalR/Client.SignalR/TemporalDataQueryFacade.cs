@@ -21,27 +21,35 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
         private Action<Dictionary<string, object>> _getRecordsHistoryOnNextAction;
         private Action _getRecordsHistoryOnCompleteAction;
         private Action<Exception> _getRecordsHistoryOnErrorAction;
-        // ************************************************
+        private int _getRecordsHistoryCount;
+        private int _getRecordsHistoryCounter;
+        private readonly object _getRecordsHistoryLock = new object();
 
         //for GetDataHistoryByTag method
         private Action<Dictionary<string, object>> _getDataHistoryByTagOnNextAction;
         private Action _getDataHistoryByTagOnCompleteAction;
-        private Action<Exception> _getDataHistoryByTagOnErrorAction; 
-        // ************************************************
+        private Action<Exception> _getDataHistoryByTagOnErrorAction;
+        private int _getDataHistoryByTagCount;
+        private int _getDataHistoryByTagCounter;
+        private readonly object _getDataHistoryByTagLock = new object();
 
         //for GetRecordsAsOf method
         private Action<Dictionary<string, object>> _getRecordsAsOfOnNextAction;
         private Action _getRecordsAsOfOnCompleteAction;
         private Action<Exception> _getRecordsAsOfOnErrorAction;
-        // ************************************************
+        private int _getRecordsAsOfCount;
+        private int _getRecordsAsOfCounter;
+        private readonly object _getRecordsAsOfLock = new object();
 
         //for GeTagInfos method
         private Action<TagInfo> _geTagInfosOnNextAction;
         private Action _geTagInfosOnCompleteAction;
         private Action<Exception> _geTagInfosOnErrorAction;
-        
+        private int _geTagInfosCount;
+        private int _geTagInfosCounter;
+        private readonly object _geTagInfosLock = new object();
+
         private Action _onCompleteAction;
-        private Action<Exception> _onFailedAction;
 
         public TemporalDataQueryFacade(string connectionString)
         {
@@ -55,15 +63,36 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
             _proxy = _connection.CreateHubProxy("ITemporalDataQueryFacade");
 
             //  for GetRecordsHistory method
-            _proxy.On<Dictionary<string, object>>("GetRecordsHistoryOnNext", data =>
+            _proxy.On<Dictionary<string, object>[]>("GetRecordsHistoryOnNext", data =>
             {
-                if (_getRecordsHistoryOnNextAction != null)
-                    _getRecordsHistoryOnNextAction(data);
+                lock (_getRecordsHistoryLock)
+                {
+                    if (_getRecordsHistoryOnNextAction != null)
+                        foreach (var dictionary in data)
+                        {
+                            ++_getRecordsHistoryCounter;
+                            _getRecordsHistoryOnNextAction(dictionary);
+                        }
+                    if (_getRecordsHistoryCount != 0 &&
+                        _getRecordsHistoryCounter != 0 &&
+                        _getRecordsHistoryCount == _getRecordsHistoryCounter &&
+                        _getRecordsHistoryOnCompleteAction != null)
+                        _getRecordsHistoryOnCompleteAction();
+                }
             });
 
-            _proxy.On("GetRecordsHistoryOnComplete", () =>
+            _proxy.On<int>("GetRecordsHistoryOnComplete", count =>
             {
-                if (_getRecordsHistoryOnCompleteAction != null)
+                _getRecordsHistoryCount = count;
+
+                if (_getRecordsHistoryCount != 0 &&
+                    _getRecordsHistoryCounter != 0 &&
+                    _getRecordsHistoryCount == _getRecordsHistoryCounter
+                    && _getRecordsHistoryOnCompleteAction != null)
+                    _getRecordsHistoryOnCompleteAction();
+
+                if (count == 0 &&
+                    _getRecordsHistoryOnCompleteAction != null)
                     _getRecordsHistoryOnCompleteAction();
             });
 
@@ -73,18 +102,36 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                     _getRecordsHistoryOnErrorAction(ex);
             });
 
-            //*********************************************
-
             //  for GetDataHistoryByTag method
-            _proxy.On<Dictionary<string, object>>("GetDataHistoryByTagOnNext", data =>
+            _proxy.On<Dictionary<string, object>[]>("GetDataHistoryByTagOnNext", data =>
             {
-                if (_getDataHistoryByTagOnNextAction != null)
-                    _getDataHistoryByTagOnNextAction(data);
+                lock (_getDataHistoryByTagLock)
+                {
+                    if (_getDataHistoryByTagOnNextAction != null)
+                        foreach (var dictionary in data)
+                        {
+                            ++_getDataHistoryByTagCounter;
+                            _getDataHistoryByTagOnNextAction(dictionary);
+                        }
+
+                    if (_getDataHistoryByTagCount != 0 &&
+                        _getDataHistoryByTagCounter != 0 &&
+                        _getDataHistoryByTagCount == _getDataHistoryByTagCounter &&
+                        _getDataHistoryByTagOnCompleteAction != null)
+                        _getDataHistoryByTagOnCompleteAction();
+                }
             });
 
-            _proxy.On("GetDataHistoryByTagOnComplete", () =>
+            _proxy.On<int>("GetDataHistoryByTagOnComplete", count =>
             {
-                if (_getDataHistoryByTagOnCompleteAction != null)
+                _getDataHistoryByTagCount = count;
+                if (_getDataHistoryByTagCount != 0 &&
+                    _getDataHistoryByTagCounter != 0 &&
+                    _getDataHistoryByTagCount == _getDataHistoryByTagCounter &&
+                    _getDataHistoryByTagOnCompleteAction != null)
+                    _getDataHistoryByTagOnCompleteAction();
+                if (count == 0 &&
+                    _getDataHistoryByTagOnCompleteAction != null)
                     _getDataHistoryByTagOnCompleteAction();
             });
 
@@ -94,18 +141,36 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                     _getDataHistoryByTagOnErrorAction(ex);
             });
 
-            //*********************************************
-
             //  for GetRecordsAsOf method
-            _proxy.On<Dictionary<string, object>>("GetRecordsAsOfOnNext", data =>
+            _proxy.On<Dictionary<string, object>[]>("GetRecordsAsOfOnNext", data =>
             {
-                if (_getRecordsAsOfOnNextAction != null)
-                    _getRecordsAsOfOnNextAction(data);
+                lock (_getRecordsAsOfLock)
+                {
+                    if (_getRecordsAsOfOnNextAction != null)
+                        foreach (var dictionary in data)
+                        {
+                            ++_getRecordsAsOfCounter;
+                            _getRecordsAsOfOnNextAction(dictionary);
+                        }
+
+                    if (_getRecordsAsOfCount != 0 &&
+                        _getRecordsAsOfCounter != 0 &&
+                        _getRecordsAsOfCounter == _getRecordsAsOfCount &&
+                        _getRecordsAsOfOnCompleteAction != null)
+                        _getRecordsAsOfOnCompleteAction();
+                }
             });
 
-            _proxy.On("GetRecordsAsOfOnComplete", () =>
+            _proxy.On<int>("GetRecordsAsOfOnComplete", count =>
             {
-                if (_getRecordsAsOfOnCompleteAction != null)
+                _getRecordsAsOfCount = count;
+                if (_getRecordsAsOfCount != 0 &&
+                    _getRecordsAsOfCounter != 0 &&
+                    _getRecordsAsOfCounter == _getRecordsAsOfCount &&
+                    _getRecordsAsOfOnCompleteAction != null)
+                    _getRecordsAsOfOnCompleteAction();
+                if (count == 0 &&
+                    _getRecordsAsOfOnCompleteAction != null)
                     _getRecordsAsOfOnCompleteAction();
             });
 
@@ -114,19 +179,38 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 if (_getRecordsAsOfOnErrorAction != null)
                     _getRecordsAsOfOnErrorAction(ex);
             });
-
-            //*********************************************
-
+            
             //  for GeTagInfos method
-            _proxy.On<TagInfo>("GeTagInfosOnNext", data =>
+            _proxy.On<TagInfo[]>("GeTagInfosOnNext", data =>
             {
-                if (_geTagInfosOnNextAction != null)
-                    _geTagInfosOnNextAction(data);
+                lock (_geTagInfosLock)
+                {
+                    if (_geTagInfosOnNextAction != null)
+                        foreach (var tagInfo in data)
+                        {
+                            ++_geTagInfosCounter;
+                            _geTagInfosOnNextAction(tagInfo);
+                        }
+
+                    if (_geTagInfosCount != 0 &&
+                        _geTagInfosCounter != 0 &&
+                        _geTagInfosCount == _geTagInfosCounter &&
+                        _geTagInfosOnCompleteAction != null)
+                        _geTagInfosOnCompleteAction();
+                }
             });
 
-            _proxy.On("GeTagInfosOnComplete", () =>
+            _proxy.On<int>("GeTagInfosOnComplete", count =>
             {
-                if (_geTagInfosOnCompleteAction != null)
+                _geTagInfosCount = count;
+                if (_geTagInfosCount != 0 &&
+                    _geTagInfosCounter != 0 &&
+                    _geTagInfosCount == _geTagInfosCounter &&
+                    _geTagInfosOnCompleteAction != null)
+                    _geTagInfosOnCompleteAction();
+
+                if (count != 0 &&
+                    _geTagInfosOnCompleteAction != null)
                     _geTagInfosOnCompleteAction();
             });
 
@@ -135,8 +219,6 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
                 if (_geTagInfosOnErrorAction != null)
                     _geTagInfosOnErrorAction(ex);
             });
-
-            //*********************************************
 
             _proxy.On("OnComplete", () =>
             {
@@ -158,12 +240,16 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)
         {
-            CheckConnectionToServer();
-
             var subject = new Subject<Dictionary<string, object>>();
+
+            _getRecordsHistoryCount = 0;
+            _getRecordsHistoryCounter = 0;
+
             _getRecordsHistoryOnNextAction = data => subject.OnNext(data);
             _getRecordsHistoryOnCompleteAction = () => subject.OnCompleted();
             _getRecordsHistoryOnErrorAction = ex => subject.OnError(ex);
+
+            CheckConnectionToServer();
 
             _proxy.Invoke("GetRecordsHistory", dataSourceInfo, recordKey);
 
@@ -172,12 +258,16 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public IEnumerable<Dictionary<string, object>> GetDataHistoryByTag(DataSourceInfo dataSourceInfo, TagInfo tagInfo)
         {
-            CheckConnectionToServer();
-
             var subject = new Subject<Dictionary<string, object>>();
+
+            _getDataHistoryByTagCount = 0;
+            _getDataHistoryByTagCounter = 0;
+
             _getDataHistoryByTagOnNextAction = data => subject.OnNext(data);
             _getDataHistoryByTagOnCompleteAction = () => subject.OnCompleted();
             _getDataHistoryByTagOnErrorAction = ex => subject.OnError(ex);
+
+            CheckConnectionToServer();
 
             _proxy.Invoke("GetDataHistoryByTag", dataSourceInfo, tagInfo);
 
@@ -186,12 +276,16 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public IEnumerable<Dictionary<string, object>> GetRecordsAsOf(DataSourceInfo dataSourceInfo, DateTime timeStamp)
         {
-            CheckConnectionToServer();
-
             var subject = new Subject<Dictionary<string, object>>();
+
+            _getRecordsAsOfCount = 0;
+            _getRecordsAsOfCounter = 0;
+
             _getRecordsAsOfOnNextAction = data => subject.OnNext(data);
             _getRecordsAsOfOnCompleteAction = () => subject.OnCompleted();
             _getRecordsAsOfOnErrorAction = ex => subject.OnError(ex);
+
+            CheckConnectionToServer();
 
             _proxy.Invoke("GetRecordsAsOf", dataSourceInfo, timeStamp);
 
@@ -200,12 +294,16 @@ namespace FalconSoft.ReactiveWorksheets.Client.SignalR
 
         public IEnumerable<TagInfo> GeTagInfos()
         {
-            CheckConnectionToServer();
-
             var subject = new Subject<TagInfo>();
+
+            _geTagInfosCount = 0;
+            _geTagInfosCounter = 0;
+
             _geTagInfosOnNextAction = data => subject.OnNext(data);
             _geTagInfosOnCompleteAction = () => subject.OnCompleted();
             _geTagInfosOnErrorAction = ex => subject.OnError(ex);
+
+            CheckConnectionToServer();
 
             _proxy.Invoke("GeTagInfos");
 

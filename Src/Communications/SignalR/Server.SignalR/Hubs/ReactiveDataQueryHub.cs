@@ -17,10 +17,11 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
     [HubName("IReactiveDataQueryFacade")]
     public class ReactiveDataQueryHub : Hub
     {
+        private const int Limit = 100;
+
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ILogger _logger;
         private readonly Dictionary<string, CompositeDisposable> _getDataChangesDisposables;
-        private readonly Dictionary<string, string> _dataSourcePathDictionary;
 
         public override Task OnConnected()
         {
@@ -50,7 +51,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
         public ReactiveDataQueryHub(IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger)
         {
             _getDataChangesDisposables = new Dictionary<string, CompositeDisposable>();
-            _dataSourcePathDictionary = new Dictionary<string, string>();
             _reactiveDataQueryFacade = reactiveDataQueryFacade;
             _logger = logger;
         }
@@ -61,13 +61,29 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             try
             {
                 var data = _reactiveDataQueryFacade.GetAggregatedData(dataSourcePath, aggregatedWorksheet, filterRules);
-
+                var list = new List<Dictionary<string, object>>();
+                var counter = 0;
+                var count = 0;
                 foreach (var d in data)
                 {
-                    Clients.Caller.GetAggregatedDataOnNext(d);
+                    ++counter;
+                    ++count;
+                    list.Add(d);
+                    if (counter == Limit)
+                    {
+                        counter = 0;
+                        Clients.Caller.GetAggregatedDataOnNext(list.ToArray());
+                        list.Clear();
+                    }
                 }
 
-                Clients.Caller.GetAggregatedDataOnComplete();
+                if (counter != 0)
+                {
+                    Clients.Caller.GetAggregatedDataOnNext(list.ToArray());
+                    list.Clear();
+                }
+
+                Clients.Caller.GetAggregatedDataOnComplete(count);
             }
             catch (Exception ex)
             {
@@ -87,12 +103,30 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     miConstructed.Invoke(_reactiveDataQueryFacade,
                         new object[] {dataSourcePath, filterRules.Any() ? filterRules : null});
 
+                var list = new List<object>();
+                var count = 0;
+                var counter = 0;
+
                 foreach (var obj in result)
                 {
-                    Clients.Caller.GetGenericDataOnNext(obj);
+                    ++counter;
+                    ++count;
+                    list.Add(obj);
+                    if (counter == Limit)
+                    {
+                        counter = 0;
+                        Clients.Caller.GetGenericDataOnNext(list.ToArray());
+                        list.Clear();
+                    }
                 }
 
-                Clients.Caller.GetGenericDataOnComplete();
+                if (counter != 0)
+                {
+                    Clients.Caller.GetGenericDataOnNext(list.ToArray());
+                    list.Clear();
+                }
+
+                Clients.Caller.GetGenericDataOnComplete(count);
             }
             catch (Exception ex)
             {
@@ -104,7 +138,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
 
         public void GetData(string connectionId, string dataSourcePath, FilterRule[] filterRules)
         {
-            //Task.Factory.StartNew(()=>
             {
                 Trace.WriteLine("   GetData Start connection Id : " + connectionId);
                 try
@@ -118,7 +151,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     {
                         ++counter;
                         list.Add(d);
-                        if (counter == 100)
+                        if (counter == Limit)
                         {
                             counter = 0;
                             Clients.Client(connectionId).GetDataOnNext(list.ToArray());
@@ -142,7 +175,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     Trace.WriteLine("   GetData Failed connection Id : " + connectionId);
                     throw;
                 }
-            }//);
+            }
         }
 
         public void GetDataChanges(string connectionId, string dataSourcePath, FilterRule[] filterRules)
@@ -162,9 +195,24 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
                     filterRules.Any() ? filterRules : null)
                     .Subscribe(recordChangedParams =>
                     {
+                        var list = new List<RecordChangedParam>();
+                        var counter = 0;
                         foreach (var recordChangedParam in recordChangedParams)
                         {
-                            Clients.Client(localConnectionId.ToString()).GetDataChangesOnNext(recordChangedParam);
+                            ++counter;
+                            list.Add(recordChangedParam);
+                            if (counter == Limit)
+                            {
+                                counter = 0;
+                                Clients.Client(localConnectionId.ToString()).GetDataChangesOnNext(list.ToArray());
+                                list.Clear();
+                            }
+                        }
+
+                        if (counter != 0)
+                        {
+                            Clients.Client(localConnectionId.ToString()).GetDataChangesOnNext(list.ToArray());
+                            list.Clear();
                         }
                     });
 
@@ -178,22 +226,6 @@ namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
             _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecord,dataSourceUrn,
                 (str, rcp) => Clients.Caller.ResolveRecordbyForeignKeySuccess(str, rcp),
                 (str, ex) => Clients.Caller.ResolveRecordbyForeignKeyFailed(str, ex));
-        }
-
-        private RecordChangedParam CopyRecordChangedParam(RecordChangedParam param)
-        {
-            return new RecordChangedParam
-            {
-                ChangeSource = param.ChangeSource,
-                ChangedAction = param.ChangedAction,
-                ChangedPropertyNames = param.ChangedPropertyNames,
-                IgnoreWorksheet = param.IgnoreWorksheet,
-                OriginalRecordKey = param.OriginalRecordKey,
-                ProviderString = param.ProviderString,
-                RecordKey = param.RecordKey,
-                RecordValues = new Dictionary<string, object>(param.RecordValues),
-                UserToken = param.UserToken
-            };
         }
     }
 }
