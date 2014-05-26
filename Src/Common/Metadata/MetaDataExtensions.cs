@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace FalconSoft.ReactiveWorksheets.Common.Metadata
@@ -9,7 +8,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
     {
         public static string GetCategory(this string str)
         {
-           return str.Split('\\').First();
+            return str.Split('\\').First();
         }
 
         public static string GetName(this string str)
@@ -19,12 +18,12 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 
         public static string ToValidDbString(this string str)
         {
-            return str.Replace('\\','_');
+            return str.Replace('\\', '_');
         }
 
         public static List<string> GetKeyFieldsName(this DataSourceInfo ds)
         {
-            return ds.Fields.Where(w=>w.Value.IsKey).Select(s=>s.Key).ToList();
+            return ds.Fields.Where(w => w.Value.IsKey).Select(s => s.Key).ToList();
         }
 
         public static DataSourceInfo ResolveDataSourceParents(this DataSourceInfo dataSourceInfo, DataSourceInfo[] dataSources)
@@ -38,7 +37,7 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 parentField.IsParentField = true;
                 if (dataSource.Fields.ContainsKey(parentField.Name))
                     dataSource.Fields[parentField.Name] = parentField;
-                else 
+                else
                     dataSource.Fields.Add(parentField.Name, parentField);
             }
             return dataSource;
@@ -46,12 +45,12 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
 
         public static IEnumerable<string> ResolveDataSourceParentUrnsRevers(this string dataSourceUrn, DataSourceInfo[] dataSources)
         {
-            if (string.IsNullOrEmpty(dataSources.First(x=>x.DataSourcePath == dataSourceUrn).ParentDataSourcePath)) return new[]{dataSourceUrn};
-            var list = new List<string> {dataSourceUrn};
+            if (string.IsNullOrEmpty(dataSources.First(x => x.DataSourcePath == dataSourceUrn).ParentDataSourcePath)) return new[] { dataSourceUrn };
+            var list = new List<string> { dataSourceUrn };
             var ds = (DataSourceInfo)dataSources.First(x => x.DataSourcePath == dataSourceUrn).Clone();
             while (!string.IsNullOrEmpty(ds.ParentDataSourcePath))
             {
-                ds = (DataSourceInfo) dataSources.First(x => x.DataSourcePath == ds.ParentDataSourcePath).Clone();
+                ds = (DataSourceInfo)dataSources.First(x => x.DataSourcePath == ds.ParentDataSourcePath).Clone();
                 list.Add(ds.DataSourcePath);
             }
             list.Reverse();
@@ -83,8 +82,8 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
         public static DataSourceInfo[] GetChildDataSources(this string dataSourcePath, DataSourceInfo[] dataSources)
         {
             var childDataSources = new Dictionary<string, DataSourceInfo>();
-            ResolveChildDataSources(ref childDataSources, dataSources.First(x=>x.DataSourcePath == dataSourcePath), dataSources);
-            return childDataSources.Where(x=>x.Key != dataSourcePath).Select(x=>x.Value).ToArray();
+            ResolveChildDataSources(ref childDataSources, dataSources.First(x => x.DataSourcePath == dataSourcePath), dataSources);
+            return childDataSources.Where(x => x.Key != dataSourcePath).Select(x => x.Value).ToArray();
         }
 
         private static void ResolveChildDataSources(ref Dictionary<string, DataSourceInfo> list, HeaderInfo dataSource, DataSourceInfo[] dataSources)
@@ -127,11 +126,11 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
                 Category = aggregatedWorksheet.DataSourceInfoPath.GetCategory(),
                 Id = aggregatedWorksheetDataSource.Id,
                 Name = aggregatedWorksheet.DataSourceInfoPath.GetName(),
-                Fields = aggregatedWorksheet.GetColumnsFromAgrWs().ToDictionary(x=>x.Header, x=>new FieldInfo
+                Fields = aggregatedWorksheet.GetColumnsFromAgrWs().ToDictionary(x => x.Header, x => new FieldInfo
                 {
                     DataSourceProviderString = aggregatedWorksheet.DataSourceInfoPath,
                     IsKey = x.FieldName == x.Header,
-                    IsNullable = x.FieldName!=x.Header,
+                    IsNullable = x.FieldName != x.Header,
                     DataType = aggregatedWorksheetDataSource.Fields[x.FieldName].DataType,
                     Name = x.Header,
                     IsParentField = false,
@@ -153,29 +152,23 @@ namespace FalconSoft.ReactiveWorksheets.Common.Metadata
             return dataSource;
         }
 
-        public static IEnumerable<TSource> DistinctBy<TSource, TKey> (this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
         {
             var seenKeys = new HashSet<TKey>();
-            foreach (var element in source)
-            {
-                if (seenKeys.Add(keySelector(element)))
-                {
-                    yield return element;
-                }
-            }
+            return source.Where(element => seenKeys.Add(keySelector(element)));
         }
 
         public static RecordChangedParam Clone(this RecordChangedParam recordChangedParam)
         {
-            var changedParam = new RecordChangedParam()
+            var changedParam = new RecordChangedParam
             {
                 ChangeSource = recordChangedParam.ChangeSource,
                 UserToken = recordChangedParam.UserToken,
-                RecordValues = new Dictionary<string, object>(recordChangedParam.RecordValues),
+                RecordValues = recordChangedParam.RecordValues != null ? new Dictionary<string, object>(recordChangedParam.RecordValues) : new Dictionary<string, object>(),
                 ChangedAction = recordChangedParam.ChangedAction,
                 RecordKey = recordChangedParam.RecordKey,
                 ProviderString = recordChangedParam.ProviderString,
-                ChangedPropertyNames = new List<string>(recordChangedParam.ChangedPropertyNames).ToArray(),
+                ChangedPropertyNames = recordChangedParam.ChangedPropertyNames != null ? new List<string>(recordChangedParam.ChangedPropertyNames).ToArray() : new string[0],
                 IgnoreWorksheet = recordChangedParam.IgnoreWorksheet,
                 OriginalRecordKey = recordChangedParam.OriginalRecordKey,
             };
