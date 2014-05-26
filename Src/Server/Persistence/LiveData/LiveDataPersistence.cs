@@ -109,9 +109,6 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
 
             var queryList = record.Select(rec => Query.EQ(string.Format("RecordValues.{0}", rec.Key), BsonValue.Create(rec.Value)));
             return _collection.FindAs<LiveDataObject>(Query.And(queryList)).SetFields(Fields.Exclude("_id"));
-
-            //return _collection.AsQueryable().Cast<LiveDataObject>()
-            //        .Where(e => e.RecordValues[foreignFieldName] == recordValue).ToList();
         }
 
         public void UpdateForeignIndexes(string[] fields)
@@ -133,7 +130,9 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
                 groupedRecords[recordChangedParam.RecordKey] = recordChangedParam;
             }
                 
-            var existedRecords =  _collection.FindAllAs<LiveDataObject>().SetFields(Fields.Exclude("_id")).AsQueryable().Select(r => r.RecordKey);
+            var query = Query<LiveDataObject>.In(e => e.RecordKey, groupedRecords.Keys);
+
+            var existedRecords =  _collection.FindAs<LiveDataObject>(query).SetFields(Fields.Exclude("_id")).AsQueryable().Select(r => r.RecordKey);
 
             var recordsToUpdate = groupedRecords.Keys.Intersect(existedRecords);
             var recordsToInsert = groupedRecords.Keys.Except(existedRecords)
@@ -198,34 +197,22 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
         private void UpdateRecord(RecordChangedParam record)
         {
             var query = Query<LiveDataObject>.EQ(e => e.RecordKey, record.RecordKey);
-
-// list of updates that will be done in document
             var updateValues = new List<UpdateBuilder>();
             updateValues.Add(Update.Set("RecordKey", record.RecordKey));
             updateValues.Add(Update.Set("UserToken", record.UserToken ?? BsonNull.Value.ToString()));
 
-            // if i have to update just several fields in dictionary
             if (record.ChangedPropertyNames != null)
-                // updateValues.AddRange(record.ChangedPropertyNames.Select(name => Update<LiveDataObject>.Set(e => e.RecordValues[name], record.RecordValues[name])).ToArray());
                 updateValues.AddRange(
-                    record.ChangedPropertyNames.Select(
-                        name =>
-                            Update.Set(string.Format("RecordValues.{0}", name),
-                                record.RecordValues[name] == null ? BsonNull.Value : BsonValue.Create(record.RecordValues[name])))
-                        .ToArray());
+                    record.ChangedPropertyNames.Select(name => Update.Set(string.Format("RecordValues.{0}", name), record.RecordValues[name] == null ? BsonNull.Value : BsonValue.Create(record.RecordValues[name]))).ToArray());
             else
-                // if i have to update all properies in dicationary
-                // updateValues.Add(Update<LiveDataObject>.Set(e => e.RecordValues, record.RecordValues));
                 updateValues.Add(Update.Set("RecordValues", record.RecordValues.ToBsonDocument()));
-
             var update = Update<LiveDataObject>.Combine(updateValues);
-
-            // thread save get last update of document
-            var documents = _collection.FindAndModify(query, SortBy<LiveDataObject>.Ascending(e => e.RecordKey),
-                update, true);
-            documents.ModifiedDocument.Remove("_id");
-            var document = BsonSerializer.Deserialize<LiveDataObject>(documents.ModifiedDocument);
-            record.RecordValues = document.RecordValues;
+            //var update = Update.Set("RecordKey", record.RecordKey).Set("UserToken", record.UserToken ?? BsonNull.Value.ToString());
+            //if (record.ChangedPropertyNames != null)
+            //        record.ChangedPropertyNames.Select(name => update.Set(string.Format("RecordValues.{0}", name), record.RecordValues[name] == null ? BsonNull.Value : BsonValue.Create(record.RecordValues[name]))).Count();
+            //else
+            //    update.Set("RecordValues", record.RecordValues.ToBson());
+            _collection.Update(query, update);
         }
 
         private string ConvertToMongoOperations(Operations operation, string value)

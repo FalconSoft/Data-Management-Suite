@@ -18,7 +18,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
         private readonly string[] _dbfields = { "RecordKey", "TimeStamp", "UserId", "_id" };
         private readonly DataSourceInfo _dataSourceInfo;
         private MongoDatabase _mongoDatabase;
-
+        private MongoCollection<BsonDocument> _collection;
         //BUFFER
         private readonly int _buffer = 100 - 1;
         //ROLLOVER
@@ -32,6 +32,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
             _dataSourceInfo = dataSourceInfo;
             _buffer = buffer - 1;
             _rollover = rollover;
+            ConnectToDb();
         }
 
         private void ConnectToDb()
@@ -40,14 +41,23 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
             {
                 _mongoDatabase = MongoDatabase.Create(_connectionString);
             }
+            if (_mongoDatabase.CollectionExists(_dataSourceProviderString.ToValidDbString() + "_History"))
+            {
+                _collection = _mongoDatabase.GetCollection(_dataSourceProviderString.ToValidDbString() + "_History");
+            }
+            else
+            {
+                _mongoDatabase.CreateCollection(_dataSourceProviderString.ToValidDbString() + "_History");
+                _collection = _mongoDatabase.GetCollection(_dataSourceProviderString.ToValidDbString() + "_History");
+                _collection.EnsureIndex("RecordKey");
+                _collection.EnsureIndex("Current");
+            }
         }
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(string recordKey)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
             var users = _mongoDatabase.GetCollection<BsonDocument>("Users");
-            var cursorData = collection.Find(Query.EQ("RecordKey", recordKey));
+            var cursorData = _collection.Find(Query.EQ("RecordKey", recordKey));
             var cursorUser = users.FindAllAs<BsonDocument>();
 
             var list = new List<Dictionary<string, object>>();
@@ -79,10 +89,8 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(DateTime timeStamp)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
             var users = _mongoDatabase.GetCollection<BsonDocument>("Users");
-            var cursorData = collection.FindAllAs<BsonDocument>();
+            var cursorData = _collection.FindAllAs<BsonDocument>();
             var cursorUser = users.FindAllAs<BsonDocument>();
             var list = new List<Dictionary<string, object>>();
 
@@ -114,9 +122,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalDataByTag(TagInfo tagInfo)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<BsonDocument>(tagInfo.DataSourceProviderString.ToValidDbString() + "_History");
-            var cursorData = collection.FindAllAs<BsonDocument>();
+            var cursorData = _collection.FindAllAs<BsonDocument>();
             string[] exceptfields = { "TimeStamp", "UserId", "_id" };
             var list = new List<Dictionary<string, object>>();
 
@@ -142,19 +148,17 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         public void SaveTempotalData(RecordChangedParam recordChangedParam)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<BsonDocument>(recordChangedParam.ProviderString.ToValidDbString() + "_History");
             if (!string.IsNullOrEmpty(recordChangedParam.OriginalRecordKey) &&
                 (recordChangedParam.OriginalRecordKey != recordChangedParam.RecordKey))
             {
                 var query = Query.EQ("RecordKey", recordChangedParam.OriginalRecordKey);
                 var update = Update.Set("RecordKey", recordChangedParam.RecordKey);
-                collection.Update(query, update, UpdateFlags.Multi);
+                _collection.Update(query, update, UpdateFlags.Multi);
             }
-            var cursor = collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LTE("Current", _buffer))); 
+            var cursor = _collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LTE("Current", _buffer))); 
             if (cursor == null)
             {
-                CreateNewDoucument(collection, recordChangedParam);
+                CreateNewDoucument(_collection, recordChangedParam);
             }
             else
             {
@@ -165,7 +169,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                     bsDoc.AddRange(recordChangedParam.RecordValues.ToArray());
                     var query = Query.EQ("_id", cursor["_id"]);
                     var update = Update.Set(string.Format("Data.{0}", cursor["Current"]), bsDoc);
-                    collection.Update(query, update);
+                    _collection.Update(query, update);
                     return;
                 }
                 switch (recordChangedParam.ChangedAction)
@@ -181,18 +185,18 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                             {
                                 var doc = cursor["Data"].AsBsonArray.Last();
                                 doc["TimeStamp"] = DateTime.Now;
-                                collection.Update(query, Update.Set(string.Format("Data.{0}", cursor["Current"].AsInt32), doc));
-                                CreateNewDoucument(collection, recordChangedParam);
+                                _collection.Update(query, Update.Set(string.Format("Data.{0}", cursor["Current"].AsInt32), doc));
+                                CreateNewDoucument(_collection, recordChangedParam);
                                 break;
                             }
                             if (cursor["Current"].AsInt32 == _buffer && _rollover == false)//ROLLOVER OFF
                             {
-                                collection.Update(query, Update.Set(string.Format("Data.{0}", _buffer), bsDoc).Set("Current",0));
+                                _collection.Update(query, Update.Set(string.Format("Data.{0}", _buffer), bsDoc).Set("Current",0));
                                 break;
                             }
                             var num = cursor["Current"].AsInt32 + 1;
                             var update = Update.Set(string.Format("Data.{0}", num), bsDoc).Set("Current", num);
-                            collection.Update(query, update);
+                            _collection.Update(query, update);
                             break;
                         }
                     case RecordChangedAction.Removed:
@@ -208,7 +212,6 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         public void SaveTagInfo(TagInfo tagInfo)
         {
-            ConnectToDb();
             var recordsHistory = _mongoDatabase.GetCollection<BsonDocument>(tagInfo.DataSourceProviderString.ToValidDbString() + "_History");
             tagInfo.Revisions =
                 recordsHistory.FindAll()
@@ -220,7 +223,6 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         public void RemoveTagInfo(TagInfo tagInfo)
         {
-            ConnectToDb();
             var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
             var query = Query<TagInfo>.EQ(t => t.TagName, tagInfo.TagName);
             collection.Remove(query);
@@ -228,7 +230,6 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         public IEnumerable<TagInfo> GeTagInfos()
         {
-            ConnectToDb();
             var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
             return collection.FindAll().SetFields(Fields.Exclude("_id")).ToList();
         }
