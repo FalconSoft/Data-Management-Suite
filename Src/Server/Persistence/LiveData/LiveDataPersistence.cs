@@ -198,6 +198,11 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
         {
             var query = Query<LiveDataObject>.EQ(e => e.RecordKey, record.RecordKey);
             var updateValues = new List<UpdateBuilder>();
+            if (record.ChangedAction == RecordChangedAction.Removed)
+            {
+                _collection.Remove(query);
+                return;
+            }
             updateValues.Add(Update.Set("RecordKey", record.RecordKey));
             updateValues.Add(Update.Set("UserToken", record.UserToken ?? BsonNull.Value.ToString()));
 
