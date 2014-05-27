@@ -38,8 +38,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.SearchIndexes
 
         public SearchData[] Search(string searchString)
         {
-            return _collection.FindAs<SearchData>(Query.And(Query.Matches("Key", new BsonRegularExpression(new Regex(searchString, RegexOptions.IgnoreCase))),
-                Query.EQ("IsSearchable", "True"))).SetFields(Fields.Exclude("_id")).ToArray();
+            return _collection.FindAs<SearchData>(Query.Matches("Key", new BsonRegularExpression(new Regex(searchString, RegexOptions.IgnoreCase)))).SetFields(Fields.Exclude("_id")).ToArray();
         }
 
         public HeaderInfo[] GetSearchableWorksheets(SearchData searchData)
@@ -56,8 +55,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.SearchIndexes
             var query = Query.And(Query<SearchData>.EQ(x => x.RecordKey, searchData.RecordKey),
                                     Query<SearchData>.EQ(x => x.DataSourceUrn, searchData.DataSourceUrn),
                                     Query<SearchData>.EQ(x => x.FieldName, searchData.FieldName));
-            _collection.FindAndModify(query, SortBy<SearchData>.Ascending(x => x.DataSourceUrn),
-                GenerateUpdate(searchData), true, true);
+            _collection.FindAndModify(query, SortBy<SearchData>.Ascending(x => x.DataSourceUrn), GenerateUpdate(searchData), true, true);
         }
 
         public void RemoveSearchData(string recordKey, string dataSourceUrn)
@@ -65,16 +63,14 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.SearchIndexes
             _collection.Remove(Query.And(Query.EQ("RecordKey", recordKey), Query.EQ("DataSourceUrn", dataSourceUrn)));
         }
 
+        public void RemoveDataSource(string dataSourceUrn)
+        {
+            _collection.Remove(Query.EQ("DataSourceUrn", dataSourceUrn));
+        }
+
         public void UpdateUrn(string oldUrn, string newUrn)
         {
             _collection.Update(Query.EQ("DataSourceUrn", oldUrn), Update.Set("DataSourceUrn", newUrn), UpdateFlags.Multi);
-        }
-
-        public void UpdateIsSearchableProperty(string dataSourceUrn, string fieldName, bool value)
-        {
-            var query = Query.And(Query.EQ("DataSourceUrn", dataSourceUrn), Query.EQ("FieldName", fieldName));
-            var update = Update.Set("IsSearchable", value.ToString());
-            _collection.Update(query, update, UpdateFlags.Multi);
         }
 
         public void RemoveFields(string dataSourceUrn, string fieldName)

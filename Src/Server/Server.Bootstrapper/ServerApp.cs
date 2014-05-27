@@ -117,7 +117,7 @@ namespace FalconSoft.ReactiveWorksheets.Server.Bootstrapper
         {
             get
             {
-                return _searchFacade ?? (_searchFacade = new SearchFacade(MessageBus, SearchIndexPersistence, MetaDataFacade));
+                return _searchFacade ?? (_searchFacade = new SearchFacade(MessageBus, SearchIndexPersistence, MetaDataFacade, LiveDataPersistenceFactory));
             }
         }
 

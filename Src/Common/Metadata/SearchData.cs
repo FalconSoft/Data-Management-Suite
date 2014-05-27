@@ -9,7 +9,5 @@
         public string DataSourceUrn { get; set; }
 
         public string FieldName { get; set; }
-
-        public bool IsSearchable { get; set; }
     }
 }
