@@ -36,14 +36,6 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FalconSoft.Data.Server.Common, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\FalconSoft.Data.Server.Common.0.1.2\lib\net40\FalconSoft.Data.Server.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="FalconSoft.Data.Server.Components, Version=0.2.5260.30768, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\FalconSoft.Data.Server.Components.0.2.1\lib\net40\FalconSoft.Data.Server.Components.dll</HintPath>
-    </Reference>
     <Reference Include="log4net">
       <HintPath>..\..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
@@ -73,6 +65,14 @@
     <Compile Include="ServerApp.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Server.Common.csproj">
+      <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
+      <Name>FalconSoft.Data.Server.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Components\FalconSoft.Data.Server.Components.csproj">
+      <Project>{ca16ffe9-bc48-4dc6-bbce-9a7a3eeca424}</Project>
+      <Name>FalconSoft.Data.Server.Components</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DataSources\DefaultMongoDbSource\FalconSoft.Data.Server.DefaultMongoDbSource.csproj">
       <Project>{4aca894f-3b93-4857-9005-fa31e890dc3e}</Project>
       <Name>FalconSoft.Data.Server.DefaultMongoDbSource</Name>
