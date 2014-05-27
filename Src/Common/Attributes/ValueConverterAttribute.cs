@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel.Composition;
-using FalconSoft.ReactiveWorksheets.Common.Metadata;
 
 namespace FalconSoft.ReactiveWorksheets.Common.Attributes
 {

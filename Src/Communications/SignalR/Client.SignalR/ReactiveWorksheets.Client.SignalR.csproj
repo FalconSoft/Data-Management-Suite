@@ -68,12 +68,6 @@
     <Compile Include="TemporalDataQueryFacade.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Common\ReactiveWorksheets.Common.csproj">
-      <Project>{1FB17202-DE2B-4DBE-8E48-C3776F86EFF3}</Project>
-      <Name>ReactiveWorksheets.Common</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

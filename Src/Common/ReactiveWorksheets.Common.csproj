@@ -41,39 +41,13 @@
     <Compile Include="Attributes\CustomComboSourceAttribute.cs" />
     <Compile Include="Attributes\ExternalProviderAttribute.cs" />
     <Compile Include="Attributes\ValueConverterAttribute.cs" />
-    <Compile Include="DataHelper.cs" />
-    <Compile Include="Facade\ICommandFacade.cs" />
-    <Compile Include="Facade\IFacadesFactory.cs" />
-    <Compile Include="Facade\IMetaDataAdminFacade.cs" />
-    <Compile Include="Facade\IMetaDataFacade.cs" />
-    <Compile Include="Facade\IReactiveDataQueryFacade.cs" />
-    <Compile Include="Facade\ISearchFacade.cs" />
-    <Compile Include="Facade\ISecurityFacade.cs" />
-    <Compile Include="Facade\ITemporalDataQueryFacade.cs" />
-    <Compile Include="HistoryStorageType.cs" />
-    <Compile Include="IMetaDataProvider.cs" />
-    <Compile Include="FilterRule.cs" />
-    <Compile Include="ICustomComboSource.cs" />
-    <Compile Include="IDataProvider.cs" />
-    <Compile Include="IDataProvidersCatalog.cs" />
-    <Compile Include="ILogger.cs" />
-    <Compile Include="Metadata\AggregatedWorksheetInfo.cs" />
-    <Compile Include="Metadata\ColumnInfo.cs" />
-    <Compile Include="Metadata\DataSourceInfo.cs" />
-    <Compile Include="Metadata\FieldInfo.cs" />
-    <Compile Include="Metadata\HeaderInfo.cs" />
-    <Compile Include="Metadata\MetaDataExtensions.cs" />
-    <Compile Include="Metadata\RelationshipInfo.cs" />
-    <Compile Include="Metadata\SearchData.cs" />
-    <Compile Include="Metadata\WorksheetInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RecordChangedParam.cs" />
-    <Compile Include="Security\AccessLevel.cs" />
-    <Compile Include="Security\User.cs" />
-    <Compile Include="Metadata\TagInfo.cs" />
-    <Compile Include="ValueChangedEventArgs.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Facade\" />
+    <Folder Include="Metadata\" />
+    <Folder Include="Security\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

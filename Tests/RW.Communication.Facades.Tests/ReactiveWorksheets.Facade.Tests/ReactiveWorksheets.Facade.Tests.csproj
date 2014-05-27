@@ -72,15 +72,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\ReactiveWorksheets\Src\Common\ReactiveWorksheets.Common.csproj">
-      <Project>{1fb17202-de2b-4dbe-8e48-c3776f86eff3}</Project>
-      <Name>ReactiveWorksheets.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\ReactiveWorksheets\Src\Communications\SignalR\Client.SignalR\ReactiveWorksheets.Client.SignalR.csproj">
+    <ProjectReference Include="..\..\..\Src\Data.Server\Communications\SignalR\Client.SignalR\ReactiveWorksheets.Client.SignalR.csproj">
       <Project>{750ea2e3-e290-4e44-bbf0-033ff8b9fc9d}</Project>
       <Name>ReactiveWorksheets.Client.SignalR</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\Src\Communications\InProcess\InProcessServer.Client\ReactiveWorksheets.InProcessServer.Client.csproj">
+    <ProjectReference Include="..\..\..\Src\Data.Server\Communications\InProcess\InProcessServer.Client\ReactiveWorksheets.InProcessServer.Client.csproj">
       <Project>{94d962b3-abd7-4a74-949a-f5d8a510aa9c}</Project>
       <Name>ReactiveWorksheets.InProcessServer.Client</Name>
     </ProjectReference>

@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{3C11C400-8182-451B-8DF5-2045E004941F}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.Server.Persistence", "Data-Server\Persistence\FalconSoft.Data.Server.Persistence.csproj", "{C2D5328B-A58D-4306-B1B6-2410DB922AB9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.Server.DefaultMongoDbSource", "Data-Server\DataSources\DefaultMongoDbSource\FalconSoft.Data.Server.DefaultMongoDbSource.csproj", "{4ACA894F-3B93-4857-9005-FA31E890DC3E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.Server.SampleDataSources", "Data-Server\DataSources\SampleDataSources\FalconSoft.Data.Server.SampleDataSources.csproj", "{65AE3850-946A-4459-AD0A-11821C451EA3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data-Sources", "Data-Sources", "{D8D07837-FDF8-4F87-A2F1-7AF048AE3FFE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.Server", "Data-Server\Data.Server\FalconSoft.Data.Server.csproj", "{5F52F2E1-8DA2-499C-B707-1356851289DD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C2D5328B-A58D-4306-B1B6-2410DB922AB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2D5328B-A58D-4306-B1B6-2410DB922AB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2D5328B-A58D-4306-B1B6-2410DB922AB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2D5328B-A58D-4306-B1B6-2410DB922AB9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4ACA894F-3B93-4857-9005-FA31E890DC3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4ACA894F-3B93-4857-9005-FA31E890DC3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4ACA894F-3B93-4857-9005-FA31E890DC3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4ACA894F-3B93-4857-9005-FA31E890DC3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65AE3850-946A-4459-AD0A-11821C451EA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65AE3850-946A-4459-AD0A-11821C451EA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65AE3850-946A-4459-AD0A-11821C451EA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65AE3850-946A-4459-AD0A-11821C451EA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F52F2E1-8DA2-499C-B707-1356851289DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F52F2E1-8DA2-499C-B707-1356851289DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F52F2E1-8DA2-499C-B707-1356851289DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F52F2E1-8DA2-499C-B707-1356851289DD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4ACA894F-3B93-4857-9005-FA31E890DC3E} = {D8D07837-FDF8-4F87-A2F1-7AF048AE3FFE}
+		{65AE3850-946A-4459-AD0A-11821C451EA3} = {D8D07837-FDF8-4F87-A2F1-7AF048AE3FFE}
+	EndGlobalSection
+EndGlobal

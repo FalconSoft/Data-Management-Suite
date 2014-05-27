@@ -44,17 +44,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\ReactiveWorksheets-private\Src\Server\RW.Server\ReactiveWorksheets.Server.csproj">
+    <ProjectReference Include="..\..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Components\FalconSoft.Data.Server.Components.csproj">
       <Project>{ca16ffe9-bc48-4dc6-bbce-9a7a3eeca424}</Project>
-      <Name>ReactiveWorksheets.Server</Name>
+      <Name>FalconSoft.Data.Server.Components</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\Common\ReactiveWorksheets.Common.csproj">
-      <Project>{1fb17202-de2b-4dbe-8e48-c3776f86eff3}</Project>
-      <Name>ReactiveWorksheets.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\Server\Server.Bootstrapper\ReactiveWorksheets.Server.Bootstrapper.csproj">
+    <ProjectReference Include="..\..\..\Bootstrapper\FalconSoft.Data.Server.csproj">
       <Project>{5f52f2e1-8da2-499c-b707-1356851289dd}</Project>
-      <Name>ReactiveWorksheets.Server.Bootstrapper</Name>
+      <Name>FalconSoft.Data.Server</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
