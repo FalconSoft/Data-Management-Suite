@@ -108,6 +108,7 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.LiveData
                 return null;
 
             var queryList = record.Select(rec => Query.EQ(string.Format("RecordValues.{0}", rec.Key), BsonValue.Create(rec.Value)));
+            if (!queryList.Any()) return new LiveDataObject[0];
             return _collection.FindAs<LiveDataObject>(Query.And(queryList)).SetFields(Fields.Exclude("_id"));
         }
 
