@@ -157,29 +157,25 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
             }
             var cursor = _collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LTE("Current", _buffer))); 
             if (cursor == null)
-            {
                 CreateNewDoucument(_collection, recordChangedParam);
-            }
             else
             {
-                if (recordChangedParam.ChangeSource != recordChangedParam.ProviderString)
-                {
-                    var bsDoc = new BsonDocument();
-                    AddStructureFields(ref bsDoc, recordChangedParam.UserToken);
-                    bsDoc.AddRange(recordChangedParam.RecordValues.ToArray());
-                    var query = Query.EQ("_id", cursor["_id"]);
-                    var update = Update.Set(string.Format("Data.{0}", cursor["Current"]), bsDoc);
-                    _collection.Update(query, update);
-                    return;
-                }
+                //if (recordChangedParam.ChangeSource != recordChangedParam.ProviderString)
+                //{
+                //    var bsDoc = new Dictionary<string, object>(recordChangedParam.RecordValues);
+                //    AddStructureFields(ref bsDoc, recordChangedParam);
+                //    var query = Query.EQ("RecordKey", recordChangedParam.RecordKey);
+                //    var update = Update.Set(string.Format("Data.{0}", cursor["Current"]), bsDoc.ToBsonDocument());
+                //    _collection.Update(query, update);
+                //    return;
+                //}
                 switch (recordChangedParam.ChangedAction)
                 {
                     case RecordChangedAction.AddedOrUpdated:
                         {
-                            var bsDoc = new BsonDocument();
-                            AddStructureFields(ref bsDoc, recordChangedParam.UserToken);
-                            bsDoc.AddRange(recordChangedParam.RecordValues.ToArray());
-                            var query = Query.EQ("_id", cursor["_id"]);
+                            var bsDoc = new Dictionary<string, object>(recordChangedParam.RecordValues);
+                            AddStructureFields(ref bsDoc, recordChangedParam);
+                            var query = Query.EQ("RecordKey", recordChangedParam.RecordKey);
                             //if current == buffer then create new doc
                             if (cursor["Current"].AsInt32 == _buffer && _rollover == true)//ROLLOVER ON
                             {
@@ -191,11 +187,11 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                             }
                             if (cursor["Current"].AsInt32 == _buffer && _rollover == false)//ROLLOVER OFF
                             {
-                                _collection.Update(query, Update.Set(string.Format("Data.{0}", _buffer), bsDoc).Set("Current",0));
+                                _collection.Update(query, Update.Set(string.Format("Data.{0}", _buffer), bsDoc.ToBsonDocument()).Set("Current",0));
                                 break;
                             }
-                            var num = cursor["Current"].AsInt32 + 1;
-                            var update = Update.Set(string.Format("Data.{0}", num), bsDoc).Set("Current", num);
+                            var currentNum = cursor["Current"].AsInt32 + 1;
+                            var update = Update.Set(string.Format("Data.{0}", currentNum), bsDoc.ToBsonDocument()).Set("Current", currentNum);
                             _collection.Update(query, update);
                             break;
                         }
@@ -236,30 +232,29 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
 
         private void CreateNewDoucument(MongoCollection<BsonDocument> collection, RecordChangedParam recordChangedParam)
         {
-            var bsDoc = new BsonDocument
+            var bsDoc = new TempDataObject
                 {
-                    {"RecordKey", recordChangedParam.RecordKey},
-                    {"Current", 0},
-                    {"Total", _buffer + 1}
+                    RecordKey = recordChangedParam.RecordKey,
+                    Current=0,
+                    Total= _buffer + 1
                 };
-            var bsItem = new BsonDocument();
-            AddStructureFields(ref bsItem, recordChangedParam.UserToken);
-            bsItem.AddRange(recordChangedParam.RecordValues);
-            var array = new BsonArray();
-            var bsonStructure = new BsonDocument { { "TimeStamp", null }, { "UserId", null } };
+            var bsItem = new Dictionary<string,object>(recordChangedParam.RecordValues);
+            AddStructureFields(ref bsItem, recordChangedParam);
+            var array = new List<Dictionary<string,object>>();
+            var bsonStructure = new Dictionary<string, object>();// { { "TimeStamp", null }, { "UserId", null } };
             array.Add(bsItem);
             for (var i = 1; i < _buffer; i++)
                 array.Add(bsonStructure);
-            bsDoc.Add("Data", array);
+            bsDoc.Data = array.ToArray();
             collection.Insert(bsDoc);
         }
 
 
-        void AddStructureFields(ref BsonDocument bsonDocument, string userToken)
+        void AddStructureFields(ref Dictionary<string, object> bsonDocument, RecordChangedParam recordChangedParam)
         {
-            bsonDocument.Add("_id", ObjectId.GenerateNewId());
+           // bsonDocument.Add("_id", ObjectId.GenerateNewId());
             bsonDocument.Add("TimeStamp", DateTime.Now);
-            bsonDocument.Add("UserId", string.IsNullOrEmpty(userToken) ? string.Empty : userToken);
+            bsonDocument.Add("UserId", string.IsNullOrEmpty(recordChangedParam.UserToken) ? string.Empty : recordChangedParam.UserToken);
         }
 
 
@@ -286,5 +281,16 @@ namespace FalconSoft.ReactiveWorksheets.Persistence.TemporalData
                     throw new NotSupportedException("DataType is not supported");
             }
         }
+    }
+
+    public class TempDataObject
+    {
+        public string RecordKey { get; set; }
+
+        public int Current { get; set; }
+
+        public int Total { get; set; }
+
+        public Dictionary<string,object>[] Data { get; set; }
     }
 }
