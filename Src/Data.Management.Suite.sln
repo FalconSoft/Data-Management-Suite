@@ -48,6 +48,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.ReactiveWorkshee
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.Management.Server.SignalR", "Communications\SignalR\Server.SignalR\FalconSoft.Data.Management.Server.SignalR.csproj", "{2AF64830-C45D-4FD2-BA4B-1E34A960D4DD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{622159BB-9FCA-425D-8E4E-C899F30FC69E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Tests", "..\..\Data-Management-Suite-Private\Tests\RW.Server.Tests\Server.Tests.csproj", "{EEFE3B49-B7C6-47FA-9171-B80D939178E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -198,6 +202,16 @@ Global
 		{2AF64830-C45D-4FD2-BA4B-1E34A960D4DD}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{2AF64830-C45D-4FD2-BA4B-1E34A960D4DD}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{2AF64830-C45D-4FD2-BA4B-1E34A960D4DD}.Release|x86.ActiveCfg = Release|Any CPU
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -217,5 +231,6 @@ Global
 		{B68B9D4E-E53E-4A96-9704-6F4A4BA43616} = {191F10AD-3F09-4DDD-9D79-47B88689EA20}
 		{7461E0DC-4B6C-45FB-96BF-46AFF91B61ED} = {191F10AD-3F09-4DDD-9D79-47B88689EA20}
 		{5B47CEFA-0E19-4069-800A-81D9FCFD875D} = {191F10AD-3F09-4DDD-9D79-47B88689EA20}
+		{EEFE3B49-B7C6-47FA-9171-B80D939178E8} = {622159BB-9FCA-425D-8E4E-C899F30FC69E}
 	EndGlobalSection
 EndGlobal
