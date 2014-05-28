@@ -7,7 +7,7 @@ using FalconSoft.Data.Server.Common.Facade;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Hubs;
 
-namespace FalconSoft.ReactiveWorksheets.Client.SignalR
+namespace FalconSoft.Data.Server.Client.SignalR
 {
     internal class CommandFacade : ICommandFacade
     {

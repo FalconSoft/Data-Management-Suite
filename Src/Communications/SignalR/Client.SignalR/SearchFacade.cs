@@ -5,7 +5,7 @@ using FalconSoft.Data.Server.Common.Metadata;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Hubs;
 
-namespace FalconSoft.ReactiveWorksheets.Client.SignalR
+namespace FalconSoft.Data.Server.Client.SignalR
 {
     internal class SearchFacade : ISearchFacade
     {

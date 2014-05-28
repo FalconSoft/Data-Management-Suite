@@ -7,14 +7,13 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
-
 using FalconSoft.Data.Server.Common;
 using FalconSoft.Data.Server.Common.Facade;
 using FalconSoft.Data.Server.Common.Metadata;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Hubs;
 
-namespace FalconSoft.ReactiveWorksheets.Client.SignalR
+namespace FalconSoft.Data.Server.Client.SignalR
 {
     internal class ReactiveDataQueryFacade : IReactiveDataQueryFacade
     {

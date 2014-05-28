@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Net.Mime;
 using FalconSoft.Data.Server.Common.Facade;
 
-namespace FalconSoft.ReactiveWorksheets.Client.SignalR
+namespace FalconSoft.Data.Server.Client.SignalR
 {
     public class SignalRFacadesFactory : IFacadesFactory
     {
