@@ -14,7 +14,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         private readonly string _connectionString;
         private readonly string _dataSourceProviderString;
         private readonly string _userId;
-        private readonly string[] _dbfields = {"RecordKey", "ValidFrom", "ValidTo", "UserId", "_id" };
+        private readonly string[] _dbfields = { "RecordKey", "ValidFrom", "ValidTo", "UserId", "_id" };
         private readonly DataSourceInfo _dataSourceInfo;
         private MongoDatabase _mongoDatabase;
 
@@ -62,7 +62,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         }
 
-        public IEnumerable<Dictionary<string, object>> GetTemporalData(DateTime timeStamp)
+        public IEnumerable<Dictionary<string, object>> GetTemporalData(DateTime timeStamp, string urn)
         {
             ConnectToDb();
             var collection = _mongoDatabase.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
@@ -92,23 +92,24 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalDataByTag(TagInfo tagInfo)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<BsonDocument>(tagInfo.DataSourceProviderString.ToValidDbString() + "_History");
-            var cursorData = collection.FindAllAs<BsonDocument>();
-            string[] exceptfields = { "ValidFrom", "ValidTo", "UserId", "_id" };
-            var list = new List<Dictionary<string, object>>();
-            cursorData.Join(tagInfo.Revisions, j1 => j1["_id"].ToString(), j2 => j2, (j1, j2) =>
-            {
-                var dict = new Dictionary<string, object>();
-                foreach (var data in j1)
-                {
-                    if (exceptfields.All(a => a != data.Name))
-                        dict.Add(data.Name, ToStrongTypedObject(data.Value, data.Name));
-                }
-                list.Add(dict);
-                return j2;
-            }).Count();
-            return list;
+            //ConnectToDb();
+            //var collection = _mongoDatabase.GetCollection<BsonDocument>(tagInfo.DataSourceProviderString.ToValidDbString() + "_History");
+            //var cursorData = collection.FindAllAs<BsonDocument>();
+            //string[] exceptfields = { "ValidFrom", "ValidTo", "UserId", "_id" };
+            //var list = new List<Dictionary<string, object>>();
+            //cursorData.Join(tagInfo.Revisions, j1 => j1["_id"].ToString(), j2 => j2, (j1, j2) =>
+            //{
+            //    var dict = new Dictionary<string, object>();
+            //    foreach (var data in j1)
+            //    {
+            //        if (exceptfields.All(a => a != data.Name))
+            //            dict.Add(data.Name, ToStrongTypedObject(data.Value, data.Name));
+            //    }
+            //    list.Add(dict);
+            //    return j2;
+            //}).Count();
+            //return list;
+            return null;
         }
 
         public void SaveTempotalData(RecordChangedParam recordChangedParam)
@@ -118,42 +119,39 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             switch (recordChangedParam.ChangedAction)
             {
                 case RecordChangedAction.AddedOrUpdated:
-                {
-                    var bsDoc = new BsonDocument();
-                    AddSystemFields(ref bsDoc, recordChangedParam.RecordKey, recordChangedParam.UserToken);
-                    bsDoc.AddRange(recordChangedParam.RecordValues);
-                    if (string.IsNullOrEmpty(recordChangedParam.OriginalRecordKey))
                     {
-                        var query = Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey),
-                            Query.EQ("ValidTo", BsonNull.Value));
-                        var oldrecord = collection.FindOne(query);
-                        if (oldrecord == null)
+                        var bsDoc = new BsonDocument();
+                        AddSystemFields(ref bsDoc, recordChangedParam.RecordKey, recordChangedParam.UserToken);
+                        bsDoc.AddRange(recordChangedParam.RecordValues);
+                        if (string.IsNullOrEmpty(recordChangedParam.OriginalRecordKey))
                         {
-                            collection.Insert(bsDoc);
-                            break;
+                            var query = Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey),
+                                Query.EQ("ValidTo", BsonNull.Value));
+                            var oldrecord = collection.FindOne(query);
+                            if (oldrecord == null)
+                            {
+                                collection.Insert(bsDoc);
+                                break;
+                            }
+                            oldrecord["ValidTo"] = bsDoc["ValidFrom"];
+                            collection.Save(oldrecord);
                         }
-                        oldrecord["ValidTo"] = bsDoc["ValidFrom"];
-                        collection.Save(oldrecord);
+                        collection.Insert(bsDoc);
+                        break;
                     }
-                    collection.Insert(bsDoc);
-                    break;
-                }
-             
+
                 case RecordChangedAction.Removed:
-                {
-                    var query = Query.And(Query.EQ("RecordKey", recordChangedParam.OriginalRecordKey), Query.EQ("ValidTo", BsonNull.Value));
-                    collection.Update(query, Update.Set("ValidTo", DateTime.Now));
-                }
-                break;
+                    {
+                        var query = Query.And(Query.EQ("RecordKey", recordChangedParam.OriginalRecordKey), Query.EQ("ValidTo", BsonNull.Value));
+                        collection.Update(query, Update.Set("ValidTo", DateTime.Now));
+                    }
+                    break;
             }
         }
 
         public void SaveTagInfo(TagInfo tagInfo)
         {
             ConnectToDb();
-            var recordsHistory = _mongoDatabase.GetCollection<BsonDocument>(tagInfo.DataSourceProviderString.ToValidDbString() + "_History");
-            var query = Query.EQ("ValidTo", BsonNull.Value);
-            tagInfo.Revisions = recordsHistory.Find(query).AsQueryable().Select(s => s["_id"].ToString()).ToList();
             var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
             collection.Insert(tagInfo);
         }
@@ -178,7 +176,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             bsonDocument.Add("RecordKey", new BsonString(recordKey));
             bsonDocument.Add("ValidFrom", DateTime.Now);
             bsonDocument.Add("ValidTo", BsonNull.Value);
-            bsonDocument.Add("UserId", string.IsNullOrEmpty(userToken)?BsonNull.Value.ToString():userToken);
+            bsonDocument.Add("UserId", string.IsNullOrEmpty(userToken) ? BsonNull.Value.ToString() : userToken);
         }
 
         private object ToStrongTypedObject(BsonValue bsonValue, string fieldName)
