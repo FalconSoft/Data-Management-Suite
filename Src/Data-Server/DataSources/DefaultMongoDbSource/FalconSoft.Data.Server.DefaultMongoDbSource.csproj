@@ -56,6 +56,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\DataServer.AssemblyInfo.cs">
+      <Link>DataServer.AssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="DataProvider.cs" />
     <Compile Include="DataProvidersCatalog.cs" />
     <Compile Include="MetaDataProvider.cs" />

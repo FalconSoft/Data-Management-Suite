@@ -50,6 +50,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\DataServer.AssemblyInfo.cs">
+      <Link>DataServer.AssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="MetaData\MetadataPersistence.cs" />
     <Compile Include="MongoDBExtention.cs" />
     <Compile Include="SearchIndexes\SearchIndexPersistence.cs" />
