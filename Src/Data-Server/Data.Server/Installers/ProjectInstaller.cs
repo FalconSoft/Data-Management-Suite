@@ -42,7 +42,6 @@ namespace FalconSoft.Data.Server.Installers
             // 
             // ServiceProcessInstaller
             // 
-            this.ServiceProcessInstaller.Account = System.ServiceProcess.ServiceAccount.LocalSystem;
             this.ServiceProcessInstaller.Password = null;
             this.ServiceProcessInstaller.Username = null;
             this.ServiceProcessInstaller.AfterInstall += new System.Configuration.Install.InstallEventHandler(this.ServiceProcessInstaller_AfterInstall);
