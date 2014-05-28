@@ -11,7 +11,7 @@
     <AssemblyName>ReactiveWorksheets.Console.Client</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\..\ReactiveWorksheets-Private\Src\</SolutionDir>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -37,7 +37,7 @@
   <ItemGroup>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\ReactiveWorksheets-Private\Src\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+      <HintPath>..\..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
@@ -45,15 +45,15 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\ReactiveWorksheets-Private\Src\packages\Rx-Core.2.2.2\lib\net40\System.Reactive.Core.dll</HintPath>
+      <HintPath>..\..\packages\Rx-Core.2.2.4\lib\net40\System.Reactive.Core.dll</HintPath>
     </Reference>
     <Reference Include="System.Reactive.Interfaces, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\ReactiveWorksheets-Private\Src\packages\Rx-Interfaces.2.2.2\lib\net40\System.Reactive.Interfaces.dll</HintPath>
+      <HintPath>..\..\packages\Rx-Interfaces.2.2.4\lib\net40\System.Reactive.Interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System.Reactive.Linq, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\ReactiveWorksheets-Private\Src\packages\Rx-Linq.2.2.2\lib\net40\System.Reactive.Linq.dll</HintPath>
+      <HintPath>..\..\packages\Rx-Linq.2.2.4\lib\net40\System.Reactive.Linq.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -72,17 +72,17 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Common\ReactiveWorksheets.Common.csproj">
-      <Project>{1FB17202-DE2B-4DBE-8E48-C3776F86EFF3}</Project>
-      <Name>ReactiveWorksheets.Common</Name>
+    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
+      <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
+      <Name>FalconSoft.Data.Management.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Communications\InProcess\InProcessServer.Client\ReactiveWorksheets.InProcessServer.Client.csproj">
+    <ProjectReference Include="..\..\Communications\InProcess\InProcessServer.Client\FalconSoft.Data.Management.InProcessServer.Client.csproj">
       <Project>{94d962b3-abd7-4a74-949a-f5d8a510aa9c}</Project>
-      <Name>ReactiveWorksheets.InProcessServer.Client</Name>
+      <Name>FalconSoft.Data.Management.InProcessServer.Client</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Communications\SignalR\Client.SignalR\ReactiveWorksheets.Client.SignalR.csproj">
-      <Project>{750EA2E3-E290-4E44-BBF0-033FF8B9FC9D}</Project>
-      <Name>ReactiveWorksheets.Client.SignalR</Name>
+    <ProjectReference Include="..\..\Communications\SignalR\Client.SignalR\FalconSoft.Data.Management.Client.SignalR.csproj">
+      <Project>{750ea2e3-e290-4e44-bbf0-033ff8b9fc9d}</Project>
+      <Name>FalconSoft.Data.Management.Client.SignalR</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
