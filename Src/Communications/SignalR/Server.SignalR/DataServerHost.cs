@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using FalconSoft.Data.Server.Common;
 using FalconSoft.Data.Server.Common.Facade;
 using Microsoft.Owin.Hosting;
 
 namespace FalconSoft.Data.Management.Server.SignalR
 {
-
     public class DataServerHost : IDataServer
     {
+        IDisposable SignalR { get; set; }
+
         public DataServerHost(string connectionString, ILogger logger, ICommandFacade commandFacade, IMetaDataAdminFacade metaDataAdminFacade,
                 IReactiveDataQueryFacade reactiveDataQueryFacade, ITemporalDataQueryFacade temporalDataQueryFacade,
                 ISearchFacade searchFacade, ISecurityFacade securityFacade)
@@ -25,14 +23,17 @@ namespace FalconSoft.Data.Management.Server.SignalR
             HubServer.SecurityFacade = securityFacade;
         }
 
-
-        public void Start()
+        public void StartServer()
         {
-            using (WebApp.Start<HubServer>(HubServer.ConnectionString))
-            {
-                HubServer.Logger.InfoFormat("Server is running, on address {0} Press <Enter> to stop", HubServer.ConnectionString);
-                Console.ReadLine();
-            }              
+            SignalR = WebApp.Start<HubServer>(HubServer.ConnectionString);
+            HubServer.Logger.InfoFormat("Server is running, on address {0} Press <Enter> to stop", HubServer.ConnectionString);
+        }
+
+        public void StopServer()
+        {
+            HubServer.Logger.Info("Server stopped running...");
+            if (SignalR!=null)
+                SignalR.Dispose();
         }
     }
 }
