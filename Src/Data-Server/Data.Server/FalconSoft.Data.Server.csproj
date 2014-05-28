@@ -73,6 +73,10 @@
       <Project>{ca16ffe9-bc48-4dc6-bbce-9a7a3eeca424}</Project>
       <Name>FalconSoft.Data.Management.Components</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Communications\SignalR\Server.SignalR\FalconSoft.Data.Management.Server.SignalR.csproj">
+      <Project>{2af64830-c45d-4fd2-ba4b-1e34a960d4dd}</Project>
+      <Name>FalconSoft.Data.Management.Server.SignalR</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DataSources\DefaultMongoDbSource\FalconSoft.Data.Server.DefaultMongoDbSource.csproj">
       <Project>{4aca894f-3b93-4857-9005-fa31e890dc3e}</Project>
       <Name>FalconSoft.Data.Server.DefaultMongoDbSource</Name>

@@ -39,6 +39,12 @@
     <Reference Include="Microsoft.AspNet.SignalR.Owin">
       <HintPath>..\..\..\packages\Microsoft.AspNet.SignalR.Owin.1.2.1\lib\net40\Microsoft.AspNet.SignalR.Owin.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Owin.Host.HttpListener">
+      <HintPath>..\..\..\packages\Microsoft.Owin.Host.HttpListener.2.1.0\lib\net40\Microsoft.Owin.Host.HttpListener.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Hosting">
+      <HintPath>..\..\..\packages\Microsoft.Owin.Hosting.2.1.0\lib\net40\Microsoft.Owin.Hosting.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -66,12 +72,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataServerHost.cs" />
+    <Compile Include="HubServer.cs" />
     <Compile Include="Hubs\CommandsHub.cs" />
     <Compile Include="Hubs\MetaDataHub.cs" />
     <Compile Include="Hubs\ReactiveDataQueryHub.cs" />
     <Compile Include="Hubs\SearchHub.cs" />
     <Compile Include="Hubs\SecurityHub.cs" />
     <Compile Include="Hubs\TemporalDataQueryHub.cs" />
+    <Compile Include="LoggingPipelineModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

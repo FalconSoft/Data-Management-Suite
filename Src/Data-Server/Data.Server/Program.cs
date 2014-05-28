@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using FalconSoft.Data.Management.Server.SignalR;
 
 namespace FalconSoft.Data.Server
 {
@@ -26,11 +27,20 @@ namespace FalconSoft.Data.Server
                     throw;
                 }
 
-                //using (WebApp.Start<HubServer>(ConfigurationManager.AppSettings["ConnectionString"]))
-                //{
-                //    ServerApp.Logger.InfoFormat("Server is running, on address {0} Press <Enter> to stop", ConfigurationManager.AppSettings["ConnectionString"]);
-                //    Console.ReadLine();
-                //}
+                var host = new DataServerHost
+                                (
+                                    ConfigurationManager.AppSettings["ConnectionString"], 
+                                    ServerApp.Logger, 
+                                    ServerApp.CommandFacade, 
+                                    ServerApp.MetaDataFacade, 
+                                    ServerApp.ReactiveDataQueryFacade, 
+                                    ServerApp.TemporalQueryFacade, 
+                                    ServerApp.SearchFacade, 
+                                    ServerApp.SecurityFacade
+                                );
+
+                host.Start();
+
             }
             else
             {
