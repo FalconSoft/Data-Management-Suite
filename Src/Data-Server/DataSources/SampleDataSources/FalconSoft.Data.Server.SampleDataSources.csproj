@@ -46,6 +46,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\DataServer.AssemblyInfo.cs">
+      <Link>DataServer.AssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="ExternalExtensions.cs" />
     <Compile Include="ExternalProviderCatalog.cs" />
     <Compile Include="ExternalSources\Calculator.cs" />

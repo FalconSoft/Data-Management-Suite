@@ -54,6 +54,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Tests", "..\..\Data-
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.Client", "Clients\Console.Client\Console.Client.csproj", "{281627BC-5964-4B2F-A491-61EE77BE27AB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".versions", ".versions", "{15BE193A-50C0-455B-BEAE-B244E6CD74E1}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\DataManagement.AssemblyInfo.cs = ..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\DataManagement.AssemblyInfo.cs
+		Data-Server\DataServer.AssemblyInfo.cs = Data-Server\DataServer.AssemblyInfo.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
