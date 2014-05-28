@@ -9,6 +9,8 @@ namespace FalconSoft.Data.Server
         [STAThread]
         private static void Main()
         {
+            Console.WindowWidth *= 2;
+            Console.WindowHeight *= 2;
             AppDomain.CurrentDomain.UnhandledException += (sender, args) => ServerApp.Logger.Error("UnhandledException -> ", (Exception)args.ExceptionObject);
             ServerApp.Logger.Info("Server...");
 
