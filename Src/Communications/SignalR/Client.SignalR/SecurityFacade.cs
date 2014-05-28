@@ -7,7 +7,7 @@ using FalconSoft.Data.Server.Common.Security;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Hubs;
 
-namespace FalconSoft.Data.Server.Client.SignalR
+namespace FalconSoft.Data.Management.Client.SignalR
 {
     internal class SecurityFacade : ISecurityFacade
     {

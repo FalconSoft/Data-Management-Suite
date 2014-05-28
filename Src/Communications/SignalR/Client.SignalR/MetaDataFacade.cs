@@ -9,7 +9,7 @@ using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Hubs;
 using Newtonsoft.Json;
 
-namespace FalconSoft.Data.Server.Client.SignalR
+namespace FalconSoft.Data.Management.Client.SignalR
 {
     internal class MetaDataFacade : IMetaDataAdminFacade
     {

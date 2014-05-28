@@ -65,13 +65,13 @@
     <Compile Include="ServerApp.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Server.Common.csproj">
+    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
       <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
-      <Name>FalconSoft.Data.Server.Common</Name>
+      <Name>FalconSoft.Data.Management.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Components\FalconSoft.Data.Server.Components.csproj">
+    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Components\FalconSoft.Data.Management.Components.csproj">
       <Project>{ca16ffe9-bc48-4dc6-bbce-9a7a3eeca424}</Project>
-      <Name>FalconSoft.Data.Server.Components</Name>
+      <Name>FalconSoft.Data.Management.Components</Name>
     </ProjectReference>
     <ProjectReference Include="..\DataSources\DefaultMongoDbSource\FalconSoft.Data.Server.DefaultMongoDbSource.csproj">
       <Project>{4aca894f-3b93-4857-9005-fa31e890dc3e}</Project>

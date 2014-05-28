@@ -7,8 +7,8 @@
     <ProjectGuid>{750EA2E3-E290-4E44-BBF0-033FF8B9FC9D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FalconSoft.Data.Server.Client.SignalR</RootNamespace>
-    <AssemblyName>FalconSoft.Data.Server.Client.SignalR</AssemblyName>
+    <RootNamespace>FalconSoft.Data.Management.Client.SignalR</RootNamespace>
+    <AssemblyName>FalconSoft.Data.Management.Client.SignalR</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\</SolutionDir>
@@ -71,9 +71,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Server.Common.csproj">
+    <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
       <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
-      <Name>FalconSoft.Data.Server.Common</Name>
+      <Name>FalconSoft.Data.Management.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

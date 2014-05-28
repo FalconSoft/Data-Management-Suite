@@ -2,7 +2,7 @@
 using FalconSoft.Data.Server;
 using FalconSoft.Data.Server.Common.Facade;
 
-namespace FalconSoft.ReactiveWorksheets.InProcessServer.Client
+namespace FalconSoft.Data.Management.InProcessServer.Client
 {
     public class InProcessServerFacadesFactory : IFacadesFactory
     {
