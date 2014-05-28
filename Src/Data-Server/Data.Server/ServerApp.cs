@@ -132,13 +132,15 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _dataProvidersCatalogs ??
-                       (_dataProvidersCatalogs = AppDomainAssemblyTypeScanner.TypesOf(typeof(IDataProvidersCatalog)).Select(
-                           x =>
-                           {
-                               Logger.Info(string.Format("-> Load {0} dll with provider Catalogs", x.FullName));
-                               return (IDataProvidersCatalog) Activator.CreateInstance(x);
-                           }).ToArray());
+                if (_dataProvidersCatalogs != null) return _dataProvidersCatalogs;
+                AppDomainAssemblyTypeScanner.Start(Logger);
+                _dataProvidersCatalogs = AppDomainAssemblyTypeScanner.TypesOf(typeof (IDataProvidersCatalog)).Select(
+                            x =>
+                            {
+                                Logger.Info(string.Format("-> Load {0} dll with provider Catalogs", x.FullName));
+                                return (IDataProvidersCatalog) Activator.CreateInstance(x);
+                            }).ToArray();
+                return _dataProvidersCatalogs;
             }
         }
 
