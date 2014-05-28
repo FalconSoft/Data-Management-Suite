@@ -7,8 +7,8 @@
     <ProjectGuid>{94D962B3-ABD7-4A74-949A-F5D8A510AA9C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FalconSoft.Data.Server.InProcessServer.Client</RootNamespace>
-    <AssemblyName>FalconSoft.Data.Server.InProcessServer.Client</AssemblyName>
+    <RootNamespace>FalconSoft.Data.Management.InProcessServer.Client</RootNamespace>
+    <AssemblyName>FalconSoft.Data.Management.InProcessServer.Client</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -44,13 +44,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Server.Common.csproj">
+    <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
       <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
-      <Name>FalconSoft.Data.Server.Common</Name>
+      <Name>FalconSoft.Data.Management.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Components\FalconSoft.Data.Server.Components.csproj">
+    <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Components\FalconSoft.Data.Management.Components.csproj">
       <Project>{ca16ffe9-bc48-4dc6-bbce-9a7a3eeca424}</Project>
-      <Name>FalconSoft.Data.Server.Components</Name>
+      <Name>FalconSoft.Data.Management.Components</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\Data-Server\Data.Server\FalconSoft.Data.Server.csproj">
       <Project>{5f52f2e1-8da2-499c-b707-1356851289dd}</Project>

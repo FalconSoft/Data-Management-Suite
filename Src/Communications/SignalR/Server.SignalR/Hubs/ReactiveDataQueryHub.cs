@@ -12,7 +12,7 @@ using FalconSoft.Data.Server.Common.Metadata;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 
-namespace FalconSoft.ReactiveWorksheets.Server.SignalR.Hubs
+namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 {
     [HubName("IReactiveDataQueryFacade")]
     public class ReactiveDataQueryHub : Hub

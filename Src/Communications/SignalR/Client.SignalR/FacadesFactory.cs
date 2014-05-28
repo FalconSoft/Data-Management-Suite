@@ -1,7 +1,7 @@
 ﻿using System;
 using FalconSoft.Data.Server.Common.Facade;
 
-namespace FalconSoft.Data.Server.Client.SignalR
+namespace FalconSoft.Data.Management.Client.SignalR
 {
     public class SignalRFacadesFactory : IFacadesFactory
     {
