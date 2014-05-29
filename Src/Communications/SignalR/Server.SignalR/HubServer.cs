@@ -23,7 +23,7 @@ namespace FalconSoft.Data.Management.Server.SignalR
 
         public void Configuration(IAppBuilder app)
         {
-            var commandHub = new CommandsHub(CommandFacade);
+            var commandHub = new CommandsHub(CommandFacade, Logger);
             var metaDataHub = new MetaDataHub(MetaDataAdminFacade);
             var reactiveDataQueryHub = new ReactiveDataQueryHub(ReactiveDataQueryFacade, Logger);
             var temporalDataQueryHub = new TemporalDataQueryHub(TemporalDataQueryFacade);
