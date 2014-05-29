@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using FalconSoft.Data.Server.Common.Metadata;
-using FalconSoft.Data.Server.Common.Security;
+using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Management.Common.Security;
 
 namespace ReactiveWorksheets.Facade.Tests
 {
