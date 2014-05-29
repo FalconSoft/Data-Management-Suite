@@ -1,4 +1,6 @@
-﻿using FalconSoft.Data.Management.Components;
+﻿using System;
+using System.Linq;
+using FalconSoft.Data.Management.Components;
 
 namespace FalconSoft.Data.Server
 {
@@ -13,6 +15,10 @@ namespace FalconSoft.Data.Server
                 persistenceDataConnectionString, mongoDataConnectionString);
 
             _commandAggregator = ServerApp.CommandAggregator;
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().OrderBy(x=>x.FullName))
+            {
+                ServerApp.Logger.InfoFormat("Loaded {0}", assembly.FullName);
+            }
             ServerApp.Logger.Debug("Configure");
         }
 
