@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Linq;
-using FalconSoft.Data.Server.Common;
-using FalconSoft.Data.Server.Common.Facade;
-using FalconSoft.Data.Server.Components;
-using FalconSoft.Data.Server.Components.CommandsAggregator;
-using FalconSoft.Data.Server.Components.Facades;
-using FalconSoft.Data.Server.Components.Infrastructure;
-using FalconSoft.Data.Server.Components.ReactiveEngine;
+using FalconSoft.Data.Management.Common;
+using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Management.Components;
+using FalconSoft.Data.Management.Components.CommandsAggregator;
+using FalconSoft.Data.Management.Components.Facades;
+using FalconSoft.Data.Management.Components.Infrastructure;
+using FalconSoft.Data.Management.Components.ReactiveEngine;
 using FalconSoft.Data.Server.DefaultMongoDbSource;
 using FalconSoft.Data.Server.Persistence;
 using FalconSoft.Data.Server.Persistence.LiveData;
@@ -14,7 +15,6 @@ using FalconSoft.Data.Server.Persistence.MetaData;
 using FalconSoft.Data.Server.Persistence.SearchIndexes;
 using FalconSoft.Data.Server.Persistence.Security;
 using FalconSoft.Data.Server.Persistence.TemporalData;
-using FalconSoft.Data.Server.Common.Metadata;
 
 namespace FalconSoft.Data.Server
 {

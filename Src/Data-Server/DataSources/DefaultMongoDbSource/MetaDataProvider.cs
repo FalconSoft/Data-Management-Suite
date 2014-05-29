@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using FalconSoft.Data.Server.Common;
-using FalconSoft.Data.Server.Common.Metadata;
-using FalconSoft.Data.Server.Common.Security;
+using FalconSoft.Data.Management.Common;
+using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Management.Common.Security;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;

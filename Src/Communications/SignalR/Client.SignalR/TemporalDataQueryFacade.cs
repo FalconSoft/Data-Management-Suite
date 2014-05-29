@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
-using FalconSoft.Data.Server.Common.Facade;
-using FalconSoft.Data.Server.Common.Metadata;
+using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Metadata;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Hubs;
 

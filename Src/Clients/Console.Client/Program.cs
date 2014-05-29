@@ -5,8 +5,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using FalconSoft.Data.Management.Client.SignalR;
+using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.InProcessServer.Client;
-using FalconSoft.Data.Server.Common.Facade;
 
 namespace FalconSoft.ReactiveWorksheets.Console.Client
 {
