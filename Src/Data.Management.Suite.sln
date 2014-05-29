@@ -56,9 +56,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.Client", "Clients\C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".versions", ".versions", "{15BE193A-50C0-455B-BEAE-B244E6CD74E1}"
 	ProjectSection(SolutionItems) = preProject
-		..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\DataManagement.AssemblyInfo.cs = ..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\DataManagement.AssemblyInfo.cs
-		Data-Server\DataServer.AssemblyInfo.cs = Data-Server\DataServer.AssemblyInfo.cs
+		Data.Management.VersionInfo.cs = Data.Management.VersionInfo.cs
+		Data.Server.VersionInfo.cs = Data.Server.VersionInfo.cs
+		Reactive.Worksheets.VersionInfo.cs = Reactive.Worksheets.VersionInfo.cs
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{94108F8E-DA07-4081-BF01-4BD94938B792}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PositionDataGenerator", "..\..\Data-Management-Suite-Private\Src\Tools\PositionDataGenerator\PositionDataGenerator\PositionDataGenerator.csproj", "{B147939B-DDAB-4287-8588-D7EA7F375CD0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReactiveWorksheets.Facade.Tests", "..\Tests\RW.Communication.Facades.Tests\ReactiveWorksheets.Facade.Tests\ReactiveWorksheets.Facade.Tests.csproj", "{F58BE831-6093-4CDE-A593-430AFA7CD8A6}"
 EndProject
@@ -232,6 +237,16 @@ Global
 		{281627BC-5964-4B2F-A491-61EE77BE27AB}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{281627BC-5964-4B2F-A491-61EE77BE27AB}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{281627BC-5964-4B2F-A491-61EE77BE27AB}.Release|x86.ActiveCfg = Release|Any CPU
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0}.Release|x86.ActiveCfg = Release|Any CPU
 		{F58BE831-6093-4CDE-A593-430AFA7CD8A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F58BE831-6093-4CDE-A593-430AFA7CD8A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F58BE831-6093-4CDE-A593-430AFA7CD8A6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -263,5 +278,6 @@ Global
 		{5B47CEFA-0E19-4069-800A-81D9FCFD875D} = {191F10AD-3F09-4DDD-9D79-47B88689EA20}
 		{EEFE3B49-B7C6-47FA-9171-B80D939178E8} = {622159BB-9FCA-425D-8E4E-C899F30FC69E}
 		{F58BE831-6093-4CDE-A593-430AFA7CD8A6} = {622159BB-9FCA-425D-8E4E-C899F30FC69E}
+		{B147939B-DDAB-4287-8588-D7EA7F375CD0} = {94108F8E-DA07-4081-BF01-4BD94938B792}
 	EndGlobalSection
 EndGlobal
