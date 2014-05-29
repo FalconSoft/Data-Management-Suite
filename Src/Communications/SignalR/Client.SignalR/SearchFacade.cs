@@ -44,21 +44,16 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
         }
 
-        private void OnClosed()
-        {
-            //throw new NotImplementedException();
-        }
+        private void OnClosed() { }
 
         private void OnReconnected()
         {
             Trace.WriteLine("*******   ISearchFacade reconected");
-            //throw new NotImplementedException();
         }
 
         private void OnReconnecting()
         {
             Trace.WriteLine("******   ISearchFacade reconecting");
-            //throw new NotImplementedException();
         }
 
         public SearchData[] Search(string searchString)
