@@ -58,8 +58,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\..\Data-Server\DataServer.AssemblyInfo.cs">
-      <Link>DataServer.AssemblyInfo.cs</Link>
+    <Compile Include="..\..\..\Data.Server.VersionInfo.cs">
+      <Link>Data.Server.VersionInfo.cs</Link>
     </Compile>
     <Compile Include="FacadesFactory.cs" />
     <Compile Include="MetaDataFacade.cs" />

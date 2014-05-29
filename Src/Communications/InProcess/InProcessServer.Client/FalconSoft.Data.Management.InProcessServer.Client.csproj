@@ -40,8 +40,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\..\Data-Server\DataServer.AssemblyInfo.cs">
-      <Link>DataServer.AssemblyInfo.cs</Link>
+    <Compile Include="..\..\..\Data.Server.VersionInfo.cs">
+      <Link>Data.Server.VersionInfo.cs</Link>
     </Compile>
     <Compile Include="InProcessServerFacadesFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

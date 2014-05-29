@@ -62,6 +62,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\Data.Server.VersionInfo.cs">
+      <Link>Data.Server.VersionInfo.cs</Link>
+    </Compile>
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="CSVHelper.cs" />
     <Compile Include="Program.cs" />
