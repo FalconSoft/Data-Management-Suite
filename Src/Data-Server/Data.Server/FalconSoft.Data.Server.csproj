@@ -90,8 +90,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\DataServer.AssemblyInfo.cs">
-      <Link>DataServer.AssemblyInfo.cs</Link>
+    <Compile Include="..\..\Data.Server.VersionInfo.cs">
+      <Link>Data.Server.VersionInfo.cs</Link>
     </Compile>
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="Installers\ProjectInstaller.cs">
