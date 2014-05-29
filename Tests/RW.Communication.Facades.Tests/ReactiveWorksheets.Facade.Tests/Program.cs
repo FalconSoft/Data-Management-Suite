@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
-using FalconSoft.ReactiveWorksheets.Client.SignalR;
-using FalconSoft.Data.Server.Common;
-using FalconSoft.Data.Server.Common.Facade;
-using FalconSoft.Data.Server.Common.Metadata;
-using FalconSoft.Data.Server.Common.Security;
-using FalconSoft.ReactiveWorksheets.InProcessServer.Client;
+using FalconSoft.Data.Management.Client.SignalR;
+using FalconSoft.Data.Management.Common;
+using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Management.Common.Security;
+using FalconSoft.Data.Management.InProcessServer.Client;
 
 namespace ReactiveWorksheets.Facade.Tests
 {
@@ -59,7 +59,7 @@ namespace ReactiveWorksheets.Facade.Tests
             var thirdWorksheet = dataSourceTest.CreateWorksheetInfo("Third Worksheet", "Test", thirdWorksheetColumns, user);
 
             Console.WriteLine("\n3. Submit data (from Tsv)");
-            var data = TestDataFactory.CreateTestData("Customers.txt");
+            var data = TestDataFactory.CreateTestData("..\\..\\Customers.txt");
 
             var changedData = data as Dictionary<string, object>[] ?? data.ToArray();
             dataSourceTest.SubmitData("test data save", changedData);
@@ -143,7 +143,7 @@ namespace ReactiveWorksheets.Facade.Tests
             dataSourceTest.Dispose();
 
             _securityFacade.RemoveUser(user);
-            Console.WriteLine("Test finish. Type <Enter> to exit.");
+            Console.WriteLine("\nTest finish. Type <Enter> to exit.");
             Console.ReadLine();
         }
 
