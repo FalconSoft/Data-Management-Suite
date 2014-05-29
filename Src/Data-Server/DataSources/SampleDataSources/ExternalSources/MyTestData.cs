@@ -9,7 +9,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
         private readonly List<MyTestData> _collection;
         private readonly System.Timers.Timer _timer;
 
-        private const int Count = 50; // COUNT
+        private const int Count = 150; // COUNT
 
         public TestDataProvider()
         {
@@ -20,9 +20,8 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
                 _collection.Add(new MyTestData
                 {
                     FieldId = i,
-                    FieldNames = rand.Next(500).ToString(),
-                    FieldDescription = rand.Next(500).ToString(),
-                    FieldData = rand.Next(500).ToString()
+                    DoubleField = rand.Next(80, 150),
+                    TimeSpanField = DateTime.Now.ToString("HHmmss")
                 });
             }
             _timer = new System.Timers.Timer(5000);
@@ -32,33 +31,23 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
 
         private void OnClick(object sender, EventArgs e)
         {
-            // Trace.WriteLine("Is background Timer => " + (Thread.CurrentThread.IsBackground ? "True" : "False"));
             var count = _collection.Count;
-
 
             var rand = new Random();
             if (count > 0)
                 for (int i = 0; i < Count; i++)
                 {
-                    var itemIndex = rand.Next(Count);
-                    var index = rand.Next(count);
+                    _collection[i].DoubleField = rand.Next(80, 150);
 
-                    _collection[itemIndex].FieldNames =
-                        rand.Next(index - 100, index).ToString();
-
-                    _collection[itemIndex].FieldDescription =
-                        rand.Next(index - 100, index).ToString();
-
-                    _collection[itemIndex].FieldData =
-                        rand.Next(index - 100, index).ToString();
+                    _collection[i].TimeSpanField = DateTime.Now.ToString("HHmmss");
 
                     if (RecordChangedEvent != null)
                         RecordChangedEvent(this,
                             new ValueChangedEventArgs
                             {
                                 DataSourceUrn = @"ExternalDataSource\MyTestData",
-                                Value = _collection[itemIndex],
-                                ChangedPropertyNames = new[] {"FieldNames", "FieldDescription", "FieldData"}
+                                Value = _collection[i],
+                                ChangedPropertyNames = new[] { "DoubleField", "TimeSpanField" }
                             });
                 }
 
@@ -70,13 +59,13 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
             foreach (var item in _collection)
             {
                 var dict = new Dictionary<string, object>();
-                dict.Add("FieldData", item.FieldData);
-                dict.Add("FieldDescription", item.FieldDescription);
+                dict.Add("DoubleField", item.DoubleField);
+                dict.Add("TimeSpanField", item.TimeSpanField);
                 dict.Add("FieldId", item.FieldId);
-                dict.Add("FieldNames", item.FieldNames);
                 list.Add(dict);
             }
             return list;
+
         }
 
         public void UpdateSourceInfo(object sourceInfo)
@@ -96,12 +85,8 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
     {
         public int FieldId { get; set; }
 
-        public string FieldNames { get; set; }
+        public double DoubleField { get; set; }
 
-        public string FieldDescription { get; set; }
-
-        public string FieldData { get; set; }
-
-
+        public string TimeSpanField { get; set; }
     }
 }

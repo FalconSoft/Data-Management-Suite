@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Globalization;
 using System.Timers;
 using FalconSoft.Data.Server.Common;
 
@@ -10,42 +8,36 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
 {
     public class QuotesFeedDataProvider : IDataProvider
     {
-        private readonly Timer _timer;
-        private List<QuotesFeed> _quotesFeedData = new List<QuotesFeed>();
+        private readonly Dictionary<object, QuotesFeed> _quotesFeedData = new Dictionary<object, QuotesFeed>();
 
-        List<int> _secId = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-        private int _iterationId = 0;
         public QuotesFeedDataProvider()
         {
             var rand = new Random();
-            foreach (var i in _secId)
+            for (int i = 1; i < 10; i++)
             {
-                _quotesFeedData.Add(new QuotesFeed
+                _quotesFeedData.Add(i, new QuotesFeed
                 {
-                    SecID = i,
+                    SecID = i.ToString(CultureInfo.InvariantCulture),
                     Quote = rand.Next(80, 150),
                     QuoteSource = "Source " + i
                 });
             }
 
-            _timer = new Timer(2000);
-            _timer.Elapsed += OnElapsed;
-            _timer.Start();
+            var timer = new Timer(2000);
+            timer.Elapsed += OnElapsed;
+            timer.Start();
         }
 
         private void OnElapsed(object sender, ElapsedEventArgs e)
         {
-            var rand = new Random();
-            int count = Math.Min(50, _quotesFeedData.Count);
-            for (int i = 0; i < count; i++)
+            foreach (var quotesFeed in _quotesFeedData.Values)
             {
-                var index = i; //rand.Next(count);
-                _quotesFeedData[index].Quote = int.Parse(DateTime.Now.ToString("HHmmss")); //rand.Next(80, 150);
+                quotesFeed.Quote = int.Parse(DateTime.Now.ToString("HHmmss")); //rand.Next(80, 150);
                 if (RecordChangedEvent != null)
                     RecordChangedEvent(this, new ValueChangedEventArgs
                     {
                         DataSourceUrn = @"ExternalDataSource\QuotesFeed",
-                        Value = _quotesFeedData[index],
+                        Value = quotesFeed,
                         ChangedPropertyNames = new[] { "Quote" }
                     });
             }
@@ -54,10 +46,36 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
         public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
             var list = new List<Dictionary<string, object>>();
-            foreach (var quotesFeed in _quotesFeedData)
+            if (filterRules != null)
+            {
+                foreach (var filterRule in filterRules)
+                {
+                    if (!_quotesFeedData.ContainsKey(filterRule.Value))
+                    {
+                        _quotesFeedData.Add(filterRule.Value, new QuotesFeed { SecID = filterRule.Value });
+
+                        var dict = new Dictionary<string, object>();
+                        dict.Add("SecID", _quotesFeedData[filterRule.Value].SecID);
+                        dict.Add("Quote", _quotesFeedData[filterRule.Value].Quote);
+                        dict.Add("QuoteSource", _quotesFeedData[filterRule.Value].QuoteSource);
+                        list.Add(dict);
+                    }
+                    else
+                    {
+                        var dict = new Dictionary<string, object>();
+                        dict.Add("SecID", _quotesFeedData[filterRule.Value].SecID);
+                        dict.Add("Quote", _quotesFeedData[filterRule.Value].Quote);
+                        dict.Add("QuoteSource", _quotesFeedData[filterRule.Value].QuoteSource);
+                        list.Add(dict);
+                    }
+                }
+                return list;
+            }
+
+            foreach (var quotesFeed in _quotesFeedData.Values)
             {
                 var dict = new Dictionary<string, object>();
-                dict.Add("SecID",quotesFeed.SecID);
+                dict.Add("SecID", quotesFeed.SecID);
                 dict.Add("Quote", quotesFeed.Quote);
                 dict.Add("QuoteSource", quotesFeed.QuoteSource);
                 list.Add(dict);
@@ -82,7 +100,7 @@ namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
 
     public class QuotesFeed
     {
-        public int SecID { get; set; }
+        public string SecID { get; set; }
 
         public double Quote { get; set; }
 
