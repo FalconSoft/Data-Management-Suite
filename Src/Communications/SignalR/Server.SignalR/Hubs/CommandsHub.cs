@@ -114,8 +114,9 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
             var deleteEnumerator = _isDeleteDataNull ? null : _toDelteSubjects[connectionId].ToEnumerable();
             var changeRecord = _isChangeDataNull ? null : _toUpdateSubjects[connectionId].ToEnumerable();
-
-            var task = Task.Factory.StartNew(() =>
+            Task task;
+            if (deleteEnumerator!=null && changeRecord !=null)
+            task = Task.Factory.StartNew(() =>
             {
                 var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord.ToArray() : null); //TODO .ToArray() - BAD FIX 
                 var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator.ToArray() : null); //TODO .ToArray() - BAD FIX
@@ -127,7 +128,19 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                     r => Clients.Client(connectionId).OnSuccess(r),
                     ex => Clients.Client(connectionId).OnFail(ex));
             });
+            else
+                task = Task.Factory.StartNew(() =>
+                {
+                    var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord : null); //TODO .ToArray() - BAD FIX 
+                    var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator : null); //TODO .ToArray() - BAD FIX
+                    var changedRecordsToArray = changeRecordsTask.Result;
+                    var deleteToArray = deleteToArrayTask.Result;
 
+                    _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
+                        changedRecordsToArray, deleteToArray,
+                        r => Clients.Client(connectionId).OnSuccess(r),
+                        ex => Clients.Client(connectionId).OnFail(ex));
+                });
             _workingTasks.Add(connectionId, task);
             Clients.Client(connectionId).InitilizeComplete();
         }
