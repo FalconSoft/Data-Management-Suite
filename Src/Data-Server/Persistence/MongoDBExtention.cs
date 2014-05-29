@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using FalconSoft.Data.Server.Common.Facade;
-using FalconSoft.Data.Server.Common.Metadata;
+using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Metadata;
 using MongoDB.Bson;
 
 namespace FalconSoft.Data.Server.Persistence

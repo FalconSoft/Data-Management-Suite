@@ -1,5 +1,5 @@
-﻿using FalconSoft.Data.Server.Common.Facade;
-using FalconSoft.Data.Server.Common.Metadata;
+﻿using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Metadata;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 

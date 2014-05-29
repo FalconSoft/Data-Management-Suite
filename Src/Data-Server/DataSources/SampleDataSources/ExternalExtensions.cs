@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using FalconSoft.Data.Server.Common.Metadata;
-using FieldInfo = FalconSoft.Data.Server.Common.Metadata.FieldInfo;
+using FalconSoft.Data.Management.Common.Metadata;
+using FieldInfo = FalconSoft.Data.Management.Common.Metadata.FieldInfo;
 
 namespace ReactiveWorksheets.ExternalDataSources
 {

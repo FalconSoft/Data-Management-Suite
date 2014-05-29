@@ -1,6 +1,6 @@
 ﻿using System;
-using FalconSoft.Data.Server.Common;
-using FalconSoft.Data.Server.Common.Facade;
+using FalconSoft.Data.Management.Common;
+using FalconSoft.Data.Management.Common.Facades;
 using Microsoft.Owin.Hosting;
 
 namespace FalconSoft.Data.Management.Server.SignalR

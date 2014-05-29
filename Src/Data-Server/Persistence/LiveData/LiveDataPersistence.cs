@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using FalconSoft.Data.Server.Common;
-using FalconSoft.Data.Server.Common.Metadata;
+using FalconSoft.Data.Management.Common;
+using FalconSoft.Data.Management.Common.Metadata;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
@@ -130,9 +130,9 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 groupedRecords[recordChangedParam.RecordKey] = recordChangedParam;
             }
                 
-            var query = Query<LiveDataObject>.In(e => e.RecordKey, groupedRecords.Keys);
+            //var query = Query<LiveDataObject>.In(e => e.RecordKey, groupedRecords.Keys);
 
-            var existedRecords =  _collection.FindAs<LiveDataObject>(query).SetFields(Fields.Exclude("_id")).AsQueryable().Select(r => r.RecordKey);
+            var existedRecords =  _collection.FindAllAs<LiveDataObject>().SetFields(Fields.Exclude("_id")).AsQueryable().Select(r => r.RecordKey);
 
             var recordsToUpdate = groupedRecords.Keys.Intersect(existedRecords);
             var recordsToInsert = groupedRecords.Keys.Except(existedRecords)
