@@ -127,6 +127,78 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
         }
 
+        public void GetTemporalDataByRevisionId(DataSourceInfo dataSourceInfo,object revisionId)
+        {
+            try
+            {
+                var enumerator = _temporalDataQueryFacade.GetTemporalDataByRevisionId(dataSourceInfo,revisionId);
+                var list = new List<Dictionary<string, object>>();
+                var counter = 0;
+                var count = 0;
+                foreach (var data in enumerator)
+                {
+                    ++counter;
+                    ++count;
+                    list.Add(data);
+                    if (counter == Limit)
+                    {
+                        counter = 0;
+                        Clients.Caller.GetTemporalDataByRevisionIdOnNext(list.ToArray());
+                        list.Clear();
+                    }
+                }
+
+                if (counter != 0)
+                {
+                    Clients.Caller.GetTemporalDataByRevisionIdOnNext(list.ToArray());
+                    list.Clear();
+                }
+
+                Clients.Caller.GetTemporalDataByRevisionIdOnComplete(count);
+            }
+            catch (Exception ex)
+            {
+                Clients.Caller.GetTemporalDataByRevisionIdOnError(ex);
+                throw ex;
+            }
+        }
+
+        public void GetRevisions(DataSourceInfo dataSourceInfo)
+        {
+            try
+            {
+                var enumerator = _temporalDataQueryFacade.GetRevisions(dataSourceInfo);
+                var list = new List<Dictionary<string, object>>();
+                var counter = 0;
+                var count = 0;
+                foreach (var data in enumerator)
+                {
+                    ++counter;
+                    ++count;
+                    list.Add(data);
+                    if (counter == Limit)
+                    {
+                        counter = 0;
+                        Clients.Caller.GetRevisionsOnNext(list.ToArray());
+                        list.Clear();
+                    }
+                }
+
+                if (counter != 0)
+                {
+                    Clients.Caller.GetRevisionsOnNext(list.ToArray());
+                    list.Clear();
+                }
+
+                Clients.Caller.GetRevisionsOnComplete(count);
+            }
+            catch (Exception ex)
+            {
+                Clients.Caller.GetRevisionsOnError(ex);
+                throw ex;
+            }
+        }
+
         public void GeTagInfos()
         {
             try

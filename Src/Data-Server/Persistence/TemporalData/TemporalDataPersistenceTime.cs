@@ -128,7 +128,22 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             return null;
         }
 
-        public void SaveTempotalData(RecordChangedParam recordChangedParam)
+        public IEnumerable<Dictionary<string, object>> GetTemporalDataByRevisionId(object revisionId = null)
+        {
+            return null;
+        }
+
+        public IEnumerable<Dictionary<string, object>> GetRevisions()
+        {
+            return null;
+        }
+
+        public Guid AddRevision(string urn, string userId)
+        {
+            return new Guid();
+        }
+
+        public void SaveTempotalData(RecordChangedParam recordChangedParam,object revisionId)
         {
             //    var client = new MongoClient(_connectionString);
             //    var mongoServer = client.GetServer();

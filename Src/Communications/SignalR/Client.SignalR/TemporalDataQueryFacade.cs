@@ -41,6 +41,22 @@ namespace FalconSoft.Data.Management.Client.SignalR
         private int _getRecordsAsOfCounter;
         private readonly object _getRecordsAsOfLock = new object();
 
+        //for GetTemporalDataByRevisionId method
+        private Action<Dictionary<string, object>> _getTemporalDataByRevisionIdOnNextAction;
+        private Action _getTemporalDataByRevisionIdOnCompleteAction;
+        private Action<Exception> _getTemporalDataByRevisionIdOnErrorAction;
+        private int _getTemporalDataByRevisionIdCount;
+        private int _getTemporalDataByRevisionIdCounter;
+        private readonly object _getTemporalDataByRevisionIdLock = new object();
+
+        //for GetRevisions method
+        private Action<Dictionary<string, object>> _getRevisionsOnNextAction;
+        private Action _getRevisionsOnCompleteAction;
+        private Action<Exception> _getRevisionsOnErrorAction;
+        private int _getRevisionsCount;
+        private int _getRevisionsCounter;
+        private readonly object _getRevisionsLock = new object();
+
         //for GeTagInfos method
         private Action<TagInfo> _geTagInfosOnNextAction;
         private Action _geTagInfosOnCompleteAction;
@@ -179,6 +195,84 @@ namespace FalconSoft.Data.Management.Client.SignalR
                 if (_getRecordsAsOfOnErrorAction != null)
                     _getRecordsAsOfOnErrorAction(ex);
             });
+
+            //  for GetTemporalDataByRevisionId method
+            _proxy.On<Dictionary<string, object>[]>("GetTemporalDataByRevisionIdOnNext", data =>
+            {
+                lock (_getTemporalDataByRevisionIdLock)
+                {
+                    if (_getTemporalDataByRevisionIdOnNextAction != null)
+                        foreach (var dictionary in data)
+                        {
+                            ++_getTemporalDataByRevisionIdCounter;
+                            _getTemporalDataByRevisionIdOnNextAction(dictionary);
+                        }
+
+                    if (_getTemporalDataByRevisionIdCount != 0 &&
+                        _getTemporalDataByRevisionIdCounter != 0 &&
+                        _getTemporalDataByRevisionIdCounter == _getTemporalDataByRevisionIdCount &&
+                        _getTemporalDataByRevisionIdOnCompleteAction != null)
+                        _getTemporalDataByRevisionIdOnCompleteAction();
+                }
+            });
+
+            _proxy.On<int>("GetTemporalDataByRevisionIdOnComplete", count =>
+            {
+                _getTemporalDataByRevisionIdCount = count;
+                if (_getTemporalDataByRevisionIdCount != 0 &&
+                    _getTemporalDataByRevisionIdCounter != 0 &&
+                    _getTemporalDataByRevisionIdCounter == _getTemporalDataByRevisionIdCount &&
+                    _getTemporalDataByRevisionIdOnCompleteAction != null)
+                    _getTemporalDataByRevisionIdOnCompleteAction();
+                if (count == 0 &&
+                    _getTemporalDataByRevisionIdOnCompleteAction != null)
+                    _getTemporalDataByRevisionIdOnCompleteAction();
+            });
+
+            _proxy.On("GetTemporalDataByRevisionIdOnError", ex =>
+            {
+                if (_getTemporalDataByRevisionIdOnErrorAction != null)
+                    _getTemporalDataByRevisionIdOnErrorAction(ex);
+            });
+
+            //  for GetRevisions method
+            _proxy.On<Dictionary<string, object>[]>("GetRevisionsOnNext", data =>
+            {
+                lock (_getRevisionsLock)
+                {
+                    if (_getRevisionsOnNextAction != null)
+                        foreach (var dictionary in data)
+                        {
+                            ++_getRevisionsCounter;
+                            _getRevisionsOnNextAction(dictionary);
+                        }
+
+                    if (_getRevisionsCount != 0 &&
+                        _getRevisionsCounter != 0 &&
+                        _getRevisionsCounter == _getRevisionsCount &&
+                        _getRevisionsOnCompleteAction != null)
+                        _getRevisionsOnCompleteAction();
+                }
+            });
+
+            _proxy.On<int>("GetRevisionsOnComplete", count =>
+            {
+                _getRevisionsCount = count;
+                if (_getRevisionsCount != 0 &&
+                    _getRevisionsCounter != 0 &&
+                    _getRevisionsCounter == _getRevisionsCount &&
+                    _getRevisionsOnCompleteAction != null)
+                    _getRevisionsOnCompleteAction();
+                if (count == 0 &&
+                    _getRevisionsOnCompleteAction != null)
+                    _getRevisionsOnCompleteAction();
+            });
+
+            _proxy.On("GetRevisionsOnError", ex =>
+            {
+                if (_getRevisionsOnErrorAction != null)
+                    _getRevisionsOnErrorAction(ex);
+            });
             
             //  for GeTagInfos method
             _proxy.On<TagInfo[]>("GeTagInfosOnNext", data =>
@@ -288,6 +382,42 @@ namespace FalconSoft.Data.Management.Client.SignalR
             CheckConnectionToServer();
 
             _proxy.Invoke("GetRecordsAsOf", dataSourceInfo, timeStamp);
+
+            return subject.ToEnumerable();
+        }
+
+        public IEnumerable<Dictionary<string, object>> GetTemporalDataByRevisionId(DataSourceInfo dataSourceInfo, object revisionId)
+        {
+            var subject = new Subject<Dictionary<string, object>>();
+
+            _getTemporalDataByRevisionIdCount = 0;
+            _getTemporalDataByRevisionIdCounter = 0;
+
+            _getTemporalDataByRevisionIdOnNextAction = data => subject.OnNext(data);
+            _getTemporalDataByRevisionIdOnCompleteAction = () => subject.OnCompleted();
+            _getTemporalDataByRevisionIdOnErrorAction = ex => subject.OnError(ex);
+
+            CheckConnectionToServer();
+
+            _proxy.Invoke("GetTemporalDataByRevisionId",dataSourceInfo,revisionId);
+
+            return subject.ToEnumerable();
+        }
+
+        public IEnumerable<Dictionary<string, object>> GetRevisions(DataSourceInfo dataSourceInfo)
+        {
+            var subject = new Subject<Dictionary<string, object>>();
+
+            _getRevisionsCount = 0;
+            _getRevisionsCounter = 0;
+
+            _getRevisionsOnNextAction = data => subject.OnNext(data);
+            _getRevisionsOnCompleteAction = () => subject.OnCompleted();
+            _getRevisionsOnErrorAction = ex => subject.OnError(ex);
+
+            CheckConnectionToServer();
+
+            _proxy.Invoke("GetRevisions", dataSourceInfo);
 
             return subject.ToEnumerable();
         }
