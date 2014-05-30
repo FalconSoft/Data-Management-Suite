@@ -7,8 +7,8 @@
     <ProjectGuid>{65AE3850-946A-4459-AD0A-11821C451EA3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ReactiveWorksheets.ExternalDataSources</RootNamespace>
-    <AssemblyName>ReactiveWorksheets.ExternalDataSources</AssemblyName>
+    <RootNamespace>FalconSoft.Data.Server.SampleDataSources</RootNamespace>
+    <AssemblyName>FalconSoft.Data.Server.SampleDataSources</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />

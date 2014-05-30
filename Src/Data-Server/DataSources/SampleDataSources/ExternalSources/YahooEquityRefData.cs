@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using HtmlAgilityPack;
 
-namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
+namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
 {
     public class YahooEquityRefDataProvider : IDataProvider
     {

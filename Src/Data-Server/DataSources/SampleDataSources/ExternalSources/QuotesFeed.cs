@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Timers;
 using FalconSoft.Data.Management.Common;
 
-namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
+namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
 {
     public class QuotesFeedDataProvider : IDataProvider
     {

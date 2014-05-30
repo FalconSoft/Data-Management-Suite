@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using FalconSoft.Data.Management.Common;
 
-namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
+namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
 {
     public class TestDataProvider : IDataProvider
     {
