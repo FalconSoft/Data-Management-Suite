@@ -25,13 +25,24 @@ namespace FalconSoft.Data.Server
         private static string _persistenceDataConnectionString;
         private static string _mongoDataConnectionString;
 
-        internal static void SetConfiguration(string metaDataPersistenceConnectionString, 
-            string persistenceDataConnectionString,
-            string mongoDataConnectionString)
+        internal static void SetConfiguration(string metaDataPersistenceConnectionString,
+            string persistenceDataConnectionString, string mongoDataConnectionString,
+            string version, string url, DateTime dateTime)
         {
             _metaDataPersistenceConnectionString = metaDataPersistenceConnectionString;
             _persistenceDataConnectionString = persistenceDataConnectionString;
             _mongoDataConnectionString = mongoDataConnectionString;
+            _serverInfo = new ServerInfo
+            {
+                StartTime = dateTime,
+                Url = url,
+                Version = version
+            };
+        }
+
+        internal static void SetServerInfo(ServerInfo serverInfo)
+        {
+            _serverInfo = serverInfo;
         }
 
         private static ICommandsAggregator _commandAggregator;
@@ -72,6 +83,8 @@ namespace FalconSoft.Data.Server
 
         private static ILogger _logger;
 
+        private static ServerInfo _serverInfo;
+
         public static IMessageBus MessageBus
         {
             get
@@ -84,7 +97,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _metaDataFacade ?? (_metaDataFacade = new MetaDataFacade(ProvidersRegistry, WorksheetsPersistence, MetaDataPersistence));
+                return _metaDataFacade ?? (_metaDataFacade = new MetaDataFacade(ProvidersRegistry, WorksheetsPersistence, MetaDataPersistence, ServerInfo));
             }
         }
 
@@ -92,7 +105,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _dataQueryFacade ?? (_dataQueryFacade = new ReactiveDataFacade(MessageBus, LiveDataPersistenceFactory,ProvidersRegistry,ReactiveEngine));
+                return _dataQueryFacade ?? (_dataQueryFacade = new ReactiveDataFacade(MessageBus, LiveDataPersistenceFactory, ProvidersRegistry, ReactiveEngine));
             }
         }
 
@@ -101,7 +114,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _temporalQueryFacade ??
-                       (_temporalQueryFacade = new TemporalDataQueryFacade(MessageBus, TemporalDataPersistenseFactory,ProvidersRegistry));
+                       (_temporalQueryFacade = new TemporalDataQueryFacade(MessageBus, TemporalDataPersistenseFactory, ProvidersRegistry));
             }
         }
 
@@ -112,7 +125,7 @@ namespace FalconSoft.Data.Server
                 return _commandFacade ?? (_commandFacade = new CommandFacade(CommandAggregator));
             }
         }
-        
+
         public static ISearchFacade SearchFacade
         {
             get
@@ -139,7 +152,7 @@ namespace FalconSoft.Data.Server
                             x =>
                             {
                                 Logger.InfoFormat("-> Load {0} dll with provider Catalogs", x.Value.FullName);
-                                return (IDataProvidersCatalog) Activator.CreateInstance(x.Key);
+                                return (IDataProvidersCatalog)Activator.CreateInstance(x.Key);
                             }).ToArray();
                 Logger.Info("");
                 return _dataProvidersCatalogs;
@@ -158,7 +171,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _providersRegistry ?? (_providersRegistry = new ProvidersRegistry {DataProvidersCatalog = DataProvidersCatalogs.First(x=>x is DataProvidersCatalog)});
+                return _providersRegistry ?? (_providersRegistry = new ProvidersRegistry { DataProvidersCatalog = DataProvidersCatalogs.First(x => x is DataProvidersCatalog) });
             }
         }
 
@@ -199,26 +212,26 @@ namespace FalconSoft.Data.Server
                 {
                     switch (s.HistoryStorageType)
                     {
-                       case HistoryStorageType.Buffer:
-                        {
-                            return
-                                new TemporalDataPersistenceBuffer(_persistenceDataConnectionString, s, "0", 
-                                    string.IsNullOrEmpty(s.HistoryStorageTypeParam) ? 100 : int.Parse(s.HistoryStorageTypeParam));
-                        }
-                       case HistoryStorageType.Event:
-                        {
-                            return new TemporalDataPersistence(_persistenceDataConnectionString, s, "0");
-                        }
-                       case HistoryStorageType.Time:
-                        {
-                            //TODO will be soon 
-                            return null;
-                        }
+                        case HistoryStorageType.Buffer:
+                            {
+                                return
+                                    new TemporalDataPersistenceBuffer(_persistenceDataConnectionString, s, "0",
+                                        string.IsNullOrEmpty(s.HistoryStorageTypeParam) ? 100 : int.Parse(s.HistoryStorageTypeParam));
+                            }
+                        case HistoryStorageType.Event:
+                            {
+                                return new TemporalDataPersistence(_persistenceDataConnectionString, s, "0");
+                            }
+                        case HistoryStorageType.Time:
+                            {
+                                //TODO will be soon 
+                                return null;
+                            }
                     }
                     //DEFAULT RETURN
                     return new TemporalDataPersistenceBuffer(_persistenceDataConnectionString, s, "0", 100);
                 });
-                                                                                         
+
             }
         }
 
@@ -264,6 +277,11 @@ namespace FalconSoft.Data.Server
             {
                 return _logger ?? (_logger = new Logger());
             }
+        }
+
+        public static ServerInfo ServerInfo
+        {
+            get { return _serverInfo ?? (_serverInfo = new ServerInfo()); }
         }
     }
 }

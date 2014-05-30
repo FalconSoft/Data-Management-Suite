@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
@@ -356,6 +357,29 @@ namespace FalconSoft.Data.Management.Client.SignalR
             var tcs = new TaskCompletionSource<AggregatedWorksheetInfo>();
             var task = tcs.Task;
             _proxy.Invoke<AggregatedWorksheetInfo>("GetAggregatedWorksheetInfo", worksheetUrn)
+                       .ContinueWith(t =>
+                       {
+                           if (t.IsFaulted)
+                           {
+                               tcs.SetCanceled();
+                               return;
+                           }
+                           tcs.SetResult(t.Result);
+                       });
+            return task.Result;
+        }
+        
+        public ServerInfo GetServerInfo()
+        {
+            CheckConnectionToServer();
+            return GetServerInfoServerCall();
+        }
+
+        public ServerInfo GetServerInfoServerCall()
+        {
+            var tcs = new TaskCompletionSource<ServerInfo>();
+            var task = tcs.Task;
+            _proxy.Invoke<ServerInfo>("GetServerInfo")
                        .ContinueWith(t =>
                        {
                            if (t.IsFaulted)

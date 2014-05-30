@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Configuration;
 using System.Linq;
+using System.Reflection;
 using FalconSoft.Data.Management.Components;
 
 namespace FalconSoft.Data.Server
@@ -11,11 +13,12 @@ namespace FalconSoft.Data.Server
         public void Configure(string metaDataPersistenceConnectionString,
             string persistenceDataConnectionString, string mongoDataConnectionString)
         {
-            ServerApp.SetConfiguration(metaDataPersistenceConnectionString, 
-                persistenceDataConnectionString, mongoDataConnectionString);
+
+            ServerApp.SetConfiguration(metaDataPersistenceConnectionString,
+                persistenceDataConnectionString, mongoDataConnectionString, Assembly.GetExecutingAssembly().GetName().Version.ToString(), ConfigurationManager.AppSettings["ConnectionString"], DateTime.Now);
 
             _commandAggregator = ServerApp.CommandAggregator;
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().OrderBy(x=>x.FullName))
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().OrderBy(x => x.FullName))
             {
                 ServerApp.Logger.InfoFormat("Loaded {0}", assembly.FullName);
             }

@@ -1,4 +1,5 @@
-﻿using FalconSoft.Data.Management.Common.Facades;
+﻿using FalconSoft.Data.Management.Common;
+using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
 using Microsoft.AspNet.SignalR;
@@ -98,6 +99,11 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
         {
             _metaDataFacade.DeleteAggregatedWorksheetInfo(worksheetUrn, userId);
             Clients.Caller.OnComplete();
+        }
+
+        public ServerInfo GetServerInfo()
+        {
+            return _metaDataFacade.GetServerInfo();
         }
       
         private void OnObjectInfoChanged(object sender, SourceObjectChangedEventArgs e)
