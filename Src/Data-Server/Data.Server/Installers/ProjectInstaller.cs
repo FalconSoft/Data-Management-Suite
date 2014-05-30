@@ -49,8 +49,8 @@ namespace FalconSoft.Data.Server.Installers
             // _serverServiceInstaller
             // 
             this._serverServiceInstaller.Description = "Server for FalconSoft Data Management Suite";
-            this._serverServiceInstaller.DisplayName = "DMS Server Service";
-            this._serverServiceInstaller.ServiceName = "DMSServerService";
+            this._serverServiceInstaller.DisplayName = "FalconSoft Data Server";
+            this._serverServiceInstaller.ServiceName = "FalconSoftDataServer";
             this._serverServiceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
             // 
             // ProjectInstaller

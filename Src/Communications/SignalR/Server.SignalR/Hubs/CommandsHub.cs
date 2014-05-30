@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
+using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
@@ -13,6 +14,8 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
     [HubName("ICommandFacade")]
     public class CommandsHub : Hub
     {
+        private readonly ILogger _logger;
+
         private readonly ICommandFacade _commandFacade;
         private readonly Dictionary<string,Subject<string>>_toDelteSubjects;
         private readonly Dictionary<string, Subject<Dictionary<string, object>>> _toUpdateSubjects;
@@ -29,8 +32,9 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
         private readonly object _onUpdateCounterLock = new object();
         private readonly object _onDeleteCounterLock = new object();
 
-        public CommandsHub(ICommandFacade commandFacade)
+        public CommandsHub(ICommandFacade commandFacade, ILogger logger)
         {
+            _logger = logger;
             _connectionIDictionary = new Dictionary<string, string>();
             _toDelteSubjects = new Dictionary<string, Subject<string>>();
             _toUpdateSubjects = new Dictionary<string, Subject<Dictionary<string, object>>>();
@@ -49,6 +53,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
         public override Task OnDisconnected()
         {
             var connectionId = string.Copy(Context.ConnectionId);
+            _logger.Debug("Disconected : " + connectionId);
             if (_connectionIDictionary.ContainsKey(connectionId))
             {
                 _connectionIDictionary.Remove(connectionId);
@@ -88,6 +93,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             bool isChangeDataNull,
             bool isDeleteDataNull)
         {
+           _logger.Debug("Submit data start connection Id : " + connectionId);
             _connectionIDictionary.Add(connectionId, dataSourceInfoPath);
             if (!isDeleteDataNull)
             {
@@ -138,8 +144,16 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
                     _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
                         changedRecordsToArray, deleteToArray,
-                        r => Clients.Client(connectionId).OnSuccess(r),
-                        ex => Clients.Client(connectionId).OnFail(ex));
+                        r =>
+                        {
+                            _logger.Debug("Success SubmitData. Return RevisionInfo : " + connectionId);
+                            Clients.Client(connectionId).OnSuccess(r);
+                        },
+                        ex =>
+                        {
+                             _logger.Debug("On submitChangest exception throw : " + connectionId,ex);
+                            Clients.Client(connectionId).OnFail(ex);
+                        });
                 });
             _workingTasks.Add(connectionId, task);
             Clients.Client(connectionId).InitilizeComplete();
@@ -163,6 +177,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
         public void SubmitChangesDeleteOnError(string connectionId, Exception ex)
         {
+            _logger.Debug("On delete. Error comes from client: " + connectionId, ex);
             _toDelteSubjects[connectionId].OnError(ex);
         }
 
@@ -184,6 +199,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
         public void SubmitChangesChangeRecordsOnError(string connectionId, Exception ex)
         {
+            _logger.Debug("On Update changes. Error comes from client: " + connectionId, ex);
             _toUpdateSubjects[connectionId].OnError(ex);
         }
 
@@ -241,6 +257,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                 (_toUpdateCounter[connectionId] == _toUpdateCount[connectionId]))
             {
                 _toUpdateSubjects[connectionId].OnCompleted();
+                _logger.Debug("To update data transfer complete : " + connectionId);
                 if (!_workingTasks[connectionId].IsCompleted)
                     _workingTasks[connectionId].Wait();
 
@@ -264,6 +281,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                 (_toDeleteCounter[connectionId] == _toDeleteCount[connectionId]))
             {
                 _toDelteSubjects[connectionId].OnCompleted();
+                _logger.Debug("To delete data transfer complete : " + connectionId);
                 if (!_workingTasks[connectionId].IsCompleted)
                     _workingTasks[connectionId].Wait();
 

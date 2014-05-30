@@ -67,6 +67,7 @@
     </Compile>
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="CSVHelper.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

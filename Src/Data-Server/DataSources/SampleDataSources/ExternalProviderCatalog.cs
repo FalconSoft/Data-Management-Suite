@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
-using ReactiveWorksheets.ExternalDataSources.ExternalSources;
+using FalconSoft.Data.Server.SampleDataSources.ExternalSources;
 
-namespace ReactiveWorksheets.ExternalDataSources
+namespace FalconSoft.Data.Server.SampleDataSources
 {
     public class ExternalProviderCatalog : IDataProvidersCatalog
     {

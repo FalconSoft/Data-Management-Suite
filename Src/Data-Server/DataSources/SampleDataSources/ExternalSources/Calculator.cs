@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 
-namespace ReactiveWorksheets.ExternalDataSources.ExternalSources
+namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
 {
     public class CalculatorDataProvider : IDataProvider
     {

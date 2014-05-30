@@ -33,11 +33,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\..\Data.Server.VersionInfo.cs">
@@ -50,10 +45,6 @@
     <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
       <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
       <Name>FalconSoft.Data.Management.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Components\FalconSoft.Data.Management.Components.csproj">
-      <Project>{ca16ffe9-bc48-4dc6-bbce-9a7a3eeca424}</Project>
-      <Name>FalconSoft.Data.Management.Components</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\Data-Server\Data.Server\FalconSoft.Data.Server.csproj">
       <Project>{5f52f2e1-8da2-499c-b707-1356851289dd}</Project>

@@ -5,7 +5,7 @@ using System.Reflection;
 using FalconSoft.Data.Management.Common.Metadata;
 using FieldInfo = FalconSoft.Data.Management.Common.Metadata.FieldInfo;
 
-namespace ReactiveWorksheets.ExternalDataSources
+namespace FalconSoft.Data.Server.SampleDataSources
 {
     public static class ExternalExtensions
     {
