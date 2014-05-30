@@ -149,7 +149,11 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                             _logger.Debug("Success SubmitData. Return RevisionInfo : " + connectionId);
                             Clients.Client(connectionId).OnSuccess(r);
                         },
-                        ex => Clients.Client(connectionId).OnFail(ex));
+                        ex =>
+                        {
+                             _logger.Debug("On submitChangest exception throw : " + connectionId,ex);
+                            Clients.Client(connectionId).OnFail(ex);
+                        });
                 });
             _workingTasks.Add(connectionId, task);
             Clients.Client(connectionId).InitilizeComplete();
@@ -173,6 +177,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
         public void SubmitChangesDeleteOnError(string connectionId, Exception ex)
         {
+            _logger.Debug("On delete. Error comes from client: " + connectionId, ex);
             _toDelteSubjects[connectionId].OnError(ex);
         }
 
@@ -194,6 +199,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
         public void SubmitChangesChangeRecordsOnError(string connectionId, Exception ex)
         {
+            _logger.Debug("On Update changes. Error comes from client: " + connectionId, ex);
             _toUpdateSubjects[connectionId].OnError(ex);
         }
 
