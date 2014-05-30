@@ -24,7 +24,7 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
                 const string metaDataPersistenceConnectionString = "mongodb://localhost/rw_metadata";
                 const string persistenceDataConnectionString = "mongodb://localhost/rw_data";
                 const string mongoDataConnectionString = "mongodb://localhost/MongoData";
-                return new InProcessServerFacadesFactory(metaDataPersistenceConnectionString, persistenceDataConnectionString, mongoDataConnectionString);
+                return new InProcessServerFacadesFactory();
             }
             else
             {
