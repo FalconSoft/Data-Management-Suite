@@ -1,12 +1,13 @@
 ﻿using System;
+using System.Configuration;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Management.Common.Utils;
 using FalconSoft.Data.Management.Components;
 using FalconSoft.Data.Management.Components.CommandsAggregator;
 using FalconSoft.Data.Management.Components.Facades;
-using FalconSoft.Data.Management.Components.Infrastructure;
 using FalconSoft.Data.Management.Components.ReactiveEngine;
 using FalconSoft.Data.Server.DefaultMongoDbSource;
 using FalconSoft.Data.Server.Persistence;
@@ -133,7 +134,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 if (_dataProvidersCatalogs != null) return _dataProvidersCatalogs;
-                _dataProvidersCatalogs = AppDomainAssemblyTypeScanner.TypesOfWithAssembly(typeof(IDataProvidersCatalog)).Select(
+                _dataProvidersCatalogs = AppDomainAssemblyTypeScanner.TypesOfWithAssembly(typeof(IDataProvidersCatalog), ConfigurationManager.AppSettings["CatalogDlls"]).Select(
                             x =>
                             {
                                 Logger.InfoFormat("-> Load {0} dll with provider Catalogs", x.Value.FullName);
