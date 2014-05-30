@@ -134,6 +134,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 if (_dataProvidersCatalogs != null) return _dataProvidersCatalogs;
+                AppDomainAssemblyTypeScanner.SetLogger(Logger);
                 _dataProvidersCatalogs = AppDomainAssemblyTypeScanner.TypesOfWithAssembly(typeof(IDataProvidersCatalog), ConfigurationManager.AppSettings["CatalogDlls"]).Select(
                             x =>
                             {

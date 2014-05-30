@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using FalconSoft.Data.Management.Client.SignalR;
+using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Utils;
 using FalconSoft.Data.Management.InProcessServer.Client;
 
 namespace FalconSoft.ReactiveWorksheets.Console.Client
@@ -18,18 +21,25 @@ namespace FalconSoft.ReactiveWorksheets.Console.Client
             {
                 return new SignalRFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"]);
             }
-            else if (facadeType.Equals("Inprocess", StringComparison.OrdinalIgnoreCase))
+            if (facadeType.Equals("Inprocess", StringComparison.OrdinalIgnoreCase))
             {
-                // this is hardcode for testing only
-                const string metaDataPersistenceConnectionString = "mongodb://localhost/rw_metadata";
-                const string persistenceDataConnectionString = "mongodb://localhost/rw_data";
-                const string mongoDataConnectionString = "mongodb://localhost/MongoData";
-                return new InProcessServerFacadesFactory();
+                AppDomainAssemblyTypeScanner.SetLogger(new Logger());
+                foreach (var assembly in AppDomainAssemblyTypeScanner.TypesOf(typeof(IFacadesFactory), ConfigurationManager.AppSettings["FacadeFactory"]))
+                {
+                    IFacadesFactory factory;
+                    try
+                    {
+                        factory = (IFacadesFactory)Activator.CreateInstance(assembly, new object[] { ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MongoDataConnectionString"] });
+                    }
+                    catch (MissingMethodException)
+                    {
+                        continue;
+                    }
+                    return factory;
+                }
+                throw new FileNotFoundException("Facade not Found");
             }
-            else
-            {
-                throw new ConfigurationException("Unsupported facade type - >" + facadeType);
-            }
+            throw new ConfigurationException("Unsupported facade type - >" + facadeType);
         }
 
         public static IFacadesFactory FacadesFactory { get; private set; }
