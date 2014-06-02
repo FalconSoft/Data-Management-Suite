@@ -1,7 +1,7 @@
 [Falconsoft Ltd@ 2014](http://falconsoft-ltd.com/)
 ## How to Install and Run FalconSoft Data Management Suite Server.
 
-1. Download **BuildRWArtifacts.bat**;
+1. Download `BuildRWArtifacts.bat`;
 2. Run it as Administrator;
 3. In the C:\ drive the _RWBuildArtifalcts_ directory will appear;
 4. Unpack the zip-archives DataServer.zip and ReactiveWorksheetsUI.zip;
