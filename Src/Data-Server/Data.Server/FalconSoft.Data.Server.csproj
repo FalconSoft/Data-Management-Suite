@@ -131,16 +131,12 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="app.manifest" />
-    <None Include="Installers\InstallService.bat">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Installers\UnInstallService.bat">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <None Include="InstallService.bat" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="Readme.md" />
+    <None Include="UnInstallService.bat" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Installers\ProjectInstaller.resx">
