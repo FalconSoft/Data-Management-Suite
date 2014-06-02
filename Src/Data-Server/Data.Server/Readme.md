@@ -12,7 +12,7 @@ Find the section <appSettings>
 
 ```xml
   <appSettings>
-    <add key="ConnectionString" value="http://192.168.0.1:8081/" />
+    <add key="ConnectionString" value="http://localhost:8080/" />
     <add key="MetaDataPersistenceConnectionString" value="mongodb://localhost/rw_metadata" />
     <add key="PersistenceDataConnectionString" value="mongodb://localhost/rw_data" />
     <add key="MongoDataConnectionString" value="mongodb://localhost/MongoData" />
