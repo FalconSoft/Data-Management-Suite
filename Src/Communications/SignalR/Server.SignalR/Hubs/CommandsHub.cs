@@ -121,29 +121,28 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             var deleteEnumerator = _isDeleteDataNull ? null : _toDelteSubjects[connectionId].ToEnumerable();
             var changeRecord = _isChangeDataNull ? null : _toUpdateSubjects[connectionId].ToEnumerable();
             Task task;
-            if (deleteEnumerator!=null && changeRecord !=null)
-            task = Task.Factory.StartNew(() =>
+            if (deleteEnumerator != null && changeRecord != null)
             {
                 var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord.ToArray() : null); //TODO .ToArray() - BAD FIX 
                 var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator.ToArray() : null); //TODO .ToArray() - BAD FIX
-                var changedRecordsToArray = changeRecordsTask.Result;
-                var deleteToArray = deleteToArrayTask.Result;
                 
-                _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
-                    changedRecordsToArray, deleteToArray,
-                    r => Clients.Client(connectionId).OnSuccess(r),
-                    ex => Clients.Client(connectionId).OnFail(ex));
-            });
+                task = Task.Factory.StartNew(() =>
+                {
+                    changeRecordsTask.Wait();
+                    deleteToArrayTask.Wait();
+                    var changedRecordsToArray = changeRecordsTask.Result;
+                    var deleteToArray = deleteToArrayTask.Result;
+                    _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
+                        changedRecordsToArray, deleteToArray,
+                        r => Clients.Client(connectionId).OnSuccess(r),
+                        ex => Clients.Client(connectionId).OnFail(ex));
+                });
+            }
             else
                 task = Task.Factory.StartNew(() =>
                 {
-                    var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord : null); //TODO .ToArray() - BAD FIX 
-                    var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator : null); //TODO .ToArray() - BAD FIX
-                    var changedRecordsToArray = changeRecordsTask.Result;
-                    var deleteToArray = deleteToArrayTask.Result;
-
                     _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
-                        changedRecordsToArray, deleteToArray,
+                        changeRecord, deleteEnumerator,
                         r =>
                         {
                             _logger.Debug("Success SubmitData. Return RevisionInfo : " + connectionId);
@@ -151,7 +150,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                         },
                         ex =>
                         {
-                             _logger.Debug("On submitChangest exception throw : " + connectionId,ex);
+                            _logger.Debug("On submitChangest exception throw : " + connectionId, ex);
                             Clients.Client(connectionId).OnFail(ex);
                         });
                 });
