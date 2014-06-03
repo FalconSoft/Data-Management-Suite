@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using FalconSoft.Data.Management.Client.SignalR;
-using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Utils;
-using FalconSoft.Data.Management.InProcessServer.Client;
 
 namespace FalconSoft.ReactiveWorksheets.Console.Client
 {
