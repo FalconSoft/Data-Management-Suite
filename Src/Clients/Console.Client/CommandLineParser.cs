@@ -31,15 +31,26 @@ namespace FalconSoft.Data.Console
             public string Separator = "\t";
         }
 
+        public class CreateParams
+        {
+            public string SchemaPath;
+            public string UserName;
+            public string Password;
+        }
+
+
+
         public enum CommandType
         {
             get,
             subscribe,
             submit,
             exit,
-            help
+            help,
+            create
         };
 
+        private CreateParams _createArgument = new CreateParams();
         private GetParams _getArgument = new GetParams();
         private SubmitParams _submitArgument = new SubmitParams();
         private SubscribeParams _subscribeArgument = new SubscribeParams();
@@ -50,6 +61,11 @@ namespace FalconSoft.Data.Console
         {
             switch (commandlineArgs[0])
             {
+                case "create":
+                    Command = CommandType.create;
+                    if(!ReadCreateParams(commandlineArgs))
+                        return false;
+                    break;
                 case "get": 
                     Command = CommandType.get;
                     if(!ReadGetPameters(commandlineArgs))
@@ -76,6 +92,23 @@ namespace FalconSoft.Data.Console
             return true;
         }
 
+        private bool ReadCreateParams(string[] commandlineArgs)
+        {
+            try
+            {
+                _createArgument.SchemaPath = commandlineArgs[1];
+                _createArgument.UserName = commandlineArgs[2];
+                _createArgument.Password = commandlineArgs[3];
+            }
+            catch (Exception)
+            {
+                ErrorMessage = "Incorrect create parameters";
+                return false;
+            }
+
+            return true;
+        }
+        
         private bool ReadSubscribePameters(string[] commandlineArgs)
         {
             try
@@ -134,7 +167,7 @@ namespace FalconSoft.Data.Console
 
         public string ErrorMessage { get; private set; }
 
-
+        public CreateParams CreateArguments { get { return _createArgument; } }
         public GetParams GetArguments { get { return _getArgument; } }
         public SubmitParams SubmitArguments { get { return _submitArgument; } }
         public SubscribeParams SubscribeArguments { get { return _subscribeArgument; } }

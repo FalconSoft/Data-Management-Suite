@@ -6,7 +6,9 @@ using System.Linq;
 using System.Reactive.Linq;
 using FalconSoft.Data.Management.Client.SignalR;
 using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Utils;
+using Newtonsoft.Json;
 
 namespace FalconSoft.Data.Console
 {
@@ -57,6 +59,10 @@ namespace FalconSoft.Data.Console
                 {
                     switch (commandLineParser.Command)
                     {
+                        case CommandLineParser.CommandType.create:
+                            Create(commandLineParser.CreateArguments);
+                            break;
+
                         case CommandLineParser.CommandType.get:
                             Get(commandLineParser.GetArguments);
                             break;
@@ -80,6 +86,28 @@ namespace FalconSoft.Data.Console
                     System.Console.WriteLine(commandLineParser.ErrorMessage);
                 }
             }
+
+        }
+
+        private static void Create(CommandLineParser.CreateParams createArguments)
+        {
+            if (!File.Exists(createArguments.SchemaPath))
+            {
+                System.Console.WriteLine("Schema file doesn't exist");
+                return;
+            }
+            string dsInfoJson;
+            
+            using (var reader = new StreamReader(createArguments.SchemaPath))
+            {
+                dsInfoJson = reader.ReadToEnd();
+            }
+
+            var datasource = JsonConvert.DeserializeObject<DataSourceInfo>(dsInfoJson);
+
+            var metadataAdminFacade = FacadesFactory.CreateMetaDataAdminFacade();
+
+            metadataAdminFacade.CreateDataSourceInfo(datasource, createArguments.UserName);
 
         }
 
