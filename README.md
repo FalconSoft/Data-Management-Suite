@@ -48,6 +48,7 @@ A simple library what references server-side logic into clients AppDomain. It do
 
 ##Resources
  - [web site - www.falconsoft-ltd.com/data-management-suite](http://www.falconsoft-ltd.com/data-management-suite)
+ - [Getting Started](https://github.com/FalconSoft/Data-Management-Suite/wiki/Getting-Started)
  - [Developer's Wiki page](https://github.com/FalconSoft/Data-Management-Suite/wiki)
  - [Architecture Overview](https://github.com/FalconSoft/Data-Management-Suite/wiki/Architecture-Overview)
  - [Release Notes](https://github.com/FalconSoft/Data-Management-Suite/wiki/Release-Notes)
