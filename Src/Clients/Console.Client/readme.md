@@ -1,5 +1,4 @@
-﻿Falconsoft Ltd@ 2014
-Reactive Worksheet Console Client application designed to comunicate with Falconsoft Data Sever troght console interface.
+**FalconSoft Data Console** application designed to comunicate with Falconsoft Data Sever troght console interface.
 
 To run application please set url to server for ConnectionString in <appSettings> section and than run the executable.
 
