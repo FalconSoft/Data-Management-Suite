@@ -52,7 +52,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{622159BB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Tests", "..\..\Data-Management-Suite-Private\Tests\RW.Server.Tests\Server.Tests.csproj", "{EEFE3B49-B7C6-47FA-9171-B80D939178E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.Client", "Clients\Console.Client\Console.Client.csproj", "{281627BC-5964-4B2F-A491-61EE77BE27AB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.Console", "Clients\Console.Client\FalconSoft.Data.Console.csproj", "{281627BC-5964-4B2F-A491-61EE77BE27AB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".versions", ".versions", "{15BE193A-50C0-455B-BEAE-B244E6CD74E1}"
 	ProjectSection(SolutionItems) = preProject

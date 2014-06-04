@@ -81,11 +81,11 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\Src\Communications\SignalR\Client.SignalR\FalconSoft.Data.Management.Client.SignalR.csproj">
       <Project>{750ea2e3-e290-4e44-bbf0-033ff8b9fc9d}</Project>
-      <Name>ReactiveWorksheets.Client.SignalR</Name>
+      <Name>FalconSoft.Data.Management.Client.SignalR</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\Src\Communications\InProcess\InProcessServer.Client\FalconSoft.Data.Management.InProcessServer.Client.csproj">
       <Project>{94d962b3-abd7-4a74-949a-f5d8a510aa9c}</Project>
-      <Name>ReactiveWorksheets.InProcessServer.Client</Name>
+      <Name>FalconSoft.Data.Management.InProcessServer.Client</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

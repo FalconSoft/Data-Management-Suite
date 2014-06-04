@@ -8,7 +8,7 @@ using FalconSoft.Data.Management.Client.SignalR;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Utils;
 
-namespace FalconSoft.ReactiveWorksheets.Console.Client
+namespace FalconSoft.Data.Console
 {
     class Program
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using FalconSoft.Data.Management.Common;
 
-namespace FalconSoft.ReactiveWorksheets.Console.Client
+namespace FalconSoft.Data.Console
 {
     public class Logger : ILogger
     {
