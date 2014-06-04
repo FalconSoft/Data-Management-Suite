@@ -28,14 +28,15 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
         private readonly Dictionary<string, bool> _onUpdateCompleteCall;
         private readonly Dictionary<string, bool> _onUpdateNextCall;
         private readonly Dictionary<string, bool> _onDeleteNextCall;
-        private readonly Dictionary<string, string> _connectionIDictionary;
+        
         private readonly object _onUpdateCounterLock = new object();
         private readonly object _onDeleteCounterLock = new object();
+        private readonly object _finilizingDictionaryCleanLock = new object();
 
         public CommandsHub(ICommandFacade commandFacade, ILogger logger)
         {
             _logger = logger;
-            _connectionIDictionary = new Dictionary<string, string>();
+            
             _toDelteSubjects = new Dictionary<string, Subject<string>>();
             _toUpdateSubjects = new Dictionary<string, Subject<Dictionary<string, object>>>();
             _workingTasks = new Dictionary<string, Task>();
@@ -54,12 +55,11 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
         {
             var connectionId = string.Copy(Context.ConnectionId);
             _logger.Debug("Disconected : " + connectionId);
-            if (_connectionIDictionary.ContainsKey(connectionId))
+            lock (_finilizingDictionaryCleanLock)
             {
-                _connectionIDictionary.Remove(connectionId);
-
                 if (_toDelteSubjects.ContainsKey(connectionId))
                 {
+                    _toDelteSubjects[connectionId].OnError(new Exception("Client program disconected while transfering data"));
                     if (_workingTasks.ContainsKey(connectionId))
                         _workingTasks.Remove(connectionId);
                     _toDelteSubjects.Remove(connectionId);
@@ -67,13 +67,11 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                     _toDeleteCounter.Remove(connectionId);
                     _toDeleteCount.Remove(connectionId);
                     _onDeleteNextCall.Remove(connectionId);
-
-                    if (_connectionIDictionary.ContainsKey(connectionId))
-                        _connectionIDictionary.Remove(connectionId);
                 }
 
                 if (_toUpdateSubjects.ContainsKey(connectionId))
                 {
+                    _toUpdateSubjects[connectionId].OnError(new Exception("Client program disconected while transfering data"));
                     if (_workingTasks.ContainsKey(connectionId))
                         _workingTasks.Remove(connectionId);
                     _toUpdateSubjects.Remove(connectionId);
@@ -81,9 +79,6 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                     _toUpdateCounter.Remove(connectionId);
                     _toUpdateCount.Remove(connectionId);
                     _onUpdateNextCall.Remove(connectionId);
-
-                    if (_connectionIDictionary.ContainsKey(connectionId))
-                        _connectionIDictionary.Remove(connectionId);
                 }
             }
             return base.OnDisconnected();
@@ -94,7 +89,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             bool isDeleteDataNull)
         {
            _logger.Debug("Submit data start connection Id : " + connectionId);
-            _connectionIDictionary.Add(connectionId, dataSourceInfoPath);
+           
             if (!isDeleteDataNull)
             {
                 _toDelteSubjects.Add(connectionId, new Subject<string>());
@@ -139,21 +134,18 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                 });
             }
             else
-                task = Task.Factory.StartNew(() =>
-                {
-                    _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
-                        changeRecord, deleteEnumerator,
-                        r =>
-                        {
-                            _logger.Debug("Success SubmitData. Return RevisionInfo : " + connectionId);
-                            Clients.Client(connectionId).OnSuccess(r);
-                        },
-                        ex =>
-                        {
-                            _logger.Debug("On submitChangest exception throw : " + connectionId, ex);
-                            Clients.Client(connectionId).OnFail(ex);
-                        });
-                });
+                task = Task.Factory.StartNew(() => _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
+                    changeRecord, deleteEnumerator,
+                    r =>
+                    {
+                        _logger.Debug("Success SubmitData. Return RevisionInfo : " + connectionId);
+                        Clients.Client(connectionId).OnSuccess(r);
+                    },
+                    ex =>
+                    {
+                        _logger.Debug("On submitChangest exception throw : " + connectionId, ex);
+                        Clients.Client(connectionId).OnFail(ex);
+                    }));
             _workingTasks.Add(connectionId, task);
             Clients.Client(connectionId).InitilizeComplete();
         }
@@ -251,51 +243,53 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
         private void SubmitChangesChangeRecordFinilize(string connectionId)
         {
-            if (_onUpdateNextCall[connectionId] &&
-                _onUpdateCompleteCall[connectionId] &&
-                (_toUpdateCounter[connectionId] == _toUpdateCount[connectionId]))
+            lock (_finilizingDictionaryCleanLock)
             {
-                _toUpdateSubjects[connectionId].OnCompleted();
-                _logger.Debug("To update data transfer complete : " + connectionId);
-                if (!_workingTasks[connectionId].IsCompleted)
-                    _workingTasks[connectionId].Wait();
+                if (_toUpdateSubjects.ContainsKey(connectionId) &&
+                    _onUpdateNextCall[connectionId] &&
+                    _onUpdateCompleteCall[connectionId] &&
+                    (_toUpdateCounter[connectionId] == _toUpdateCount[connectionId]))
+                {
+                    _toUpdateSubjects[connectionId].OnCompleted();
+                    _logger.Debug("To update data transfer complete : " + connectionId);
+                    if (!_workingTasks[connectionId].IsCompleted)
+                        _workingTasks[connectionId].Wait();
 
-                if (_workingTasks.ContainsKey(connectionId))
-                    _workingTasks.Remove(connectionId);
-                _toUpdateSubjects.Remove(connectionId);
-                _onUpdateCompleteCall.Remove(connectionId);
-                _toUpdateCounter.Remove(connectionId);
-                _toUpdateCount.Remove(connectionId);
-                _onUpdateNextCall.Remove(connectionId);
-
-                if (_connectionIDictionary.ContainsKey(connectionId))
-                    _connectionIDictionary.Remove(connectionId);
+                    if (_workingTasks.ContainsKey(connectionId))
+                        _workingTasks.Remove(connectionId);
+                    _toUpdateSubjects.Remove(connectionId);
+                    _onUpdateCompleteCall.Remove(connectionId);
+                    _toUpdateCounter.Remove(connectionId);
+                    _toUpdateCount.Remove(connectionId);
+                    _onUpdateNextCall.Remove(connectionId);
+                }
             }
         }
 
         private void SubmitChangesDeleteFinilize(string connectionId)
         {
-            if (_toDelteSubjects.ContainsKey(connectionId) && _onDeleteNextCall[connectionId] &&
-                _onDeleteCompleteCall[connectionId] &&
-                (_toDeleteCounter[connectionId] == _toDeleteCount[connectionId]))
+            lock (_finilizingDictionaryCleanLock)
             {
-                _toDelteSubjects[connectionId].OnCompleted();
-                _logger.Debug("To delete data transfer complete : " + connectionId);
-                if (!_workingTasks[connectionId].IsCompleted)
-                    _workingTasks[connectionId].Wait();
+                if (_toDelteSubjects.ContainsKey(connectionId) && 
+                    _onDeleteNextCall[connectionId] &&
+                    _onDeleteCompleteCall[connectionId] &&
+                    (_toDeleteCounter[connectionId] == _toDeleteCount[connectionId]))
+                {
+                    _toDelteSubjects[connectionId].OnCompleted();
+                    _logger.Debug("To delete data transfer complete : " + connectionId);
+                    if (!_workingTasks[connectionId].IsCompleted)
+                        _workingTasks[connectionId].Wait();
 
-                if (_workingTasks.ContainsKey(connectionId))
-                    _workingTasks.Remove(connectionId);
-                _toDelteSubjects.Remove(connectionId);
-                _onDeleteCompleteCall.Remove(connectionId);
-                _toDeleteCounter.Remove(connectionId);
-                _toDeleteCount.Remove(connectionId);
-                _onDeleteNextCall.Remove(connectionId);
-                if (_connectionIDictionary.ContainsKey(connectionId))
-                    _connectionIDictionary.Remove(connectionId);
+                    if (_workingTasks.ContainsKey(connectionId))
+                        _workingTasks.Remove(connectionId);
+                    _toDelteSubjects.Remove(connectionId);
+                    _onDeleteCompleteCall.Remove(connectionId);
+                    _toDeleteCounter.Remove(connectionId);
+                    _toDeleteCount.Remove(connectionId);
+                    _onDeleteNextCall.Remove(connectionId);
+                }
             }
         }
-
     }
      
 }
