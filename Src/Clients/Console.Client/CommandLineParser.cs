@@ -179,6 +179,7 @@ namespace FalconSoft.Data.Console
         public string Help()
         {
             var helpInfo = new StringBuilder();
+            helpInfo.AppendLine("--create <SchemaPath> <UserName> <Password>");
             helpInfo.AppendLine("--get <DataSource Name> <Output File Name> [FilterRules] [Separator(optional default to TAB)]");
             helpInfo.AppendLine("--submit <update filename (file what has to be uploaded)> <delete filename (file with RecordKeys to be deleted)> <DataSource name> [comment (optional)] [separator (optional) default to TAB]");
             helpInfo.AppendLine("--subscribe <DataSource name> <filename (file name where output should be dumped)> [FilterRules] [separator (optional default to TAB)]");

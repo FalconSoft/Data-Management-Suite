@@ -8,6 +8,12 @@ Following commans allow you to comunicate with server:
 -exit exit from application
 
 
+create <SchemaPath> <UserName> <Password>
+where
+	<SchemaPath> - required field, path to the file in json format where described DatasourceInfo structure
+	<UserName> - required field, user name whoc create ds
+	<Password> - required field, password
+
 -get <DataSource Name> <Output File Name> [FilterRules] [Separator]
 where 
 	<DataSource name> - required parameter, format category\datasource name. Datasource name from which data will be downloaded
