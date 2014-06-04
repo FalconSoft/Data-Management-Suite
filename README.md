@@ -7,8 +7,7 @@ FalconSoft Data Management Suite' reference architecture and set of reusable com
 
 ###Core feadures
  - Real-time data updates
- - Data Virtualization - what allow us to consolidate data from different sources in real-time
- - Full Audit trail
+ - Data Virtualization - new way to consolidate data from different sources in real-time.
  - Full Audit trail
  - Security / control
  - Customizable WPF GUI with high frequent and real-time updates
@@ -42,15 +41,16 @@ A simple library what references server-side logic into clients AppDomain. It do
 
 ####Clients
  - **FalconSoft.Data.Console** - a simple console application to work with FalconSoft Data Server
- - **Reactive Worksheets** - Real-time and customizable Wpf application. Is not open source yet!
+ - **Reactive Worksheets** - A generic and customizable Wpf application, what was designed and built to visualize and manage data sources in real-time. It is not open source yet!
 
-###Current Release
+##Current Release
  - release is comming
 
-###Resources
- - [web site - www.falconsoft-ltd.com/data-management-suite](www.falconsoft-ltd.com/data-management-suite)
+##Resources
+ - [web site - www.falconsoft-ltd.com/data-management-suite](http://www.falconsoft-ltd.com/data-management-suite)
+ - [Getting Started](https://github.com/FalconSoft/Data-Management-Suite/wiki/Getting-Started)
  - [Developer's Wiki page](https://github.com/FalconSoft/Data-Management-Suite/wiki)
  - [Architecture Overview](https://github.com/FalconSoft/Data-Management-Suite/wiki/Architecture-Overview)
  - [Release Notes](https://github.com/FalconSoft/Data-Management-Suite/wiki/Release-Notes)
+ - [Future plans / Roadmap](https://github.com/FalconSoft/Data-Management-Suite/wiki/Roadmap)
 
-###Future plans / Roadmap
