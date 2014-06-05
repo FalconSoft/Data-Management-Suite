@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using FalconSoft.Data.Management.Client.SignalR;
+using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Utils;
@@ -14,15 +15,22 @@ namespace FalconSoft.Data.Console
 {
     class Program
     {
+        private static ILogger _logger;
+
+        public static ILogger Logger
+        {
+            get { return _logger ?? (_logger = new Logger()); }
+        }
+
         private static IFacadesFactory GetFacadesFactory(string facadeType)
         {
             if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
             {
                 return new SignalRFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"]);
             }
-            if (facadeType.Equals("Inprocess", StringComparison.OrdinalIgnoreCase))
+            if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
             {
-                AppDomainAssemblyTypeScanner.SetLogger(new Logger());
+                AppDomainAssemblyTypeScanner.SetLogger(Logger);
                 foreach (var assembly in AppDomainAssemblyTypeScanner.TypesOf(typeof(IFacadesFactory), ConfigurationManager.AppSettings["FacadeFactory"]))
                 {
                     IFacadesFactory factory;
@@ -51,7 +59,7 @@ namespace FalconSoft.Data.Console
             while (true)
             {
                 System.Console.Write(">");
-                string[] commandArgs = (args == null || args.Length == 0)? System.Console.ReadLine().Split(' ') : args.ToArray();
+                var commandArgs = (args == null || args.Length == 0)? System.Console.ReadLine().Split(' ') : args.ToArray();
 
                 args = null;
 
@@ -59,25 +67,22 @@ namespace FalconSoft.Data.Console
                 {
                     switch (commandLineParser.Command)
                     {
-                        case CommandLineParser.CommandType.create:
+                        case CommandLineParser.CommandType.Create:
                             Create(commandLineParser.CreateArguments);
                             break;
-
-                        case CommandLineParser.CommandType.get:
+                        case CommandLineParser.CommandType.Get:
                             Get(commandLineParser.GetArguments);
                             break;
-                            
-                        case CommandLineParser.CommandType.submit:
+                        case CommandLineParser.CommandType.Submit:
                             Submit(commandLineParser.SubmitArguments);
                             break;
-                        
-                        case CommandLineParser.CommandType.subscribe:
+                        case CommandLineParser.CommandType.Subscribe:
                             Subscribe(commandLineParser.SubscribeArguments);
                             break;
-                        case CommandLineParser.CommandType.help:
+                        case CommandLineParser.CommandType.Help:
                             WriteHelpInfoToConsole(commandLineParser);
                             break;
-                        case CommandLineParser.CommandType.exit:
+                        case CommandLineParser.CommandType.Exit:
                             return;
                     }
                 }
@@ -86,7 +91,6 @@ namespace FalconSoft.Data.Console
                     System.Console.WriteLine(commandLineParser.ErrorMessage);
                 }
             }
-
         }
 
         private static void Create(CommandLineParser.CreateParams createArguments)
@@ -97,60 +101,47 @@ namespace FalconSoft.Data.Console
                 return;
             }
             string dsInfoJson;
-            
             using (var reader = new StreamReader(createArguments.SchemaPath))
             {
                 dsInfoJson = reader.ReadToEnd();
             }
-
             var datasource = JsonConvert.DeserializeObject<DataSourceInfo>(dsInfoJson);
-
             var metadataAdminFacade = FacadesFactory.CreateMetaDataAdminFacade();
-
             metadataAdminFacade.CreateDataSourceInfo(datasource, createArguments.UserName);
-
         }
 
         private static void WriteHelpInfoToConsole(CommandLineParser commandLineParser)
         {
-            string help = commandLineParser.Help();
+            var help = commandLineParser.Help();
             System.Console.WriteLine(help);
         }
 
         private static IReactiveDataQueryFacade _reactiveDataProvider2;
+
         private static void Subscribe(CommandLineParser.SubscribeParams subscribeArguments)
         {
             _reactiveDataProvider2 = FacadesFactory.CreateReactiveDataQueryFacade();
-
             _reactiveDataProvider2.GetDataChanges(subscribeArguments.DataSourceUrn)
                         .Buffer(TimeSpan.FromMilliseconds(1000))
                         .Subscribe(s =>
                         {
-                            if (s.Any())
+                            if (!s.Any()) return;
+                            foreach (var recordChangedParamse in s)
                             {
-                                foreach (var recordChangedParamse in s)
-                                {
-                                    CSVHelper.AppendRecords(recordChangedParamse.Select(r => r.RecordValues), subscribeArguments.FileName, subscribeArguments.Separator);
-                                }
+                                CSVHelper.AppendRecords(recordChangedParamse.Select(r => r.RecordValues), subscribeArguments.FileName, subscribeArguments.Separator);
                             }
                         });
-
-            System.Console.WriteLine(string.Format("Listening updates to [{0}] and writing to [{1}]", subscribeArguments.DataSourceUrn, subscribeArguments.FileName));
+            System.Console.WriteLine("Listening updates to [{0}] and writing to [{1}]", subscribeArguments.DataSourceUrn, subscribeArguments.FileName);
         }
 
 
         private static void Get(CommandLineParser.GetParams getArguments)
         {
             var reactiveDataQueryFacade = FacadesFactory.CreateReactiveDataQueryFacade();
-            
             var startTime = DateTime.Now;
-
             var data = reactiveDataQueryFacade.GetData(getArguments.DataSourceUrn).ToArray();
-            
-            TimeSpan executionSpan = DateTime.Now - startTime;
-
+            var executionSpan = DateTime.Now - startTime;
             CSVHelper.WriteRecords(data, getArguments.FileName, getArguments.Separator);
-            
             System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds.", getArguments.DataSourceUrn, getArguments.FileName, executionSpan);            
         }
 

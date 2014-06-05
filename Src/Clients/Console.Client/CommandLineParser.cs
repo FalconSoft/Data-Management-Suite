@@ -7,7 +7,6 @@ namespace FalconSoft.Data.Console
     {
         public class GetParams
         {
-           
             public string DataSourceUrn;
             public string FilterRules;
             public string FileName;
@@ -38,22 +37,20 @@ namespace FalconSoft.Data.Console
             public string Password;
         }
 
-
-
         public enum CommandType
         {
-            get,
-            subscribe,
-            submit,
-            exit,
-            help,
-            create
+            Get,
+            Subscribe,
+            Submit,
+            Exit,
+            Help,
+            Create
         };
 
-        private CreateParams _createArgument = new CreateParams();
-        private GetParams _getArgument = new GetParams();
-        private SubmitParams _submitArgument = new SubmitParams();
-        private SubscribeParams _subscribeArgument = new SubscribeParams();
+        private readonly CreateParams _createArgument = new CreateParams();
+        private readonly GetParams _getArgument = new GetParams();
+        private readonly SubmitParams _submitArgument = new SubmitParams();
+        private readonly SubscribeParams _subscribeArgument = new SubscribeParams();
 
         public CommandType Command { get; set; }
 
@@ -62,33 +59,32 @@ namespace FalconSoft.Data.Console
             switch (commandlineArgs[0])
             {
                 case "create":
-                    Command = CommandType.create;
-                    if(!ReadCreateParams(commandlineArgs))
+                    Command = CommandType.Create;
+                    if (!ReadCreateParams(commandlineArgs))
                         return false;
                     break;
-                case "get": 
-                    Command = CommandType.get;
-                    if(!ReadGetPameters(commandlineArgs))
+                case "get":
+                    Command = CommandType.Get;
+                    if (!ReadGetPameters(commandlineArgs))
                         return false;
                     break;
-                case "subscribe": Command = CommandType.subscribe;
-                    if(!ReadSubscribePameters(commandlineArgs))
+                case "subscribe": Command = CommandType.Subscribe;
+                    if (!ReadSubscribePameters(commandlineArgs))
                         return false;
                     break;
                 case "submit":
-                    Command = CommandType.submit;
-                    if(!ReadSubmitPameters(commandlineArgs))
+                    Command = CommandType.Submit;
+                    if (!ReadSubmitPameters(commandlineArgs))
                         return false;
                     break;
                 case "exit":
-                    Command = CommandType.exit;
+                    Command = CommandType.Exit;
                     break;
-                case "help": Command = CommandType.help;
+                case "help": Command = CommandType.Help;
                     break;
                 default:
                     return false;
             }
-
             return true;
         }
 
@@ -97,33 +93,29 @@ namespace FalconSoft.Data.Console
             try
             {
                 _createArgument.SchemaPath = commandlineArgs[1];
-                _createArgument.UserName = commandlineArgs[2];
-                _createArgument.Password = commandlineArgs[3];
             }
             catch (Exception)
             {
                 ErrorMessage = "Incorrect create parameters";
                 return false;
             }
-
             return true;
         }
-        
+
         private bool ReadSubscribePameters(string[] commandlineArgs)
         {
             try
             {
                 _subscribeArgument.DataSourceUrn = commandlineArgs[1];
                 _subscribeArgument.FileName = commandlineArgs[2];
-                _subscribeArgument.FilterRules = (commandlineArgs.Length >= 4)? commandlineArgs[3] : string.Empty;
-                _subscribeArgument.Separator = (commandlineArgs.Length >= 5)? commandlineArgs[4] : "\t";
+                _subscribeArgument.FilterRules = (commandlineArgs.Length >= 4) ? commandlineArgs[3] : string.Empty;
+                _subscribeArgument.Separator = (commandlineArgs.Length >= 5) ? commandlineArgs[4] : "\t";
             }
             catch (Exception)
             {
                 ErrorMessage = "Incorrect subscribe parameters";
                 return false;
             }
-
             return true;
         }
 
@@ -132,17 +124,16 @@ namespace FalconSoft.Data.Console
             try
             {
                 _submitArgument.UpdateFileName = commandlineArgs[1];
-                _submitArgument.DeleteFileName = (commandlineArgs.Length >= 3)? commandlineArgs[2] : string.Empty;
+                _submitArgument.DeleteFileName = (commandlineArgs.Length >= 3) ? commandlineArgs[2] : string.Empty;
                 _submitArgument.DataSourceUrn = (commandlineArgs.Length >= 4) ? commandlineArgs[3] : string.Empty;
                 _submitArgument.Comment = (commandlineArgs.Length >= 5) ? commandlineArgs[4] : string.Empty;
-                _submitArgument.Separator = (commandlineArgs.Length >= 6)? commandlineArgs[5] : "\t";
+                _submitArgument.Separator = (commandlineArgs.Length >= 6) ? commandlineArgs[5] : "\t";
             }
             catch (Exception)
             {
                 ErrorMessage = "Incorrect submit parameters";
                 return false;
             }
-
             return true;
         }
 
@@ -160,8 +151,6 @@ namespace FalconSoft.Data.Console
                 ErrorMessage = "Incorrect get parameters";
                 return false;
             }
-            
-
             return true;
         }
 
@@ -176,16 +165,16 @@ namespace FalconSoft.Data.Console
         {
             ErrorMessage = "Incorrect command!!! use <help> command for more info";
         }
+
         public string Help()
         {
             var helpInfo = new StringBuilder();
-            helpInfo.AppendLine("--create <SchemaPath> <UserName> <Password>");
+            helpInfo.AppendLine("--create <SchemaPath>");
             helpInfo.AppendLine("--get <DataSource Name> <Output File Name> [FilterRules] [Separator(optional default to TAB)]");
             helpInfo.AppendLine("--submit <update filename (file what has to be uploaded)> <delete filename (file with RecordKeys to be deleted)> <DataSource name> [comment (optional)] [separator (optional) default to TAB]");
             helpInfo.AppendLine("--subscribe <DataSource name> <filename (file name where output should be dumped)> [FilterRules] [separator (optional default to TAB)]");
             helpInfo.AppendLine("--exit");
             helpInfo.AppendLine("--help");
-
             return helpInfo.ToString();
         }
     }
