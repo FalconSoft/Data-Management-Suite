@@ -121,14 +121,15 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             }
             return resultData;
         }
-
         public IEnumerable<Dictionary<string, object>> GetTemporalDataByTag(TagInfo tagInfo)
         {
+
             var mainDataHistory = GetDataByLTEDate(tagInfo.TimeStamp, tagInfo.DataSourceProviderString).ToArray();
             var resultData = new List<Dictionary<string, object>>();
             foreach (var relationshipInfo in _dataSourceInfo.Relationships.Values)
             {
                 var relatedDataHistory = GetDataByLTEDate(tagInfo.TimeStamp, relationshipInfo.RelatedSourceInfoProviderString).ToArray();
+                if(!relatedDataHistory.Any()) continue;
                 foreach (var mappedField in relationshipInfo.MappedFields)
                 {
                     mainDataHistory.Join(relatedDataHistory, j1 => j1[mappedField.Key].ToString(), j2 => j2[mappedField.Value].ToString(),
