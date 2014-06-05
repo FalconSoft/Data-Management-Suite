@@ -1,4 +1,4 @@
-In the [DataSourceInfoTemplate.txt](../DataSourceInfoTemplates/DataSourceInfoTemplate.txt) is a JSON - formated template for using in `<SchemaPath>` in FalconSoft.Data.Client command `create <SchemaPath> <UserName> <Password>`
+In the [DataSourceInfoTemplate.json](../DataSourceInfoTemplates/DataSourceInfoTemplate.json) is a JSON - formated template for using in `<SchemaPath>` in FalconSoft.Data.Client command `create <SchemaPath> <UserName> <Password>`
 
 Every DataSourceInfo must contain:
 
