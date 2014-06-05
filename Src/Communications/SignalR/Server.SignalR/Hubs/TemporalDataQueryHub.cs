@@ -57,8 +57,8 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
         public void GetDataHistoryByTag(DataSourceInfo dataSourceInfo, TagInfo tagInfo)
         {
-            try
-            {
+          //  try
+         //   {
                 var enumerator = _temporalDataQueryFacade.GetDataHistoryByTag(dataSourceInfo, tagInfo);
                 var list = new List<Dictionary<string, object>>();
                 var counter = 0;
@@ -83,12 +83,12 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                 }
 
                 Clients.Caller.GetDataHistoryByTagOnComplete(count);
-            }
-            catch (Exception ex)
-            {
-                Clients.Caller.GetDataHistoryByTagOnError(ex);
-                throw ex;
-            }
+        //    }
+         //   catch (Exception ex)
+        //    {
+        //        Clients.Caller.GetDataHistoryByTagOnError(ex);
+        //        throw ex;
+        //    }
         }
 
         public void GetRecordsAsOf(DataSourceInfo dataSourceInfo, DateTime timeStamp)

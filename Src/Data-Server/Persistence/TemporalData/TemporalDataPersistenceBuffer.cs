@@ -137,6 +137,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                         {
                             foreach (var field in _dataSourceInfo.Fields.Where(w => w.Value.RelationUrn == relationshipInfo.Name))
                             {
+                                if (!j1.ContainsKey(field.Key) || !j2.ContainsKey(field.Value.RelatedFieldName)) continue;
                                 j1[field.Key] = j2[field.Value.RelatedFieldName];
                             }
                             resultData.Add(j1);
