@@ -44,9 +44,6 @@ A simple library what references server-side logic into clients AppDomain. It do
  - **FalconSoft.Data.Console** - a simple console application to work with FalconSoft Data Server
  - **Reactive Worksheets** - A generic and customizable Wpf application, what was designed and built to visualize and manage data sources in real-time. It is not open source yet!
 
-##Current Release
- - release is comming
-
 ##Resources
  - [web site - www.falconsoft-ltd.com/data-management-suite](http://www.falconsoft-ltd.com/data-management-suite)
  - [Getting Started](https://github.com/FalconSoft/Data-Management-Suite/wiki/Getting-Started)
