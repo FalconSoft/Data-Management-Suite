@@ -8,6 +8,7 @@ FalconSoft Data Management Suite' reference architecture and set of reusable com
 ###Core feadures
  - Real-time data updates
  - Data Virtualization - new way to consolidate data from different sources in real-time.
+ - Versioned Data Repository
  - Full Audit trail
  - Security / control
  - Customizable WPF GUI with high frequent and real-time updates
@@ -15,7 +16,7 @@ FalconSoft Data Management Suite' reference architecture and set of reusable com
 for more information look into...
 
 ###Project Structure
-FalconSoft Data Management Suite platform is organized into several high level assemblies
+FalconSoft Data Management Suite is organized into several high level assemblies
 
 ####Common
  - **FalconSoft.Data.Management.Common** - common assembly that contains all main interfaces and base classes used in data virtualization server as well as GUI.
@@ -43,11 +44,9 @@ A simple library what references server-side logic into clients AppDomain. It do
  - **FalconSoft.Data.Console** - a simple console application to work with FalconSoft Data Server
  - **Reactive Worksheets** - A generic and customizable Wpf application, what was designed and built to visualize and manage data sources in real-time. It is not open source yet!
 
-##Current Release
- - release is comming
-
 ##Resources
  - [web site - www.falconsoft-ltd.com/data-management-suite](http://www.falconsoft-ltd.com/data-management-suite)
+ - [Licensing](https://github.com/FalconSoft/Data-Management-Suite/wiki/Licensing)
  - [Getting Started](https://github.com/FalconSoft/Data-Management-Suite/wiki/Getting-Started)
  - [Developer's Wiki page](https://github.com/FalconSoft/Data-Management-Suite/wiki)
  - [Architecture Overview](https://github.com/FalconSoft/Data-Management-Suite/wiki/Architecture-Overview)
