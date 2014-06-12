@@ -129,7 +129,8 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                     _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
                         changedRecordsToArray, deleteToArray,
                         r => Clients.Client(connectionId).OnSuccess(r),
-                        ex => Clients.Client(connectionId).OnFail(ex));
+                        ex => Clients.Client(connectionId).OnFail(ex),
+                        (key, msg) => Clients.Client(connectionId).OnNotify(key,msg));
                 });
             }
             else
@@ -144,7 +145,8 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                     {
                         _logger.Debug("On submitChangest exception throw : " + connectionId, ex);
                         Clients.Client(connectionId).OnFail(ex);
-                    }));
+                    },
+                    (key, msg) => Clients.Client(connectionId).OnNotify(key, msg)));
             _workingTasks.Add(connectionId, task);
             Clients.Client(connectionId).InitilizeComplete();
         }
