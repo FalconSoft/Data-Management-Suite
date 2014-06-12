@@ -76,7 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
-      <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
+      <Project>{322CB0EC-5C6C-400C-9315-2A679DA9CDA9}</Project>
       <Name>FalconSoft.Data.Management.Common</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\Src\Communications\SignalR\Client.SignalR\FalconSoft.Data.Management.Client.SignalR.csproj">
