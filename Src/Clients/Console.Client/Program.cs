@@ -159,7 +159,7 @@ namespace FalconSoft.Data.Console
             
             var commandFacade = FacadesFactory.CreateCommandFacade();
             commandFacade.SubmitChanges(submitParams.DataSourceUrn, "console", recordsToUpdate, null, (r) => System.Console.WriteLine("Submit Success"), (ex) => System.Console.WriteLine("Submit Failed"),
-                (key, msg) => System.Console.WriteLine(msg)); // ,new string[0], (r) => System.Console.WriteLine("Submit Success"), (ex) => System.Console.WriteLine("Submit Failed")
+                (key, msg) => System.Console.WriteLine(msg));
         }
     }
 }
