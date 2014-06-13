@@ -65,6 +65,8 @@ namespace FalconSoft.Data.Server
 
         private static ISecurityFacade _securityFacade;
 
+        private static IPermissionSecurityFacade _permissionSecurityFacade;
+
         private static Func<string, ILiveDataPersistence> _liveDataPersistenceFactory;
 
         private static IWorksheetPersistence _worksheetsPersistence;
@@ -74,6 +76,8 @@ namespace FalconSoft.Data.Server
         private static ISearchIndexPersistence _searchIndexPersistence;
 
         private static ISecurityPersistence _securityPersistence;
+
+        private static IPermissionSecurityPersistance _permissionSecurityPersistance;
 
         private static IMetaDataPersistence _metaDataPersistence;
 
@@ -139,6 +143,15 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _securityFacade ?? (_securityFacade = new SecurityFacade(SecurityPersistence));
+            }
+        }
+
+        public static IPermissionSecurityFacade PermissionSecurityFacade
+        {
+            get
+            {
+                return _permissionSecurityFacade ??
+                       (_permissionSecurityFacade = new PermissionSecurityFacade(PermissionSecurityPersistance));
             }
         }
 
@@ -250,6 +263,15 @@ namespace FalconSoft.Data.Server
             {
                 return _securityPersistence ??
                        (_securityPersistence = new SecurityPersistence(_persistenceDataConnectionString));
+            }
+        }
+
+        public static IPermissionSecurityPersistance PermissionSecurityPersistance
+        {
+            get
+            {
+                return _permissionSecurityPersistance ??
+                       (_permissionSecurityPersistance = new PermissionSecurityPersistance(_persistenceDataConnectionString));
             }
         }
 

@@ -34,14 +34,14 @@ namespace FalconSoft.Data.Server.Persistence.Security
             return _mongoDatabase.GetCollection<User>(UsersCollectionName).FindAll().ToList();
         }
 
-        public void SaveNewUser(User user)
+        public void SaveNewUser(User user, string userToken)
         {
             ConnectToDb();
             user.Id = ObjectId.GenerateNewId().ToString();
             _mongoDatabase.GetCollection<User>(UsersCollectionName).Insert(user);
         }
 
-        public void UpdateUser(User user)
+        public void UpdateUser(User user, string userToken)
         {
             ConnectToDb();
             _mongoDatabase.GetCollection<User>(UsersCollectionName).Update(Query<User>.EQ(u => u.Id, user.Id), Update<User>.Set(u => u.LoginName, user.LoginName)
@@ -49,7 +49,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
                                                                                                            .Set(u => u.LastName, user.LastName));
         }
 
-        public void RemoveUser(User user)
+        public void RemoveUser(User user, string userToken)
         {
             ConnectToDb();
             _mongoDatabase.GetCollection<User>(UsersCollectionName).Remove(Query.EQ("Id", new BsonString(user.Id)));

@@ -21,21 +21,21 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             return  _securityFacade.GetUsers();
         }
 
-        public void SaveNewUser(User user)
+        public void SaveNewUser(User user, string userToken)
         {
-            _securityFacade.SaveNewUser(user);
+            _securityFacade.SaveNewUser(user, userToken);
             Clients.Caller.OnComplete();
         }
 
-        public void UpdateUser(User user)
+        public void UpdateUser(User user, string userToken)
         {
-            _securityFacade.UpdateUser(user);
+            _securityFacade.UpdateUser(user, userToken);
             Clients.Caller.OnComplete();
         }
 
-        public void RemoveUser(User user)
+        public void RemoveUser(User user, string userToken)
         {
-            _securityFacade.UpdateUser(user);
+            _securityFacade.UpdateUser(user, userToken);
             Clients.Caller.OnComplete();
         }
     }

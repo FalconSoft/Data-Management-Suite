@@ -60,6 +60,14 @@ namespace FalconSoft.Data.Management.Client.SignalR
             return new SearchFacade(_serverUrl);
         }
 
+        public IPermissionSecurityFacade CreatePermissionSecurityFacade()
+        {
+            if (string.IsNullOrWhiteSpace(_serverUrl))
+                throw new ApplicationException("Server Url is not initialized in bootstrapper");
+
+            return new PermissionSecurityFacade(_serverUrl);
+        }
+        
         public ISecurityFacade CreateSecurityFacade()
         {
             if (string.IsNullOrWhiteSpace(_serverUrl))

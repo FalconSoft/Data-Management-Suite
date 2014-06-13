@@ -142,7 +142,7 @@ namespace ReactiveWorksheets.Facade.Tests
             dataSourceTest.RemoveDatasourceInfo(user);
             dataSourceTest.Dispose();
 
-            _securityFacade.RemoveUser(user);
+            _securityFacade.RemoveUser(user, user.Id);
             Console.WriteLine("\nTest finish. Type <Enter> to exit.");
             Console.ReadLine();
         }
@@ -158,7 +158,7 @@ namespace ReactiveWorksheets.Facade.Tests
         private static User TestSecurityfacade(User user)
         {
             Console.WriteLine("Step #1. Create test user.");
-            _securityFacade.SaveNewUser(user);
+            _securityFacade.SaveNewUser(user, user.Id);
 
             Console.WriteLine("Cheacking if user is created...");
             var allUsers = _securityFacade.GetUsers();

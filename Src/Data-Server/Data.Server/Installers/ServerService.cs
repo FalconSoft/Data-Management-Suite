@@ -49,7 +49,8 @@ namespace FalconSoft.Data.Server.Installers
                                 ServerApp.ReactiveDataQueryFacade,
                                 ServerApp.TemporalQueryFacade,
                                 ServerApp.SearchFacade,
-                                ServerApp.SecurityFacade
+                                ServerApp.SecurityFacade,
+                                ServerApp.PermissionSecurityFacade
                             );
 
             DataServerHost.StartServer();
