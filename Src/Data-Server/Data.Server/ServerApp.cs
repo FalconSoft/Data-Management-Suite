@@ -11,6 +11,7 @@ using FalconSoft.Data.Management.Components.Facades;
 using FalconSoft.Data.Management.Components.ReactiveEngine;
 using FalconSoft.Data.Server.DefaultMongoDbSource;
 using FalconSoft.Data.Server.Persistence;
+using FalconSoft.Data.Server.Persistence.ErrorData;
 using FalconSoft.Data.Server.Persistence.LiveData;
 using FalconSoft.Data.Server.Persistence.MetaData;
 using FalconSoft.Data.Server.Persistence.SearchIndexes;
@@ -74,6 +75,8 @@ namespace FalconSoft.Data.Server
         private static Func<DataSourceInfo, ITemporalDataPersistense> _temporalDataPersistenseFactory;
 
         private static ISearchIndexPersistence _searchIndexPersistence;
+
+        private static IErrorDataPersistence _errorDataPersistence;
 
         private static ISecurityPersistence _securityPersistence;
 
@@ -195,6 +198,7 @@ namespace FalconSoft.Data.Server
                 return _commandAggregator ??
                        (_commandAggregator = new CommandAggregator(ProvidersRegistry, LiveDataPersistenceFactory,
                                                                    TemporalDataPersistenseFactory,
+                                                                   ErrorDataPersistence,
                                                                    DataProvidersCatalogs, ReactiveEngine, MetaDataPersistence, DefaultMetaDataProvider, Logger));
             }
         }
@@ -254,6 +258,15 @@ namespace FalconSoft.Data.Server
             {
                 return _searchIndexPersistence ??
                        (_searchIndexPersistence = new SearchIndexPersistence(_persistenceDataConnectionString, _metaDataPersistenceConnectionString));
+            }
+        }
+
+        public static IErrorDataPersistence ErrorDataPersistence
+        {
+            get
+            {
+                return _errorDataPersistence ??
+                       (_errorDataPersistence = new ErrorDataPersistence(_persistenceDataConnectionString));
             }
         }
 

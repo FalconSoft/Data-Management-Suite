@@ -20,6 +20,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
         private Task _startConnectionTask;
         private Action<RevisionInfo> _onSuccessAction;
         private Action<Exception> _onFailedAction;
+        private Action<string,string> _onNotifyAction;
         private Action _onInitilizeCompleteAction;
 
         public CommandFacade(string connectionString)
@@ -42,6 +43,12 @@ namespace FalconSoft.Data.Management.Client.SignalR
             {
                 if (_onFailedAction != null)
                     _onFailedAction(ex);
+            });
+
+            _proxy.On<string,string>("OnNotify", (key,msg) =>
+            {
+                if (_onNotifyAction != null)
+                    _onNotifyAction(key, msg);
             });
 
             _proxy.On("InitilizeComplete", () =>
@@ -72,6 +79,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
                 _onSuccessAction = onSuccess;
                 _onFailedAction = onFail;
+                _onNotifyAction = onNotification;
                 var are = new AutoResetEvent(false);
 
                 _onInitilizeCompleteAction = () => are.Set();
