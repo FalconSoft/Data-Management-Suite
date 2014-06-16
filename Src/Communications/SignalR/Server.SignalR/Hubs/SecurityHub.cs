@@ -23,20 +23,20 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
         public void SaveNewUser(User user, string userToken)
         {
-            _securityFacade.SaveNewUser(user, userToken);
-            Clients.Caller.OnComplete();
+            var userId = _securityFacade.SaveNewUser(user, userToken);
+            Clients.Caller.OnComplete(userId);
         }
 
         public void UpdateUser(User user, string userToken)
         {
             _securityFacade.UpdateUser(user, userToken);
-            Clients.Caller.OnComplete();
+            Clients.Caller.OnComplete("Updated Successfull");
         }
 
         public void RemoveUser(User user, string userToken)
         {
             _securityFacade.UpdateUser(user, userToken);
-            Clients.Caller.OnComplete();
+            Clients.Caller.OnComplete("Deleted successfull");
         }
     }
 }

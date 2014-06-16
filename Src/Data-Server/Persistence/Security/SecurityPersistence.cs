@@ -34,11 +34,12 @@ namespace FalconSoft.Data.Server.Persistence.Security
             return _mongoDatabase.GetCollection<User>(UsersCollectionName).FindAll().ToList();
         }
 
-        public void SaveNewUser(User user, string userToken)
+        public string SaveNewUser(User user, string userToken)
         {
             ConnectToDb();
             user.Id = ObjectId.GenerateNewId().ToString();
-            _mongoDatabase.GetCollection<User>(UsersCollectionName).Insert(user);
+           _mongoDatabase.GetCollection<User>(UsersCollectionName).Insert(user);
+            return user.Id;
         }
 
         public void UpdateUser(User user, string userToken)

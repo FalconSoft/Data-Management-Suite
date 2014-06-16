@@ -6,10 +6,10 @@ using Microsoft.AspNet.SignalR.Hubs;
 
 namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 {
-    [HubName("IPermissionSecurityFacade")]
+    [HubName("IPermissionSecurityHub")]
     public class PermissionSecurityHub : Hub
     {
-        private IPermissionSecurityFacade _permissionSecurityPersistance;
+        private readonly IPermissionSecurityFacade _permissionSecurityPersistance;
         public PermissionSecurityHub(IPermissionSecurityFacade permissionSecurityPersistance)
         {
             _permissionSecurityPersistance = permissionSecurityPersistance;
@@ -17,14 +17,18 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
         public Permission[] GetUserPermissions(string userToken)
         {
-            return _permissionSecurityPersistance.GetUserPermissions(userToken).ToArray();
+            var data = _permissionSecurityPersistance.GetUserPermissions(userToken);
+            if (data!=null)
+            return data.ToArray();
+            else
+            {
+                return new Permission[0];
+            }
         }
 
-        public void SaveUserPermissions(string connectionId, Permission[] permissions, string targetUserToken,
-            string grantedByUserToken)
+        public void SaveUserPermissions(string connectionId, Permission[] permissions, string targetUserToken, string grantedByUserToken)
         {
-            _permissionSecurityPersistance.SaveUserPermissions(permissions, targetUserToken, grantedByUserToken, message => Clients.Client(connectionId).MessageAction(message));
-            Clients.Client(connectionId).OnComplete();
+            _permissionSecurityPersistance.SaveUserPermissions(permissions, targetUserToken, grantedByUserToken, message => Clients.Client(connectionId).OnMessageAction(message));
         }
     }
 }

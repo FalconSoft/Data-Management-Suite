@@ -44,27 +44,22 @@ namespace FalconSoft.Data.Management.Client.SignalR
             var are = new AutoResetEvent(false);
             _onCompleteAction = ()=> are.Set();
             _onMessageResiveAction = messageAction;
-            _proxy.Invoke("SaveUserPermissions", permissions.ToList(), targetUserToken, grantedByUserToken);
+            _proxy.Invoke("SaveUserPermissions", _connection.ConnectionId, permissions.ToList(), targetUserToken, grantedByUserToken);
+            are.WaitOne();
         }
 
         private void InitialiseConnection(string connectionString)
         {
             _connection = new HubConnection(connectionString);
-            _proxy = _connection.CreateHubProxy("IPermissionSecurityFacade");
+            _proxy = _connection.CreateHubProxy("IPermissionSecurityHub");
 
-            _proxy.On<string>("MessageAction", revisionInfo =>
+            _proxy.On<string>("OnMessageAction", revisionInfo =>
             {
                 if (_onMessageResiveAction != null)
                     _onMessageResiveAction(revisionInfo);
             });
 
-            _proxy.On("OnComplete", ex =>
-            {
-                if (_onCompleteAction != null)
-                    _onCompleteAction();
-            });
-
-            _startConnectionTask = _connection.Start();
+           _startConnectionTask = _connection.Start();
         }
 
         private void CheckConnectionToServer()
@@ -75,6 +70,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
             }
             if (!_startConnectionTask.IsCompleted)
                 _startConnectionTask.Wait();
+        }
+
+        public void Dispose()
+        {
+            _connection.Stop();
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
@@ -15,7 +16,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
         private HubConnection _connection;
         private IHubProxy _proxy;
         private Task _startConnectionTask;
-        private Action _onCompleteAction;
+        private Action<string> _onCompleteAction;
 
         public SecurityFacade(string connectionString)
         {
@@ -32,10 +33,10 @@ namespace FalconSoft.Data.Management.Client.SignalR
             _connection.Reconnected += OnReconnected;
             _connection.Closed += OnClosed;
 
-            _proxy.On("OnComplete", () =>
+            _proxy.On<string>("OnComplete", userToken =>
             {
                 if (_onCompleteAction != null)
-                    _onCompleteAction();
+                    _onCompleteAction(userToken);
             });
 
             _startConnectionTask = _connection.Start();
@@ -68,6 +69,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
             Trace.WriteLine("******   ISecurityFacade reconecting");
         }
 
+        public bool Authenticate(string userName, string password)
+        {
+            return true; 
+        }
+
         public List<User> GetUsers()
         {
             CheckConnectionToServer();
@@ -79,23 +85,24 @@ namespace FalconSoft.Data.Management.Client.SignalR
             return task.Result;
         }
 
-        public void SaveNewUser(User user, string userToken)
+        public string SaveNewUser(User user, string userToken)
         {
-            var tcs = new TaskCompletionSource<object>();
+            var tcs = new TaskCompletionSource<string>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = tcs.SetResult;
 
             CheckConnectionToServer();
             _proxy.Invoke("SaveNewUser", user, userToken);
             
             task.Wait();
+            return task.Result;
         }
 
         public void UpdateUser(User user, string userToken)
         {
-            var tcs = new TaskCompletionSource<object>();
+            var tcs = new TaskCompletionSource<string>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction =  tcs.SetResult;
 
             CheckConnectionToServer();
             _proxy.Invoke("UpdateUser", user, userToken);
@@ -107,7 +114,8 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => tcs.SetResult(new object());
+            _onCompleteAction = tcs.SetResult;
+
             CheckConnectionToServer();
             _proxy.Invoke("RemoveUser", user, userToken);
             
