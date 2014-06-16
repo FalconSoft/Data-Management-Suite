@@ -105,9 +105,18 @@ namespace FalconSoft.Data.Console
             {
                 dsInfoJson = reader.ReadToEnd();
             }
-            var datasource = JsonConvert.DeserializeObject<DataSourceInfo>(dsInfoJson);
+            DataSourceInfo dataSource;
+            try
+            {
+                dataSource = JsonConvert.DeserializeObject<DataSourceInfo>(dsInfoJson);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine(ex.Message);
+                return;
+            }
             var metadataAdminFacade = FacadesFactory.CreateMetaDataAdminFacade();
-            metadataAdminFacade.CreateDataSourceInfo(datasource, createArguments.UserName);
+            metadataAdminFacade.CreateDataSourceInfo(dataSource, createArguments.UserName);
         }
 
         private static void WriteHelpInfoToConsole(CommandLineParser commandLineParser)
