@@ -116,7 +116,7 @@ namespace FalconSoft.Data.Console
                 return;
             }
             var metadataAdminFacade = FacadesFactory.CreateMetaDataAdminFacade();
-            metadataAdminFacade.CreateDataSourceInfo(dataSource, createArguments.UserName);
+            metadataAdminFacade.CreateDataSourceInfo(dataSource, createArguments.UserName??"1");
         }
 
         private static void WriteHelpInfoToConsole(CommandLineParser commandLineParser)

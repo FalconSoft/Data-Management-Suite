@@ -11,7 +11,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
 {
     internal class CommandFacade : ICommandFacade
     {
-        private const int Limit = 100;
+        private const int Limit = 50;
 
         private readonly string _connectionString;
 
