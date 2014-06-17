@@ -18,6 +18,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
         public SecurityPersistence(string connectionString)
         {
             _connectionString = connectionString;
+            
         }
 
         private void ConnectToDb()
@@ -28,13 +29,13 @@ namespace FalconSoft.Data.Server.Persistence.Security
             }
         }
 
-        public List<User> GetUsers()
+        public List<User> GetUsers(string userToken)
         {
             ConnectToDb();
             return _mongoDatabase.GetCollection<User>(UsersCollectionName).FindAll().ToList();
         }
 
-        public string SaveNewUser(User user, string userToken)
+        public string SaveNewUser(User user, UserRole userRole, string userToken)
         {
             ConnectToDb();
             user.Id = ObjectId.GenerateNewId().ToString();
@@ -42,7 +43,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
             return user.Id;
         }
 
-        public void UpdateUser(User user, string userToken)
+        public void UpdateUser(User user, UserRole userRole, string userToken)
         {
             ConnectToDb();
             _mongoDatabase.GetCollection<User>(UsersCollectionName).Update(Query<User>.EQ(u => u.Id, user.Id), Update<User>.Set(u => u.LoginName, user.LoginName)

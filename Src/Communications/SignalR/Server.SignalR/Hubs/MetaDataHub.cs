@@ -19,7 +19,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
         
         public DataSourceInfo[] GetAvailableDataSources(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            return  _metaDataFacade.GetAvailableDataSources(userId, minAccessLevel);
+            return _metaDataFacade.GetAvailableDataSources(userId, minAccessLevel) ?? new DataSourceInfo[0];
         }
 
         public DataSourceInfo GetDataSourceInfo(string dataSourceUrn)

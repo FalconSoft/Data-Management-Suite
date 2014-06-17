@@ -65,11 +65,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
             _connection.Stop();
         }
 
-        public void SubmitChanges<T>(string dataSourcePath, string comment, IEnumerable<T> changedRecords = null,
+        public void SubmitChanges<T>(string dataSourcePath, string userToken, IEnumerable<T> changedRecords = null,
             IEnumerable<string> deleted = null, Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null,
             Action<string, string> onNotification = null) { }
 
-        public void SubmitChanges(string dataSourcePath, string comment,
+        public void SubmitChanges(string dataSourcePath, string userToken,
             IEnumerable<Dictionary<string, object>> changedRecords = null, IEnumerable<string> deleted = null,
             Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null,
             Action<string, string> onNotification = null)
@@ -86,7 +86,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
                 CheckConnectionToServer();
 
-                _proxy.Invoke("InitilizeSubmit", _connection.ConnectionId, dataSourcePath, comment,
+                _proxy.Invoke("InitilizeSubmit", _connection.ConnectionId, dataSourcePath, userToken,
                     changedRecords == null, deleted == null);
                 are.WaitOne();
                 if (onNotification != null)

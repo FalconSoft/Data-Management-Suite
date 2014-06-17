@@ -104,7 +104,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _metaDataFacade ?? (_metaDataFacade = new MetaDataFacade(ProvidersRegistry, WorksheetsPersistence, MetaDataPersistence, ServerInfo));
+                return _metaDataFacade ?? (_metaDataFacade = new MetaDataFacade(ProvidersRegistry, WorksheetsPersistence, MetaDataPersistence, PermissionSecurityPersistance, ServerInfo));
             }
         }
 
@@ -129,7 +129,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _commandFacade ?? (_commandFacade = new CommandFacade(CommandAggregator));
+                return _commandFacade ?? (_commandFacade = new CommandFacade(CommandAggregator,PermissionSecurityPersistance));
             }
         }
 
@@ -145,7 +145,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _securityFacade ?? (_securityFacade = new SecurityFacade(SecurityPersistence));
+                return _securityFacade ?? (_securityFacade = new SecurityFacade(SecurityPersistence,PermissionSecurityPersistance));
             }
         }
 

@@ -74,38 +74,38 @@ namespace FalconSoft.Data.Management.Client.SignalR
             return true; 
         }
 
-        public List<User> GetUsers()
+        public List<User> GetUsers(string userToken)
         {
             CheckConnectionToServer();
             var tcs = new TaskCompletionSource<List<User>>();
             var task = tcs.Task;
-            _proxy.Invoke<List<User>>("GetUsers")
+            _proxy.Invoke<List<User>>("GetUsers",userToken)
                 .ContinueWith(t => tcs.SetResult(t.Result));
 
             return task.Result;
         }
 
-        public string SaveNewUser(User user, string userToken)
+        public string SaveNewUser(User user, UserRole userRole, string userToken)
         {
             var tcs = new TaskCompletionSource<string>();
             var task = tcs.Task;
             _onCompleteAction = tcs.SetResult;
 
             CheckConnectionToServer();
-            _proxy.Invoke("SaveNewUser", user, userToken);
+            _proxy.Invoke("SaveNewUser", user, userRole, userToken);
             
             task.Wait();
             return task.Result;
         }
 
-        public void UpdateUser(User user, string userToken)
+        public void UpdateUser(User user, UserRole userRole, string userToken)
         {
             var tcs = new TaskCompletionSource<string>();
             var task = tcs.Task;
             _onCompleteAction =  tcs.SetResult;
 
             CheckConnectionToServer();
-            _proxy.Invoke("UpdateUser", user, userToken);
+            _proxy.Invoke("UpdateUser", user, userRole, userToken);
            
             task.Wait();
         }

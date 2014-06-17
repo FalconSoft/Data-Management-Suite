@@ -83,7 +83,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             return base.OnDisconnected();
         }
 
-        public void InitilizeSubmit(string connectionId, string dataSourceInfoPath, string comment,
+        public void InitilizeSubmit(string connectionId, string dataSourceInfoPath, string userToken,
             bool isChangeDataNull,
             bool isDeleteDataNull)
         {
@@ -108,7 +108,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
 
             var _dataSourceInfoPath = string.Copy(dataSourceInfoPath);
-            var _comment = string.Copy(comment);
+            var _userToken = string.Copy(userToken);
             var _isDeleteDataNull = isDeleteDataNull;
             var _isChangeDataNull = isChangeDataNull;
 
@@ -126,7 +126,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                     deleteToArrayTask.Wait();
                     var changedRecordsToArray = changeRecordsTask.Result;
                     var deleteToArray = deleteToArrayTask.Result;
-                    _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
+                    _commandFacade.SubmitChanges(_dataSourceInfoPath, _userToken,
                         changedRecordsToArray, deleteToArray,
                         r => Clients.Client(connectionId).OnSuccess(r),
                         ex => Clients.Client(connectionId).OnFail(ex),
@@ -134,7 +134,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                 });
             }
             else
-                task = Task.Factory.StartNew(() => _commandFacade.SubmitChanges(_dataSourceInfoPath, _comment,
+                task = Task.Factory.StartNew(() => _commandFacade.SubmitChanges(_dataSourceInfoPath, _userToken,
                     changeRecord, deleteEnumerator,
                     r =>
                     {

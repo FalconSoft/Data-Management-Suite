@@ -27,25 +27,22 @@ namespace FalconSoft.Data.Management.Client.SignalR
             InitialiseConnection(connectionString);
         }
 
-        public IEnumerable<Permission> GetUserPermissions(string userToken)
+        public Permission GetUserPermissions(string userToken)
         {
             CheckConnectionToServer();
 
-            var tcs = new TaskCompletionSource<IEnumerable<Permission>>();
+            var tcs = new TaskCompletionSource<Permission>();
             var task = tcs.Task;
-            _proxy.Invoke<Permission[]>("GetUserPermissions", userToken)
-                .ContinueWith(t => tcs.SetResult(t.Result));
+            _proxy.Invoke<Permission>("GetUserPermissions", userToken)
+                .ContinueWith(t => tcs.SetResult(t.Result.Id == null ? null : t.Result));
 
             return task.Result;
         }
 
-        public void SaveUserPermissions(IEnumerable<Permission> permissions, string targetUserToken, string grantedByUserToken,Action<string> messageAction = null)
+        public void SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken, string grantedByUserToken,Action<string> messageAction = null)
         {
-            var are = new AutoResetEvent(false);
-            _onCompleteAction = ()=> are.Set();
             _onMessageResiveAction = messageAction;
-            _proxy.Invoke("SaveUserPermissions", _connection.ConnectionId, permissions.ToList(), targetUserToken, grantedByUserToken);
-            are.WaitOne();
+            _proxy.Invoke("SaveUserPermissions", _connection.ConnectionId, permissions, targetUserToken, grantedByUserToken);
         }
 
         private void InitialiseConnection(string connectionString)

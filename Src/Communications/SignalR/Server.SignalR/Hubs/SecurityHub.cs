@@ -16,26 +16,26 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             _securityFacade = securityFacade;
         }
 
-        public List<User> GetUsers()
+        public List<User> GetUsers(string userToken)
         {
-            return  _securityFacade.GetUsers();
+            return  _securityFacade.GetUsers(userToken);
         }
 
-        public void SaveNewUser(User user, string userToken)
+        public void SaveNewUser(User user,UserRole userRole, string userToken)
         {
-            var userId = _securityFacade.SaveNewUser(user, userToken);
+            var userId = _securityFacade.SaveNewUser(user, userRole, userToken);
             Clients.Caller.OnComplete(userId);
         }
 
-        public void UpdateUser(User user, string userToken)
+        public void UpdateUser(User user, UserRole userRole, string userToken)
         {
-            _securityFacade.UpdateUser(user, userToken);
+            _securityFacade.UpdateUser(user, userRole, userToken);
             Clients.Caller.OnComplete("Updated Successfull");
         }
 
         public void RemoveUser(User user, string userToken)
         {
-            _securityFacade.UpdateUser(user, userToken);
+            _securityFacade.RemoveUser(user, userToken);
             Clients.Caller.OnComplete("Deleted successfull");
         }
     }
