@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FalconSoft.Data.Console.FileCrawler
+namespace FalconSoft.Data.EDI.FeedWatcher
 {
     public class CommandLineParser
     {
@@ -66,6 +66,7 @@ namespace FalconSoft.Data.Console.FileCrawler
         public void Help()
         {
             System.Console.WriteLine("start -> <data path(like c:\\data\\)>  <filter(like *690.txt)>");
+            System.Console.WriteLine("test -> start watcher with default params");
         }
     }
 }

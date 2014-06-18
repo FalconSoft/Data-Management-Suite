@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FalconSoft.Data.Console;
 using FalconSoft.Data.Management.Client.SignalR;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -12,14 +13,14 @@ using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Utils;
 using Newtonsoft.Json;
 
-namespace FalconSoft.Data.Console.FileCrawler
+namespace FalconSoft.Data.EDI.FeedWatcher
 {
     class Program
     {
         private static ILogger _logger;
 
         private static string Urn_main = @"ok\CorporateActions"; //hardcode
-        private static string Urn_AGM = @"ok\Company Meeting_AGM"; //hardcode
+        private static string Urn_AGM = @"ok\CompanyMeeting_AGM"; //hardcode
         private static string Urn_DIV = @"ok\Dividend_DIV"; //hardcode
         private static string Urn_Sec = @"ok\SecurityRefData"; //hardcode
         private static string[] exFields = new[] { "paytype", "rdid", "priority", "defaultopt", "outturnsecid", "outturnisin", "ratioold", "rationew", "fractions", "currency", "rate1type", "rate1", "rate2type", "rate2" }; //hardcode
@@ -209,39 +210,8 @@ namespace FalconSoft.Data.Console.FileCrawler
 
         private static void Test()
         {
-            CreateSource(@"c:\data\CorporateActions_json.txt");
-            CreateSource(@"c:\data\AGM_json.txt");
-            CreateSource(@"c:\data\DIV_json.txt");
-            CreateSource(@"c:\data\SecurityRefData_json.txt");
-            StartFileWatcher("C:\\data\\", "*690.txt");
+            StartFileWatcher(ConfigurationManager.AppSettings["PathForWatching"], "*690.txt");
             System.Console.WriteLine("Start File Watcher . . .");
-        }
-
-        private static void CreateSource(string path)
-        {
-            if (!File.Exists(path))
-            {
-                System.Console.WriteLine("Schema file doesn't exist");
-                return;
-            }
-            string dsInfoJson;
-            using (var reader = new StreamReader(path))
-            {
-                dsInfoJson = reader.ReadToEnd();
-            }
-            DataSourceInfo dataSource;
-            try
-            {
-                dataSource = JsonConvert.DeserializeObject<DataSourceInfo>(dsInfoJson);
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine(ex.Message);
-                return;
-            }
-            var metadataAdminFacade = FacadesFactory.CreateMetaDataAdminFacade();
-            metadataAdminFacade.CreateDataSourceInfo(dataSource, "server");
-            System.Console.WriteLine("Save Success " + dataSource.DataSourcePath);
         }
     }
 }
