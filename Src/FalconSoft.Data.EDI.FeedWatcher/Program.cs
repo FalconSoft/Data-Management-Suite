@@ -3,15 +3,11 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FalconSoft.Data.Console;
 using FalconSoft.Data.Management.Client.SignalR;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Utils;
-using Newtonsoft.Json;
 
 namespace FalconSoft.Data.EDI.FeedWatcher
 {
@@ -26,10 +22,6 @@ namespace FalconSoft.Data.EDI.FeedWatcher
         private static string Urn_Sec = @"EDI\SecurityRefData"; //hardcode
         private static string[] exFields = new[] { "paytype", "rdid", "priority", "defaultopt", "outturnsecid", "outturnisin", "ratioold", "rationew", "fractions", "currency", "rate1type", "rate1", "rate2type", "rate2" }; //hardcode
 
-        public static ILogger Logger
-        {
-            get { return _logger ?? (_logger = new Logger()); }
-        }
 
         private static IFacadesFactory GetFacadesFactory(string facadeType)
         {
@@ -39,7 +31,7 @@ namespace FalconSoft.Data.EDI.FeedWatcher
             }
             if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
             {
-                AppDomainAssemblyTypeScanner.SetLogger(Logger);
+               
                 foreach (var assembly in AppDomainAssemblyTypeScanner.TypesOf(typeof(IFacadesFactory), ConfigurationManager.AppSettings["FacadeFactory"]))
                 {
                     IFacadesFactory factory;

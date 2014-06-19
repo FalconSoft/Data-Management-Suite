@@ -49,19 +49,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommandLineParser.cs" />
@@ -83,10 +73,6 @@
     <ProjectReference Include="..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
       <Project>{322CB0EC-5C6C-400C-9315-2A679DA9CDA9}</Project>
       <Name>FalconSoft.Data.Management.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Clients\Console.Client\FalconSoft.Data.Console.csproj">
-      <Project>{281627BC-5964-4B2F-A491-61EE77BE27AB}</Project>
-      <Name>FalconSoft.Data.Console</Name>
     </ProjectReference>
     <ProjectReference Include="..\Communications\SignalR\Client.SignalR\FalconSoft.Data.Management.Client.SignalR.csproj">
       <Project>{750EA2E3-E290-4E44-BBF0-033FF8B9FC9D}</Project>
@@ -111,11 +97,21 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="DataSourcesJson\AGM_json.txt" />
-    <Content Include="DataSourcesJson\CorporateActions_json.txt" />
-    <Content Include="DataSourcesJson\DIV_json.txt" />
-    <Content Include="DataSourcesJson\Portfolio_json.txt" />
-    <Content Include="DataSourcesJson\SecurityRefData_json.txt" />
+    <Content Include="DataSourcesJson\AGM_json.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DataSourcesJson\CorporateActions_json.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DataSourcesJson\DIV_json.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DataSourcesJson\Portfolio_json.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DataSourcesJson\SecurityRefData_json.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />

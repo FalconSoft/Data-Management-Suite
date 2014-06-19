@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Security;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
-using MongoDB.Driver.Wrappers;
 
 namespace FalconSoft.Data.Server.Persistence.Security
 {
@@ -22,13 +19,11 @@ namespace FalconSoft.Data.Server.Persistence.Security
         {
             _connectionString = connectionString;
             ConnectToDb();
-            if (!_mongoDatabase.CollectionExists(PermissionsCollectionName))
-            {
-                _mongoDatabase.CreateCollection(PermissionsCollectionName);
+            if (_mongoDatabase.CollectionExists(PermissionsCollectionName)) return;
+            _mongoDatabase.CreateCollection(PermissionsCollectionName);
 
-                CreatePowerAdmin("Admin", "Admin");
-                CreatePowerAdmin("consoleClient", "console");
-            }
+            CreatePowerAdmin("Admin", "Admin");
+            CreatePowerAdmin("consoleClient", "console");
         }
 
         private void CreatePowerAdmin(string userName, string password)
@@ -88,8 +83,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
                 });
             }
         }
-
-       
+        
         private void ConnectToDb()
         {
             if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
@@ -101,16 +95,8 @@ namespace FalconSoft.Data.Server.Persistence.Security
         public Permission GetUserPermissions(string userToken)
         {
             ConnectToDb();
-
-            var collection = _mongoDatabase.GetCollection(typeof (Permission),
-                PermissionsCollectionName);
-
-            var permission = collection.FindAllAs<Permission>().FirstOrDefault(p => p.UserId == userToken);
-            if (permission != null)
-            {
-                return permission;
-            }
-            return null;
+            var collection = _mongoDatabase.GetCollection(typeof (Permission), PermissionsCollectionName);
+            return collection.FindAllAs<Permission>().FirstOrDefault(p => p.UserId == userToken);
         }
 
         public void SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken, string grantedByUserToken, Action<string> messageAction = null)
@@ -162,8 +148,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
                 throw;
             }
         }
-
-
+        
         public void ChangeUserRole(string userToken, UserRole userRole, string grantedByUserToken)
         {
             var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
@@ -184,8 +169,13 @@ namespace FalconSoft.Data.Server.Persistence.Security
                 });
             }
         }
-        
 
+        public AccessLevel CheckAccess(string userToken, string urn)
+        {
+            ConnectToDb();
+            var collection = _mongoDatabase.GetCollection(typeof(Permission), PermissionsCollectionName);
+            var permission = collection.FindAllAs<Permission>().FirstOrDefault(p => p.UserId == userToken);
+            return permission != null ? permission.DataSourceAccessPermissions[urn].AccessLevel : AccessLevel.Read;
+        }
     }
-  
 }
