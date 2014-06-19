@@ -183,7 +183,7 @@ namespace FalconSoft.Data.EDI.FeedWatcher
             IEnumerable<Dictionary<string, object>> data, string[] fields = null)
         {
             var metaDataFacade = FacadesFactory.CreateMetaDataFacade();
-            var dsInfo = metaDataFacade.GetDataSourceInfo(urn);
+            var dsInfo = metaDataFacade.GetDataSourceInfo(urn,_userToken);
             var dsFields = fields ?? dsInfo.Fields.Keys.ToArray();
             foreach (var row in data)
             {
