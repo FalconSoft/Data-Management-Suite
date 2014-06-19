@@ -26,10 +26,14 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
         public Permission GetUserPermissions(string userToken)
         {
+            if (userToken == null)
+                return null;
+
             CheckConnectionToServer();
 
             var tcs = new TaskCompletionSource<Permission>();
             var task = tcs.Task;
+            
             _proxy.Invoke<Permission>("GetUserPermissions", userToken)
                 .ContinueWith(t => tcs.SetResult(t.Result.Id == null ? null : t.Result));
             return task.Result;
@@ -38,7 +42,14 @@ namespace FalconSoft.Data.Management.Client.SignalR
         public void SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken, string grantedByUserToken,Action<string> messageAction = null)
         {
             _onMessageResiveAction = messageAction;
-            _proxy.Invoke("SaveUserPermissions", _connection.ConnectionId, permissions, targetUserToken, grantedByUserToken);
+            if (targetUserToken != null)
+            {
+                _proxy.Invoke("SaveUserPermissions", _connection.ConnectionId, permissions, targetUserToken,
+                    grantedByUserToken);
+            } else if (messageAction != null)
+            {
+                messageAction("Target user id do not input");
+            }
         }
 
         public AccessLevel CheckAccess(string userToken, string urn)
