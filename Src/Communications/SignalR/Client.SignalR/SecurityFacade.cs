@@ -97,6 +97,16 @@ namespace FalconSoft.Data.Management.Client.SignalR
             return task.Result;
         }
 
+        public User GetUser(string userName)
+        {
+            CheckConnectionToServer();
+            var tcs = new TaskCompletionSource<User>();
+            var task = tcs.Task;
+            _proxy.Invoke<User>("GetUser", userName)
+                .ContinueWith(t => tcs.SetResult(t.Result));
+            return task.Result;
+        }
+
         public string SaveNewUser(User user, UserRole userRole, string userToken)
         {
             var tcs = new TaskCompletionSource<string>();
