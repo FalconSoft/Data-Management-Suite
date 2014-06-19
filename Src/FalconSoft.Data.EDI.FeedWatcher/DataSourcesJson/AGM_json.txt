@@ -1,7 +1,7 @@
 {
     "_id" : "53a0104ed52aaa0e201781b0",
     "Name" : "CompanyMeeting_AGM",
-    "Category" : "ok",
+    "Category" : "EDI",
     "Description" : null,
     "ImageSource" : null,
     "Fields" : {
@@ -17,7 +17,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : true
         },
         "AGMDate" : {
@@ -32,7 +32,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "FYEDate" : {
@@ -47,7 +47,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "RecDate" : {
@@ -62,7 +62,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "AGMEGM" : {
@@ -77,7 +77,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "AGMNo" : {
@@ -92,7 +92,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "AGMTime" : {
@@ -107,7 +107,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "Add1" : {
@@ -122,7 +122,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "Add2" : {
@@ -137,7 +137,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "Add3" : {
@@ -152,7 +152,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "Add4" : {
@@ -167,7 +167,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "Add5" : {
@@ -182,7 +182,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "Add6" : {
@@ -197,7 +197,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "City" : {
@@ -212,7 +212,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         },
         "CntryCD" : {
@@ -227,12 +227,12 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Company Meeting_AGM",
+            "DataSourceProviderString" : "EDI\\Company Meeting_AGM",
             "IsParentField" : false
         }
     },
     "Relationships" : {},
-    "ParentDataSourcePath" : "ok\\CorporateActions",
+    "ParentDataSourcePath" : "EDI\\CorporateActions",
     "ParentFilterString" : null,
     "HistoryStorageType" : 0,
     "HistoryStorageTypeParam" : null,

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
 
-namespace FalconSoft.Data.Console.FileCrawler
+namespace FalconSoft.Data.EDI.FeedWatcher
 {
     public class FileParser
     {

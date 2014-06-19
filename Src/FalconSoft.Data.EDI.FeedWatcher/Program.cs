@@ -5,22 +5,25 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FalconSoft.Data.Console;
 using FalconSoft.Data.Management.Client.SignalR;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Utils;
+using Newtonsoft.Json;
 
-namespace FalconSoft.Data.Console.FileCrawler
+namespace FalconSoft.Data.EDI.FeedWatcher
 {
     class Program
     {
         private static ILogger _logger;
         private static string _userToken = "serverAgent";
 
-        private static string Urn_main = @"ok\CorporateActions"; //hardcode
-        private static string Urn_AGM = @"ok\Company Meeting_AGM"; //hardcode
-        private static string Urn_DIV = @"ok\Dividend_DIV"; //hardcode
+        private static string Urn_main = @"EDI\CorporateActions"; //hardcode
+        private static string Urn_AGM = @"EDI\CompanyMeeting_AGM"; //hardcode
+        private static string Urn_DIV = @"EDI\Dividend_DIV"; //hardcode
+        private static string Urn_Sec = @"EDI\SecurityRefData"; //hardcode
         private static string[] exFields = new[] { "paytype", "rdid", "priority", "defaultopt", "outturnsecid", "outturnisin", "ratioold", "rationew", "fractions", "currency", "rate1type", "rate1", "rate2type", "rate2" }; //hardcode
 
         public static ILogger Logger
@@ -62,8 +65,36 @@ namespace FalconSoft.Data.Console.FileCrawler
         static void Main(string[] args)
         {
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
-            StartFileWatcher("C:\\data\\","*690.txt");
-            System.Console.ReadLine();
+            var commandLineParser = new CommandLineParser();
+
+            while (true)
+            {
+                System.Console.Write(">");
+                var commandArgs = (args == null || args.Length == 0) ? System.Console.ReadLine().Split(' ') : args.ToArray();
+
+                args = null;
+
+                if (commandLineParser.Parse(commandArgs))
+                {
+                    switch (commandLineParser.Command)
+                    {
+                        case CommandLineParser.CommandType.Start:
+                            StartFileWatcher(ConfigurationManager.AppSettings["PathForWatching"], "*690.txt");
+                            System.Console.WriteLine("Start FeedWatcher " + ConfigurationManager.AppSettings["PathForWatching"]);
+                            break;
+                        case CommandLineParser.CommandType.Help:
+                            System.Console.WriteLine("start -> Start FeedWatcher with Parameters in config file");
+                            System.Console.WriteLine("exit -> Close FeedWatcher");
+                            break;
+                        case CommandLineParser.CommandType.Exit:
+                            return;
+                    }
+                }
+                else
+                {
+                    System.Console.WriteLine("Error");
+                }
+            }   
         }
 
         private static void StartFileWatcher(string path,string filter)
@@ -90,11 +121,16 @@ namespace FalconSoft.Data.Console.FileCrawler
             var records = ConvertDataToStrongTyped(preparedData, Urn_main).ToArray();
 
             var recordsAgm = ParseInheritData(records, Urn_AGM, "AGM");
-            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_AGM, "console", recordsAgm, null, (r) => System.Console.WriteLine("Submit Success"), (ex) => System.Console.WriteLine("Submit Failed"),
+            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_AGM, "console", recordsAgm, null, (r) => System.Console.WriteLine("Submit Success -> " + Urn_AGM), (ex) => System.Console.WriteLine("Submit Failed"),
                 (key, msg) => System.Console.WriteLine(msg));
 
             var recordsDiv = ParseInheritData(records, Urn_DIV, "DIV");
-            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_DIV, "console", recordsDiv, null, (r) => System.Console.WriteLine("Submit Success"), (ex) => System.Console.WriteLine("Submit Failed"),
+            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_DIV, "console", recordsDiv, null, (r) => System.Console.WriteLine("Submit Success -> " + Urn_DIV), (ex) => System.Console.WriteLine("Submit Failed"),
+                (key, msg) => System.Console.WriteLine(msg));
+
+            var secData = PrepareData(rows, "secid"); // hardcode
+            var recordsSec = ParseDataSourceData(Urn_Sec, secData);
+            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_Sec, "console", recordsSec, null, (r) => System.Console.WriteLine("Submit Success -> " + Urn_Sec), (ex) => System.Console.WriteLine("Submit Failed"),
                 (key, msg) => System.Console.WriteLine(msg));
         }
 
@@ -139,6 +175,24 @@ namespace FalconSoft.Data.Console.FileCrawler
                     if (keyValuePair.Key.Contains("field") || keyValuePair.Key.Contains("date")) continue;
                     dict.Add(keyValuePair.Key,keyValuePair.Value);
                 }
+                yield return dict;
+            }
+        }
+
+        private static IEnumerable<Dictionary<string, object>> ParseDataSourceData(string urn,
+            IEnumerable<Dictionary<string, object>> data, string[] fields = null)
+        {
+            var metaDataFacade = FacadesFactory.CreateMetaDataFacade();
+            var dsInfo = metaDataFacade.GetDataSourceInfo(urn);
+            var dsFields = fields ?? dsInfo.Fields.Keys.ToArray();
+            foreach (var row in data)
+            {
+                var dict = new Dictionary<string, object>();
+                row.Join(dsFields, j1 => j1.Key.ToLower(), j2 => j2.ToLower(), (j1, j2) =>
+                {
+                    dict.Add(j2, FileParser.TryConvert(row[j2].ToString(), dsInfo.Fields[j2].DataType));
+                    return j1;
+                }).Count();
                 yield return dict;
             }
         }
