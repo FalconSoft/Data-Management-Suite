@@ -7,7 +7,7 @@ using Microsoft.AspNet.SignalR.Hubs;
 namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 {
     [HubName("ISecurityFacade")]
-    public class SecurityHub:Hub
+    public class SecurityHub : Hub
     {
         private readonly ISecurityFacade _securityFacade;
 
@@ -16,17 +16,22 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             _securityFacade = securityFacade;
         }
 
-        public string Authenticate( string login, string password)
+        public string Authenticate(string login, string password)
         {
-           return _securityFacade.Authenticate(login, password);
+            return _securityFacade.Authenticate(login, password);
         }
 
         public List<User> GetUsers(string userToken)
         {
-            return  _securityFacade.GetUsers(userToken);
+            return _securityFacade.GetUsers(userToken);
         }
 
-        public void SaveNewUser(User user,UserRole userRole, string userToken)
+        public User GetUser(string userName)
+        {
+            return _securityFacade.GetUser(userName);
+        }
+
+        public void SaveNewUser(User user, UserRole userRole, string userToken)
         {
             var userId = _securityFacade.SaveNewUser(user, userRole, userToken);
             Clients.Caller.OnComplete(userId);

@@ -19,7 +19,7 @@ namespace FalconSoft.Data.EDI.FeedWatcher
     {
         private static ILogger _logger;
         private static string _userToken = "serverAgent";
-
+        private static string ConsoleClientToken;
         private static string Urn_main = @"EDI\CorporateActions"; //hardcode
         private static string Urn_AGM = @"EDI\CompanyMeeting_AGM"; //hardcode
         private static string Urn_DIV = @"EDI\Dividend_DIV"; //hardcode
@@ -66,7 +66,7 @@ namespace FalconSoft.Data.EDI.FeedWatcher
         {
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
             var commandLineParser = new CommandLineParser();
-
+            ConsoleClientToken = FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console");
             while (true)
             {
                 System.Console.Write(">");
@@ -121,16 +121,16 @@ namespace FalconSoft.Data.EDI.FeedWatcher
             var records = ConvertDataToStrongTyped(preparedData, Urn_main).ToArray();
 
             var recordsAgm = ParseInheritData(records, Urn_AGM, "AGM");
-            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_AGM, "console", recordsAgm, null, (r) => System.Console.WriteLine("Submit Success -> " + Urn_AGM), (ex) => System.Console.WriteLine("Submit Failed"),
+            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_AGM, ConsoleClientToken, recordsAgm, null, (r) => System.Console.WriteLine("Submit Success -> " + Urn_AGM), (ex) => System.Console.WriteLine("Submit Failed"),
                 (key, msg) => System.Console.WriteLine(msg));
 
             var recordsDiv = ParseInheritData(records, Urn_DIV, "DIV");
-            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_DIV, "console", recordsDiv, null, (r) => System.Console.WriteLine("Submit Success -> " + Urn_DIV), (ex) => System.Console.WriteLine("Submit Failed"),
+            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_DIV, ConsoleClientToken, recordsDiv, null, (r) => System.Console.WriteLine("Submit Success -> " + Urn_DIV), (ex) => System.Console.WriteLine("Submit Failed"),
                 (key, msg) => System.Console.WriteLine(msg));
 
             var secData = PrepareData(rows, "secid"); // hardcode
             var recordsSec = ParseDataSourceData(Urn_Sec, secData);
-            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_Sec, "console", recordsSec, null, (r) => System.Console.WriteLine("Submit Success -> " + Urn_Sec), (ex) => System.Console.WriteLine("Submit Failed"),
+            FacadesFactory.CreateCommandFacade().SubmitChanges(Urn_Sec, ConsoleClientToken, recordsSec, null, (r) => System.Console.WriteLine("Submit Success -> " + Urn_Sec), (ex) => System.Console.WriteLine("Submit Failed"),
                 (key, msg) => System.Console.WriteLine(msg));
         }
 
