@@ -16,6 +16,11 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             _securityFacade = securityFacade;
         }
 
+        public string Authenticate( string login, string password)
+        {
+           return _securityFacade.Authenticate(login, password);
+        }
+
         public List<User> GetUsers(string userToken)
         {
             return  _securityFacade.GetUsers(userToken);

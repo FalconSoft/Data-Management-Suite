@@ -234,8 +234,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
             _connection.Stop();
         }
 
-        public IEnumerable<Dictionary<string, object>> GetAggregatedData(string dataSourcePath,
-            AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)
+        public IEnumerable<Dictionary<string, object>> GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)
         {
             var subject = new Subject<Dictionary<string, object>>();
             
@@ -248,11 +247,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
             CheckConnectionToServer();
 
-            _proxy.Invoke("GetAggregatedData", dataSourcePath, aggregatedWorksheet, filterRules ?? new FilterRule[0]);
+            _proxy.Invoke("GetAggregatedData" , userToken, dataSourcePath, aggregatedWorksheet, filterRules ?? new FilterRule[0]);
             return subject.ToEnumerable();
         }
 
-        public IEnumerable<T> GetData<T>(string dataSourcePath, FilterRule[] filterRules = null)
+        public IEnumerable<T> GetData<T>(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
             var subject = new Subject<object>();
 
@@ -265,11 +264,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
             CheckConnectionToServer();
 
-            _proxy.Invoke("GetGenericData", dataSourcePath, typeof (T), filterRules ?? new FilterRule[0]);
+            _proxy.Invoke("GetGenericData", userToken, dataSourcePath, typeof(T), filterRules ?? new FilterRule[0]);
             return subject.ToEnumerable() as IEnumerable<T>;
         }
 
-        public IEnumerable<Dictionary<string, object>> GetData(string dataSourcePath, FilterRule[] filterRules = null)
+        public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
             var subject = new Subject<Dictionary<string, object>>();
             
@@ -281,12 +280,12 @@ namespace FalconSoft.Data.Management.Client.SignalR
             _getDataOnErrorAction = ex => subject.OnError(ex);
 
             CheckConnectionToServer();
-    
-            _proxy.Invoke("GetData",_connection.ConnectionId, dataSourcePath, filterRules ?? new FilterRule[0]);
+
+            _proxy.Invoke("GetData", _connection.ConnectionId, userToken, dataSourcePath, filterRules ?? new FilterRule[0]);
             return subject.ToEnumerable();
         }
 
-        public IObservable<RecordChangedParam[]> GetDataChanges(string dataSourcePath, FilterRule[] filterRules = null)
+        public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
             var subject = new Subject<RecordChangedParam>();
             _getDataChangesSubject.Subscribe(data => subject.OnNext(data),
@@ -311,7 +310,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
                     {
                         _allowToRestoreConnection = false;
                         Trace.WriteLine(string.Format("   Client GetDataChanges  ConnectionId : {0} , DataSourceName : {1} , IsBackGround {2}", _connection.ConnectionId, dataSourcePath, Thread.CurrentThread.IsBackground));
-                        _proxy.Invoke("GetDataChanges",_connection.ConnectionId, providerString, whereCondition);
+                        _proxy.Invoke("GetDataChanges",_connection.ConnectionId, userToken, providerString, whereCondition);
                     }
 
                 });
@@ -341,16 +340,15 @@ namespace FalconSoft.Data.Management.Client.SignalR
                 action();
         }
 
-       
-        public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn,
-            Action<string, RecordChangedParam[]> onSuccess, Action<string, Exception> onFail)
+
+        public void ResolveRecordbyForeignKey( RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken, Action<string, RecordChangedParam[]> onSuccess, Action<string, Exception> onFail)
         {
             _resolveRecordbyForeignKeySuccessAction = onSuccess;
             _resolveRecordbyForeignKeyFailedAction = onFail;
 
             CheckConnectionToServer();
 
-            _proxy.Invoke("ResolveRecordbyForeignKey", changedRecord, dataSourceUrn);
+            _proxy.Invoke("ResolveRecordbyForeignKey", changedRecord, dataSourceUrn, userToken);
         }
 
         private void CheckConnectionToServer()

@@ -117,7 +117,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             Task task;
             if (deleteEnumerator != null && changeRecord != null)
             {
-                var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord.ToArray() : null); //TODO .ToArray() - BAD FIX 
+                var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord.ToArray() : null); //LoggedInUser.UserToken .ToArray() - BAD FIX 
                 var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator.ToArray() : null); //TODO .ToArray() - BAD FIX
                 
                 task = Task.Factory.StartNew(() =>

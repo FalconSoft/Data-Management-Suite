@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Security;
@@ -24,49 +25,71 @@ namespace FalconSoft.Data.Server.Persistence.Security
             if (!_mongoDatabase.CollectionExists(PermissionsCollectionName))
             {
                 _mongoDatabase.CreateCollection(PermissionsCollectionName);
-               
-                _mongoDatabase.GetCollection<User>("Users").Insert(new User
-                {
-                    Id = ObjectId.GenerateNewId().ToString(),
-                    LoginName = "Admin",
-                    FirstName = "Ivan",
-                    LastName = "Ivanov",
-                    Password = "Admin"
-                });
-                var user = _mongoDatabase.GetCollection<User>("Users").FindOne(Query<User>.EQ(u => u.LoginName, "Admin"));
-                if (user != null)
-                {
-                    var collection = _mongoDatabase.GetCollection<Permission>(
-                   PermissionsCollectionName);
-                    collection.Insert(new Permission
-                    {
-                        Id = ObjectId.GenerateNewId().ToString(),
-                        UserRole = UserRole.Administrator,
-                        UserId = user.Id,
-                        DataSourceAccessPermissions = new Dictionary<string, DataSourceAccessPermission>
-                        {
-                            {
-                                "ExternalDataSource\\QuotesFeed",
-                               new DataSourceAccessPermission{AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,GrantedByUserId = user.Id}
-                            },
-                            {
-                                "ExternalDataSource\\MyTestData",
-                                 new DataSourceAccessPermission{AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,GrantedByUserId = user.Id}
-                            },
-                            {
-                                "ExternalDataSource\\Calculator",
-                                new DataSourceAccessPermission{AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,GrantedByUserId = user.Id}
-                            },
-                            {
-                                "ExternalDataSource\\YahooEquityRefData",
-                                 new DataSourceAccessPermission{AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,GrantedByUserId = user.Id}
-                            },
-                        }
-                    });
-                }
+
+                CreatePowerAdmin("Admin", "Admin");
+                CreatePowerAdmin("consoleClient", "console");
             }
         }
 
+        private void CreatePowerAdmin(string userName, string password)
+        {
+            _mongoDatabase.GetCollection<User>("Users").Insert(new User
+            {
+                Id = ObjectId.GenerateNewId().ToString(),
+                LoginName = userName,
+                Password = password
+            });
+
+            var user = _mongoDatabase.GetCollection<User>("Users").FindOne(Query<User>.EQ(u => u.LoginName, userName));
+            if (user != null)
+            {
+                var collection = _mongoDatabase.GetCollection<Permission>(
+                    PermissionsCollectionName);
+                collection.Insert(new Permission
+                {
+                    Id = ObjectId.GenerateNewId().ToString(),
+                    UserRole = UserRole.Administrator,
+                    UserId = user.Id,
+                    DataSourceAccessPermissions = new Dictionary<string, DataSourceAccessPermission>
+                    {
+                        {
+                            "ExternalDataSource\\QuotesFeed",
+                            new DataSourceAccessPermission
+                            {
+                                AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,
+                                GrantedByUserId = user.Id
+                            }
+                        },
+                        {
+                            "ExternalDataSource\\MyTestData",
+                            new DataSourceAccessPermission
+                            {
+                                AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,
+                                GrantedByUserId = user.Id
+                            }
+                        },
+                        {
+                            "ExternalDataSource\\Calculator",
+                            new DataSourceAccessPermission
+                            {
+                                AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,
+                                GrantedByUserId = user.Id
+                            }
+                        },
+                        {
+                            "ExternalDataSource\\YahooEquityRefData",
+                            new DataSourceAccessPermission
+                            {
+                                AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,
+                                GrantedByUserId = user.Id
+                            }
+                        },
+                    }
+                });
+            }
+        }
+
+       
         private void ConnectToDb()
         {
             if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
@@ -141,7 +164,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
         }
 
 
-        public void ChangeUserRole(string userToken, UserRole userRole)
+        public void ChangeUserRole(string userToken, UserRole userRole, string grantedByUserToken)
         {
             var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
             var permission = collection.FindOneAs<Permission>(Query<Permission>.EQ(p => p.UserId, userToken));
@@ -161,5 +184,8 @@ namespace FalconSoft.Data.Server.Persistence.Security
                 });
             }
         }
+        
+
     }
+  
 }

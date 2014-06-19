@@ -15,6 +15,8 @@ namespace ReactiveWorksheets.Facade.Tests
         private readonly ICommandFacade _commandFacade;
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ITemporalDataQueryFacade _temporalDataQueryFacade;
+        private readonly string _userToken;
+
         public SimpleDataSourceTest(DataSourceInfo dataSourceInfo, IFacadesFactory facadesFactory,User user)
         {
             _dataSourceInfo = dataSourceInfo;
@@ -22,7 +24,7 @@ namespace ReactiveWorksheets.Facade.Tests
             _commandFacade = facadesFactory.CreateCommandFacade();
             _reactiveDataQueryFacade = facadesFactory.CreateReactiveDataQueryFacade();
             _temporalDataQueryFacade = facadesFactory.CreateTemporalDataQueryFacade();
-            
+            _userToken = user.Id;
             _metaDataAdminFacade.CreateDataSourceInfo(_dataSourceInfo, user.Id);
         }
 
@@ -36,7 +38,7 @@ namespace ReactiveWorksheets.Facade.Tests
             };
             _metaDataAdminFacade.CreateWorksheetInfo(worksheet,user.Id);
 
-            return _metaDataAdminFacade.GetWorksheetInfo(worksheet.DataSourcePath);
+            return _metaDataAdminFacade.GetWorksheetInfo(worksheet.DataSourcePath, user.Id);
         }
 
         public void SubmitData(string comment, IEnumerable<Dictionary<string, object>> changedData = null, IEnumerable<string> deleted = null)
@@ -58,12 +60,12 @@ namespace ReactiveWorksheets.Facade.Tests
 
         public IEnumerable<Dictionary<string, object>> GetData(FilterRule[] filterRules = null)
         {
-            return _reactiveDataQueryFacade.GetData(_dataSourceInfo.DataSourcePath, filterRules);
+            return _reactiveDataQueryFacade.GetData(_userToken, _dataSourceInfo.DataSourcePath, filterRules: filterRules);
         }
 
         public IObservable<RecordChangedParam[]> GetDataChanges(FilterRule[] filterRules = null)
         {
-            return _reactiveDataQueryFacade.GetDataChanges(_dataSourceInfo.DataSourcePath, filterRules);
+            return _reactiveDataQueryFacade.GetDataChanges(_userToken, _dataSourceInfo.DataSourcePath, filterRules: filterRules);
         }
 
         public IEnumerable<Dictionary<string,object>> GetHistory(string recordKey)
@@ -74,7 +76,7 @@ namespace ReactiveWorksheets.Facade.Tests
         public DataSourceInfo UpdateDataSourceInfo(DataSourceInfo dataSourceInfo,User user)
         {
             _metaDataAdminFacade.UpdateDataSourceInfo(dataSourceInfo,_dataSourceInfo.DataSourcePath,user.Id);
-            _dataSourceInfo = _metaDataAdminFacade.GetDataSourceInfo(dataSourceInfo.DataSourcePath);
+            _dataSourceInfo = _metaDataAdminFacade.GetDataSourceInfo(dataSourceInfo.DataSourcePath, user.Id);
             return _dataSourceInfo;
         }
 

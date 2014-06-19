@@ -22,9 +22,9 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             return _metaDataFacade.GetAvailableDataSources(userId, minAccessLevel) ?? new DataSourceInfo[0];
         }
 
-        public DataSourceInfo GetDataSourceInfo(string dataSourceUrn)
+        public DataSourceInfo GetDataSourceInfo(string dataSourceUrn, string userToken)
         {
-            return  _metaDataFacade.GetDataSourceInfo(dataSourceUrn);
+            return _metaDataFacade.GetDataSourceInfo(dataSourceUrn, userToken);
         }
 
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userId)
@@ -45,9 +45,9 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             Clients.Caller.OnComplete();
         }
 
-        public WorksheetInfo GetWorksheetInfo(string worksheetUrn)
+        public WorksheetInfo GetWorksheetInfo(string worksheetUrn, string userToken)
         {
-            return _metaDataFacade.GetWorksheetInfo(worksheetUrn);
+            return _metaDataFacade.GetWorksheetInfo(worksheetUrn, userToken);
         }
 
         public WorksheetInfo[] GetAvailableWorksheets(string userId,AccessLevel minAccessLevel = AccessLevel.Read)
@@ -73,9 +73,9 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             Clients.Caller.OnComplete();
         }
 
-        public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn)
+        public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
-            return  _metaDataFacade.GetAggregatedWorksheetInfo(worksheetUrn);
+            return _metaDataFacade.GetAggregatedWorksheetInfo(worksheetUrn, userToken);
         }
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)

@@ -29,6 +29,20 @@ namespace FalconSoft.Data.Server.Persistence.Security
             }
         }
 
+        public string Authenticate(string login, string password)
+        {
+            ConnectToDb();
+
+            var collection = _mongoDatabase.GetCollection<User>(UsersCollectionName);
+            var user = collection.FindOneAs<User>(Query<User>.EQ(u => u.LoginName, login));
+            if (user != null)
+            {
+                if (user.Password.Equals(password))
+                    return user.Id;
+            }
+            return null;
+        }
+
         public List<User> GetUsers(string userToken)
         {
             ConnectToDb();

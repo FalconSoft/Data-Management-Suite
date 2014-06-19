@@ -82,6 +82,8 @@ namespace FalconSoft.Data.Server
 
         private static IPermissionSecurityPersistance _permissionSecurityPersistance;
 
+        private static IDataSwitMembershipProvider _dataSwitMembershipProvider;
+
         private static IMetaDataPersistence _metaDataPersistence;
 
         private static IMetaDataProvider _metaDataProvider;
@@ -104,7 +106,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _metaDataFacade ?? (_metaDataFacade = new MetaDataFacade(ProvidersRegistry, WorksheetsPersistence, MetaDataPersistence, PermissionSecurityPersistance, ServerInfo));
+                return _metaDataFacade ?? (_metaDataFacade = new MetaDataFacade(ProvidersRegistry, WorksheetsPersistence, MetaDataPersistence, DataSwitMembershipProvider, ServerInfo));
             }
         }
 
@@ -112,7 +114,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _dataQueryFacade ?? (_dataQueryFacade = new ReactiveDataFacade(MessageBus, LiveDataPersistenceFactory, ProvidersRegistry, ReactiveEngine));
+                return _dataQueryFacade ?? (_dataQueryFacade = new ReactiveDataFacade(MessageBus, LiveDataPersistenceFactory, ProvidersRegistry, ReactiveEngine, DataSwitMembershipProvider));
             }
         }
 
@@ -129,7 +131,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _commandFacade ?? (_commandFacade = new CommandFacade(CommandAggregator,PermissionSecurityPersistance));
+                return _commandFacade ?? (_commandFacade = new CommandFacade(CommandAggregator,DataSwitMembershipProvider));
             }
         }
 
@@ -145,7 +147,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _securityFacade ?? (_securityFacade = new SecurityFacade(SecurityPersistence,PermissionSecurityPersistance));
+                return _securityFacade ?? (_securityFacade = new SecurityFacade(SecurityPersistence, DataSwitMembershipProvider));
             }
         }
 
@@ -154,7 +156,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _permissionSecurityFacade ??
-                       (_permissionSecurityFacade = new PermissionSecurityFacade(PermissionSecurityPersistance));
+                       (_permissionSecurityFacade = new PermissionSecurityFacade(DataSwitMembershipProvider));
             }
         }
 
@@ -285,6 +287,15 @@ namespace FalconSoft.Data.Server
             {
                 return _permissionSecurityPersistance ??
                        (_permissionSecurityPersistance = new PermissionSecurityPersistance(_persistenceDataConnectionString));
+            }
+        }
+
+        public static IDataSwitMembershipProvider DataSwitMembershipProvider
+        {
+            get
+            {
+                return _dataSwitMembershipProvider ??
+                       (_dataSwitMembershipProvider = new DataSwitMembershipProvider(PermissionSecurityPersistance));
             }
         }
 

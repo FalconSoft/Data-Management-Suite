@@ -55,12 +55,12 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             _logger = logger;
         }
 
-        public void GetAggregatedData(string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
+        public void GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
             FilterRule[] filterRules = null)
         {
             try
             {
-                var data = _reactiveDataQueryFacade.GetAggregatedData(dataSourcePath, aggregatedWorksheet, filterRules);
+                var data = _reactiveDataQueryFacade.GetAggregatedData(userToken, dataSourcePath, aggregatedWorksheet, filterRules: filterRules);
                 var list = new List<Dictionary<string, object>>();
                 var counter = 0;
                 var count = 0;
@@ -136,14 +136,14 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
         }
 
-        public void GetData(string connectionId, string dataSourcePath, FilterRule[] filterRules)
+        public void GetData(string connectionId, string userToken, string dataSourcePath, FilterRule[] filterRules)
         {
             {
                 Trace.WriteLine("   GetData Start connection Id : " + connectionId);
                 try
                 {
-                    var data = _reactiveDataQueryFacade.GetData(dataSourcePath,
-                        filterRules.Any() ? filterRules : null);
+                    var data = _reactiveDataQueryFacade.GetData(userToken, dataSourcePath,
+                        filterRules: filterRules.Any() ? filterRules : null);
                     var counter = 0;
                     var count = 0;
                     var list = new List<Dictionary<string, object>>(); 
@@ -178,7 +178,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
         }
 
-        public void GetDataChanges(string connectionId, string dataSourcePath, FilterRule[] filterRules)
+        public void GetDataChanges(string connectionId, string userToken, string dataSourcePath, FilterRule[] filterRules)
         {
             Task.Factory.StartNew(localConnectionId =>
             {
@@ -191,8 +191,8 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                 if (!_getDataChangesDisposables.ContainsKey(localConnectionId.ToString()))
                     _getDataChangesDisposables.Add(localConnectionId.ToString(), new CompositeDisposable());
 
-                var disposable = _reactiveDataQueryFacade.GetDataChanges(providerString,
-                    filterRules.Any() ? filterRules : null)
+                var disposable = _reactiveDataQueryFacade.GetDataChanges(userToken, providerString,
+                    filterRules: filterRules.Any() ? filterRules : null)
                     .Subscribe(recordChangedParams =>
                     {
                         var list = new List<RecordChangedParam>();
@@ -221,9 +221,9 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }, string.Copy(connectionId));
         }
 
-        public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord,string dataSourceUrn)
+        public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord,string dataSourceUrn, string userToken)
         {
-            _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecord,dataSourceUrn,
+            _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecord, dataSourceUrn, userToken,
                 (str, rcp) => Clients.Caller.ResolveRecordbyForeignKeySuccess(str, rcp),
                 (str, ex) => Clients.Caller.ResolveRecordbyForeignKeyFailed(str, ex));
         }

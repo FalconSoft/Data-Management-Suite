@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
@@ -69,9 +68,22 @@ namespace FalconSoft.Data.Management.Client.SignalR
             Trace.WriteLine("******   ISecurityFacade reconecting");
         }
 
-        public bool Authenticate(string userName, string password)
+        public string Authenticate(string userName, string password)
         {
-            return true; 
+            CheckConnectionToServer();
+            var tcs = new TaskCompletionSource<string>();
+            var task = tcs.Task;
+            _proxy.Invoke<string>("Authenticate", userName, password)
+                .ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        if (t.Exception != null) tcs.SetException(t.Exception);
+                    }
+                    else tcs.SetResult(t.Result);
+                });
+
+            return string.IsNullOrEmpty(task.Result) ? null : task.Result;
         }
 
         public List<User> GetUsers(string userToken)
