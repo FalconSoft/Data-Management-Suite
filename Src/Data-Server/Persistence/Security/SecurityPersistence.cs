@@ -10,7 +10,6 @@ namespace FalconSoft.Data.Server.Persistence.Security
 {
     public class SecurityPersistence : ISecurityPersistence
     {
-
         private readonly string _connectionString;
         private const string UsersCollectionName = "Users";
         private MongoDatabase _mongoDatabase;
@@ -18,7 +17,6 @@ namespace FalconSoft.Data.Server.Persistence.Security
         public SecurityPersistence(string connectionString)
         {
             _connectionString = connectionString;
-            
         }
 
         private void ConnectToDb()
@@ -32,15 +30,24 @@ namespace FalconSoft.Data.Server.Persistence.Security
         public string Authenticate(string login, string password)
         {
             ConnectToDb();
-
             var collection = _mongoDatabase.GetCollection<User>(UsersCollectionName);
             var user = collection.FindOneAs<User>(Query<User>.EQ(u => u.LoginName, login));
-            if (user != null)
-            {
-                if (user.Password.Equals(password))
-                    return user.Id;
-            }
-            return null;
+            if (user == null) return null;
+            return user.Password.Equals(password) ? user.Id : null;
+        }
+
+        public User GetUser(string login)
+        {
+            ConnectToDb();
+            var collection = _mongoDatabase.GetCollection<User>(UsersCollectionName);
+            return collection.FindOneAs<User>(Query<User>.EQ(u => u.LoginName, login));
+        }
+
+        public User GetUserByToken(string token)
+        {
+            ConnectToDb();
+            var collection = _mongoDatabase.GetCollection<User>(UsersCollectionName);
+            return collection.FindOneAs<User>(Query<User>.EQ(u => u.Id, token));
         }
 
         public List<User> GetUsers(string userToken)
@@ -60,9 +67,8 @@ namespace FalconSoft.Data.Server.Persistence.Security
         public void UpdateUser(User user, UserRole userRole, string userToken)
         {
             ConnectToDb();
-            _mongoDatabase.GetCollection<User>(UsersCollectionName).Update(Query<User>.EQ(u => u.Id, user.Id), Update<User>.Set(u => u.LoginName, user.LoginName)
-                                                                                                           .Set(u => u.FirstName, user.FirstName)
-                                                                                                           .Set(u => u.LastName, user.LastName));
+            _mongoDatabase.GetCollection<User>(UsersCollectionName)
+                .Update(Query<User>.EQ(u => u.Id, user.Id), Update<User>.Set(u => u.LoginName, user.LoginName));
         }
 
         public void RemoveUser(User user, string userToken)

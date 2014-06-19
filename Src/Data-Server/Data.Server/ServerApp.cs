@@ -201,7 +201,7 @@ namespace FalconSoft.Data.Server
                        (_commandAggregator = new CommandAggregator(ProvidersRegistry, LiveDataPersistenceFactory,
                                                                    TemporalDataPersistenseFactory,
                                                                    ErrorDataPersistence,
-                                                                   DataProvidersCatalogs, ReactiveEngine, MetaDataPersistence, DefaultMetaDataProvider, Logger));
+                                                                   DataProvidersCatalogs, ReactiveEngine, MetaDataPersistence, DefaultMetaDataProvider, Logger, SecurityPersistence));
             }
         }
 
