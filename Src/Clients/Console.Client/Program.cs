@@ -16,8 +16,7 @@ namespace FalconSoft.Data.Console
     class Program
     {
         private static ILogger _logger;
-        private static string _userToken = "_userToken";
-
+        
         public static ILogger Logger
         {
             get { return _logger ?? (_logger = new Logger()); }
@@ -146,7 +145,7 @@ namespace FalconSoft.Data.Console
         private static void Subscribe(CommandLineParser.SubscribeParams subscribeArguments)
         {
             _reactiveDataProvider2 = FacadesFactory.CreateReactiveDataQueryFacade();
-            _reactiveDataProvider2.GetDataChanges(_userToken, subscribeArguments.DataSourceUrn)
+            _reactiveDataProvider2.GetDataChanges(ConsoleClientToken, subscribeArguments.DataSourceUrn)
                         .Buffer(TimeSpan.FromMilliseconds(1000))
                         .Subscribe(s =>
                         {
@@ -164,7 +163,7 @@ namespace FalconSoft.Data.Console
         {
             var reactiveDataQueryFacade = FacadesFactory.CreateReactiveDataQueryFacade();
             var startTime = DateTime.Now;
-            var data = reactiveDataQueryFacade.GetData(_userToken, getArguments.DataSourceUrn).ToArray();
+            var data = reactiveDataQueryFacade.GetData(ConsoleClientToken, getArguments.DataSourceUrn).ToArray();
             var executionSpan = DateTime.Now - startTime;
             CSVHelper.WriteRecords(data, getArguments.FileName, getArguments.Separator);
             System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds.", getArguments.DataSourceUrn, getArguments.FileName, executionSpan);            
