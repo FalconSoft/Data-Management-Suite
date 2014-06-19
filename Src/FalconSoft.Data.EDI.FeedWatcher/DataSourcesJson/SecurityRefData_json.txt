@@ -1,7 +1,7 @@
 {
     "_id" : "53a17bebd52aaa1bc0afb22c",
     "Name" : "SecurityRefData",
-    "Category" : "ok",
+    "Category" : "EDI",
     "Description" : null,
     "ImageSource" : null,
     "Fields" : {
@@ -17,7 +17,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
 	"eventid" : {
@@ -32,7 +32,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "issid" : {
@@ -47,7 +47,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "isin" : {
@@ -62,7 +62,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "uscode" : {
@@ -77,7 +77,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "issuername" : {
@@ -92,7 +92,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "cntryofincorp" : {
@@ -107,7 +107,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "indusid" : {
@@ -122,7 +122,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "sectycd" : {
@@ -137,7 +137,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "securitydesc" : {
@@ -152,7 +152,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "parvalue" : {
@@ -167,7 +167,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "pvcurrency" : {
@@ -182,7 +182,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "statusflag" : {
@@ -197,7 +197,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "primaryexchgcd" : {
@@ -212,7 +212,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "sedol" : {
@@ -227,7 +227,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "sedolcurrency" : {
@@ -242,7 +242,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "defunct" : {
@@ -257,7 +257,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "sedolregcntry" : {
@@ -272,7 +272,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "structcd" : {
@@ -287,7 +287,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "exchgcntry" : {
@@ -302,7 +302,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "exchgcd" : {
@@ -317,7 +317,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "mic" : {
@@ -332,7 +332,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "micseg" : {
@@ -347,7 +347,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "localcode" : {
@@ -362,7 +362,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         },
         "liststatus" : {
@@ -377,7 +377,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\SecurityRefData",
+            "DataSourceProviderString" : "EDI\\SecurityRefData",
             "IsParentField" : false
         }
     },

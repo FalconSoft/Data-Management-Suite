@@ -68,8 +68,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-    <None Include="CreateDS.bat" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="CreateDS_develop.bat" />
+    <None Include="CreateEDI_datasources.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -87,12 +92,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="DataSourcesJson\AGM_json.txt" />
-    <Content Include="DataSourcesJson\CorporateActions_json.txt" />
-    <Content Include="DataSourcesJson\DIV_json.txt" />
-    <Content Include="DataSourcesJson\SecurityRefData_json.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">
       <Visible>False</Visible>
       <ProductName>Microsoft .NET Framework 4.5 %28x86 and x64%29</ProductName>
@@ -108,6 +107,13 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="DataSourcesJson\AGM_json.txt" />
+    <Content Include="DataSourcesJson\CorporateActions_json.txt" />
+    <Content Include="DataSourcesJson\DIV_json.txt" />
+    <Content Include="DataSourcesJson\Portfolio_json.txt" />
+    <Content Include="DataSourcesJson\SecurityRefData_json.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,7 +1,7 @@
 {
     "_id" : "539ed61bd52aaa0b9c00f4c3",
     "Name" : "CorporateActions",
-    "Category" : "ok",
+    "Category" : "EDI",
     "Description" : null,
     "ImageSource" : null,
     "Fields" : {
@@ -17,7 +17,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "eventid" : {
@@ -32,7 +32,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "optionid" : {
@@ -47,7 +47,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "serialid" : {
@@ -62,7 +62,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "scexhid" : {
@@ -77,7 +77,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "sedolid" : {
@@ -92,7 +92,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "actflag" : {
@@ -107,7 +107,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "changed" : {
@@ -122,7 +122,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "created" : {
@@ -137,7 +137,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "secid" : {
@@ -152,7 +152,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "issid" : {
@@ -167,7 +167,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "isin" : {
@@ -182,7 +182,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "uscode" : {
@@ -197,7 +197,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "issuername" : {
@@ -212,7 +212,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "cntryofincorp" : {
@@ -227,7 +227,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "sic" : {
@@ -242,7 +242,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "cik" : {
@@ -257,7 +257,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "indusid" : {
@@ -272,7 +272,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "sectycd" : {
@@ -287,7 +287,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "securitydesc" : {
@@ -302,7 +302,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "parvalue" : {
@@ -317,7 +317,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "pvcurrency" : {
@@ -332,7 +332,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "statusflag" : {
@@ -347,7 +347,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "primaryexchgcd" : {
@@ -362,7 +362,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "sedol" : {
@@ -377,7 +377,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "sedolcurrency" : {
@@ -392,7 +392,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "defunct" : {
@@ -407,7 +407,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "sedolregcntry" : {
@@ -422,7 +422,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "structcd" : {
@@ -437,7 +437,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "exchgcntry" : {
@@ -452,7 +452,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "exchgcd" : {
@@ -467,7 +467,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "mic" : {
@@ -482,7 +482,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "micseg" : {
@@ -497,7 +497,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "localcode" : {
@@ -512,7 +512,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : null,
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         },
         "liststatus" : {
@@ -527,7 +527,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : false
         }
     },

@@ -55,11 +55,18 @@ namespace FalconSoft.Data.Console
         {
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
             var commandLineParser = new CommandLineParser();
-
+            var withArgs = false;
             while (true)
             {
                 System.Console.Write(">");
-                var commandArgs = (args == null || args.Length == 0)? System.Console.ReadLine().Split(' ') : args.ToArray();
+                string[] commandArgs;
+                if (args == null || args.Length == 0)
+                    commandArgs = System.Console.ReadLine().Split(' ');
+                else
+                {
+                    commandArgs = args.ToArray();
+                    withArgs = true;
+                }
 
                 args = null;
 
@@ -69,12 +76,15 @@ namespace FalconSoft.Data.Console
                     {
                         case CommandLineParser.CommandType.Create:
                             Create(commandLineParser.CreateArguments);
+                            if(withArgs) return;
                             break;
                         case CommandLineParser.CommandType.Get:
                             Get(commandLineParser.GetArguments);
+                            if (withArgs) return;
                             break;
                         case CommandLineParser.CommandType.Submit:
                             Submit(commandLineParser.SubmitArguments);
+                            if (withArgs) return;
                             break;
                         case CommandLineParser.CommandType.Subscribe:
                             Subscribe(commandLineParser.SubscribeArguments);

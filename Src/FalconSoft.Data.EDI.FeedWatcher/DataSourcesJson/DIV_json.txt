@@ -1,7 +1,7 @@
 {
     "_id" : "53a02788d52aaa02f44f4952",
     "Name" : "Dividend_DIV",
-    "Category" : "ok",
+    "Category" : "EDI",
     "Description" : null,
     "ImageSource" : null,
     "Fields" : {
@@ -17,7 +17,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "RecDate" : {
@@ -32,7 +32,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "Paydate" : {
@@ -47,7 +47,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "PayDate2" : {
@@ -62,7 +62,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "FYEDate" : {
@@ -77,7 +77,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "PeriodEndDate" : {
@@ -92,7 +92,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "OptElectionDate" : {
@@ -107,7 +107,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "ToDate" : {
@@ -122,7 +122,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "RegistrationDate" : {
@@ -137,7 +137,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "DeclarationDate" : {
@@ -152,7 +152,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "InstallmentPayDate" : {
@@ -167,7 +167,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "FXDate" : {
@@ -182,7 +182,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "Marker" : {
@@ -197,7 +197,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "Frequency" : {
@@ -212,7 +212,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "Tbaflag" : {
@@ -227,7 +227,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "NilDividend" : {
@@ -242,7 +242,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "DivRescind" : {
@@ -257,7 +257,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "RecindCashDiv" : {
@@ -272,7 +272,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "RecindStockDiv" : {
@@ -287,7 +287,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "Approxflag" : {
@@ -302,7 +302,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "TaxRate" : {
@@ -317,7 +317,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "Depfees" : {
@@ -332,7 +332,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "Coupon" : {
@@ -347,7 +347,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "Dapflag" : {
@@ -362,7 +362,7 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\Dividend_DIV",
+            "DataSourceProviderString" : "EDI\\Dividend_DIV",
             "IsParentField" : false
         },
         "eventid" : {
@@ -377,12 +377,12 @@
             "IsSearchable" : false,
             "RelationUrn" : null,
             "RelatedFieldName" : "",
-            "DataSourceProviderString" : "ok\\CorporateActions",
+            "DataSourceProviderString" : "EDI\\CorporateActions",
             "IsParentField" : true
         }
     },
     "Relationships" : {},
-    "ParentDataSourcePath" : "ok\\CorporateActions",
+    "ParentDataSourcePath" : "EDI\\CorporateActions",
     "ParentFilterString" : null,
     "HistoryStorageType" : 0,
     "HistoryStorageTypeParam" : null,

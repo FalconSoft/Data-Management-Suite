@@ -19,10 +19,10 @@ namespace FalconSoft.Data.EDI.FeedWatcher
     {
         private static ILogger _logger;
 
-        private static string Urn_main = @"ok\CorporateActions"; //hardcode
-        private static string Urn_AGM = @"ok\CompanyMeeting_AGM"; //hardcode
-        private static string Urn_DIV = @"ok\Dividend_DIV"; //hardcode
-        private static string Urn_Sec = @"ok\SecurityRefData"; //hardcode
+        private static string Urn_main = @"EDI\CorporateActions"; //hardcode
+        private static string Urn_AGM = @"EDI\CompanyMeeting_AGM"; //hardcode
+        private static string Urn_DIV = @"EDI\Dividend_DIV"; //hardcode
+        private static string Urn_Sec = @"EDI\SecurityRefData"; //hardcode
         private static string[] exFields = new[] { "paytype", "rdid", "priority", "defaultopt", "outturnsecid", "outturnisin", "ratioold", "rationew", "fractions", "currency", "rate1type", "rate1", "rate2type", "rate2" }; //hardcode
 
         public static ILogger Logger
@@ -64,7 +64,6 @@ namespace FalconSoft.Data.EDI.FeedWatcher
         static void Main(string[] args)
         {
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
-            System.Console.WriteLine("Hello!");
             var commandLineParser = new CommandLineParser();
 
             while (true)
@@ -79,18 +78,12 @@ namespace FalconSoft.Data.EDI.FeedWatcher
                     switch (commandLineParser.Command)
                     {
                         case CommandLineParser.CommandType.Start:
-                            if (commandLineParser.StartParameters != null)
-                            {
-                                StartFileWatcher(commandLineParser.StartParameters.Path,
-                                    commandLineParser.StartParameters.Filter);
-                                System.Console.WriteLine("Start File Watcher . . .");
-                            }
-                            break;
-                        case CommandLineParser.CommandType.Test:
-                            Test();
+                            StartFileWatcher(ConfigurationManager.AppSettings["PathForWatching"], "*690.txt");
+                            System.Console.WriteLine("Start FeedWatcher " + ConfigurationManager.AppSettings["PathForWatching"]);
                             break;
                         case CommandLineParser.CommandType.Help:
-                            commandLineParser.Help();
+                            System.Console.WriteLine("start -> Start FeedWatcher with Parameters in config file");
+                            System.Console.WriteLine("exit -> Close FeedWatcher");
                             break;
                         case CommandLineParser.CommandType.Exit:
                             return;
@@ -206,12 +199,6 @@ namespace FalconSoft.Data.EDI.FeedWatcher
         private static IEnumerable<Dictionary<string, object>> PrepareData(IEnumerable<Dictionary<string, object>> data,string keyFieldName)
         {
             return data.GroupBy(gr => gr[keyFieldName].ToString()).Select(gr => gr.Last());  
-        }
-
-        private static void Test()
-        {
-            StartFileWatcher(ConfigurationManager.AppSettings["PathForWatching"], "*690.txt");
-            System.Console.WriteLine("Start File Watcher . . .");
         }
     }
 }
