@@ -38,6 +38,15 @@ namespace FalconSoft.Data.Management.Client.SignalR
                     _onCompleteAction(userToken);
             });
 
+            _proxy.On<string, string>("ErrorMessageHandledAction", (methodName, errorMessage) =>
+            {
+                if (ErrorMessageHandledAction != null)
+                {
+                    ErrorMessageHandledAction(methodName, errorMessage);
+                }
+                Trace.WriteLine(string.Format("MethodName : {0}     Error Message : {1}", methodName, errorMessage));
+            });
+
             _startConnectionTask = _connection.Start();
         }
 
@@ -143,6 +152,8 @@ namespace FalconSoft.Data.Management.Client.SignalR
             
             task.Wait();
         }
+
+        public Action<string, string> ErrorMessageHandledAction { get; set; }
 
         public void Dispose()
         {

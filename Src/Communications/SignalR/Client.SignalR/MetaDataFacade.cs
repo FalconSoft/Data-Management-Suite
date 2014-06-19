@@ -70,7 +70,6 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
         private void CheckConnectionToServer()
         {
-
             if (_connection.State == ConnectionState.Disconnected)
             {
                 InitialiseConnection(_connectionString);
