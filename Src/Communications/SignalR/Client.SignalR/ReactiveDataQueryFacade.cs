@@ -328,7 +328,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
             CheckConnectionToServer();
 
-            _proxy.Invoke("GetDataChanges", _connection.ConnectionId, dataSourcePath, filterRules ?? new FilterRule[0]);
+            _proxy.Invoke("GetDataChanges", _connection.ConnectionId, userToken, dataSourcePath, filterRules ?? new FilterRule[0]);
             
             return returnObservable;
         }
