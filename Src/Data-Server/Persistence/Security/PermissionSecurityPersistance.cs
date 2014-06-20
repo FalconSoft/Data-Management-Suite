@@ -94,14 +94,12 @@ namespace FalconSoft.Data.Server.Persistence.Security
 
         public Permission GetUserPermissions(string userToken)
         {
-            ConnectToDb();
             var collection = _mongoDatabase.GetCollection(typeof (Permission), PermissionsCollectionName);
             return collection.FindAllAs<Permission>().FirstOrDefault(p => p.UserId == userToken);
         }
 
         public void SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken, string grantedByUserToken, Action<string> messageAction = null)
         {
-            ConnectToDb();
             try
             {
                 var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
@@ -113,9 +111,16 @@ namespace FalconSoft.Data.Server.Persistence.Security
                     {
                         if (permissionsCollection.ContainsKey(accessLevel.Key))
                         {
-                            permissionsCollection[accessLevel.Key].AccessLevel =
-                                accessLevel.Value;
-                            permissionsCollection[accessLevel.Key].GrantedByUserId = grantedByUserToken;
+                            if (accessLevel.Value == 0)
+                            {
+                                permissionsCollection.Remove(accessLevel.Key);
+                            }
+                            else
+                            {
+                                permissionsCollection[accessLevel.Key].AccessLevel =
+                                    accessLevel.Value;
+                                permissionsCollection[accessLevel.Key].GrantedByUserId = grantedByUserToken;
+                            }
                         }
                         else
                         {
@@ -135,7 +140,8 @@ namespace FalconSoft.Data.Server.Persistence.Security
                     {
                         Id = ObjectId.GenerateNewId().ToString(),
                         UserId = targetUserToken,
-                        DataSourceAccessPermissions = permissions.ToDictionary(p => p.Key, p => new DataSourceAccessPermission { AccessLevel = p.Value, GrantedByUserId = grantedByUserToken })
+                        DataSourceAccessPermissions = permissions.Where(p=>p.Value > (AccessLevel)1)
+                        .ToDictionary(p => p.Key, p => new DataSourceAccessPermission { AccessLevel = p.Value, GrantedByUserId = grantedByUserToken })
                     });
                 }
                 if (messageAction != null)
@@ -172,10 +178,14 @@ namespace FalconSoft.Data.Server.Persistence.Security
 
         public AccessLevel CheckAccess(string userToken, string urn)
         {
-            ConnectToDb();
             var collection = _mongoDatabase.GetCollection(typeof(Permission), PermissionsCollectionName);
             var permission = collection.FindAllAs<Permission>().FirstOrDefault(p => p.UserId == userToken);
-            return permission != null ? permission.DataSourceAccessPermissions[urn].AccessLevel : AccessLevel.Read;
+            if (permission!=null)
+                if (permission.DataSourceAccessPermissions.ContainsKey(urn))
+            return  permission.DataSourceAccessPermissions[urn].AccessLevel;
+            return 0;
         }
+
+        public event EventHandler<PermissionEventArgs> NotifyPermissionChanged;
     }
 }

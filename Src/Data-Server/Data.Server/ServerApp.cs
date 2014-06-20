@@ -295,7 +295,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _dataSwitMembershipProvider ??
-                       (_dataSwitMembershipProvider = new DataSwitMembershipProvider(PermissionSecurityPersistance));
+                       (_dataSwitMembershipProvider = new DataSwitMembershipProvider(PermissionSecurityPersistance, MetaDataPersistence));
             }
         }
 

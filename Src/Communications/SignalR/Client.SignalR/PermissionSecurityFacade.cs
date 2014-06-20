@@ -70,6 +70,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
             return task.Result;
         }
 
+        public IObservable<Dictionary<string, AccessLevel>> GetPermissionChanged(string userToken)
+        {
+            throw new NotImplementedException();
+        }
+
         private void InitialiseConnection(string connectionString)
         {
             _connection = new HubConnection(connectionString);
