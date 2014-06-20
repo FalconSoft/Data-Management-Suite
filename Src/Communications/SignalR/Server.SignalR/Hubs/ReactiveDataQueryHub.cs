@@ -60,7 +60,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
         {
             try
             {
-                var data = _reactiveDataQueryFacade.GetAggregatedData(userToken, dataSourcePath, aggregatedWorksheet, filterRules: filterRules);
+                var data = _reactiveDataQueryFacade.GetAggregatedData(userToken, dataSourcePath, aggregatedWorksheet, filterRules);
                 var list = new List<Dictionary<string, object>>();
                 var counter = 0;
                 var count = 0;
@@ -142,8 +142,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                 Trace.WriteLine("   GetData Start connection Id : " + connectionId);
                 try
                 {
-                    var data = _reactiveDataQueryFacade.GetData(userToken, dataSourcePath,
-                        filterRules: filterRules.Any() ? filterRules : null);
+                    var data = _reactiveDataQueryFacade.GetData(userToken, dataSourcePath, filterRules.Any() ? filterRules : null);
                     var counter = 0;
                     var count = 0;
                     var list = new List<Dictionary<string, object>>(); 
@@ -184,15 +183,13 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             {
                 var providerString = string.Copy(dataSourcePath);
 
-                Trace.WriteLine(
-                    string.Format("   GetDataChanges  ConnectionId : {0} , DataSourceName : {1} , IsBackGround {2}",
+                Trace.WriteLine(string.Format("   GetDataChanges  ConnectionId : {0} , DataSourceName : {1} , IsBackGround {2}",
                         localConnectionId.ToString(), dataSourcePath, Thread.CurrentThread.IsBackground));
 
                 if (!_getDataChangesDisposables.ContainsKey(localConnectionId.ToString()))
                     _getDataChangesDisposables.Add(localConnectionId.ToString(), new CompositeDisposable());
 
-                var disposable = _reactiveDataQueryFacade.GetDataChanges(userToken, providerString,
-                    filterRules: filterRules.Any() ? filterRules : null)
+                var disposable = _reactiveDataQueryFacade.GetDataChanges(userToken, providerString, filterRules.Any() ? filterRules : null)
                     .Subscribe(recordChangedParams =>
                     {
                         var list = new List<RecordChangedParam>();

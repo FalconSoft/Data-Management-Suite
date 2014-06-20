@@ -98,12 +98,13 @@ namespace FalconSoft.Data.Server.Persistence.Security
             return collection.FindAllAs<Permission>().FirstOrDefault(p => p.UserId == userToken);
         }
 
-        public void SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken, string grantedByUserToken, Action<string> messageAction = null)
+        public void SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken,
+            string grantedByUserToken, Action<string> messageAction = null)
         {
             try
             {
                 var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
-                var permission = collection.FindOneAs<Permission>(Query<Permission>.EQ(p=>p.UserId,targetUserToken));
+                var permission = collection.FindOneAs<Permission>(Query<Permission>.EQ(p => p.UserId, targetUserToken));
                 if (permission != null)
                 {
                     var permissionsCollection = permission.DataSourceAccessPermissions;
@@ -133,16 +134,27 @@ namespace FalconSoft.Data.Server.Persistence.Security
                     }
                     collection.Update(Query<Permission>.EQ(p => p.UserId, targetUserToken),
                         Update<Permission>.Set(p => p.DataSourceAccessPermissions, permissionsCollection));
+                    if (NotifyPermissionChanged != null)
+                        NotifyPermissionChanged(this, new PermissionEventArgs(targetUserToken, permissions));
                 }
                 else
                 {
-                    collection.Insert(new Permission
+                    permission = new Permission
                     {
                         Id = ObjectId.GenerateNewId().ToString(),
                         UserId = targetUserToken,
-                        DataSourceAccessPermissions = permissions.Where(p=>p.Value > (AccessLevel)1)
-                        .ToDictionary(p => p.Key, p => new DataSourceAccessPermission { AccessLevel = p.Value, GrantedByUserId = grantedByUserToken })
-                    });
+                        DataSourceAccessPermissions = permissions.Where(p => p.Value > (AccessLevel) 1)
+                            .ToDictionary(p => p.Key,
+                                p =>
+                                    new DataSourceAccessPermission
+                                    {
+                                        AccessLevel = p.Value,
+                                        GrantedByUserId = grantedByUserToken
+                                    })
+                    };
+                    collection.Insert(permission);
+                    if (NotifyPermissionChanged != null)
+                        NotifyPermissionChanged(this, new PermissionEventArgs(targetUserToken, permissions));
                 }
                 if (messageAction != null)
                     messageAction("Permissions saved successful");
@@ -154,7 +166,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
                 throw;
             }
         }
-        
+
         public void ChangeUserRole(string userToken, UserRole userRole, string grantedByUserToken)
         {
             var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
