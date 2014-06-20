@@ -65,8 +65,8 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             {
                 foreach (var bsondocument in cdata["Data"].AsBsonArray.Where(w => w.ToString() != "{ }"))
                 {
-                    var user = cursorUser.FirstOrDefault(f => f["_id"].ToString() == bsondocument["UserId"].ToString());
-                    var loginname = user == null ? _dataSourceProviderString : user["LoginName"].ToString();
+                    //var user = cursorUser.FirstOrDefault(f => f["_id"].ToString() == bsondocument["UserId"].ToString());
+                    var loginname = bsondocument["UserId"].ToString() == string.Empty ? _dataSourceProviderString : bsondocument["UserId"].ToString();
                     var dict = new Dictionary<string, object>
                     {
                         {"LoginName", loginname},
