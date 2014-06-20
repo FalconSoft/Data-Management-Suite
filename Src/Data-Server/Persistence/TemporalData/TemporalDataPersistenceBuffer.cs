@@ -186,7 +186,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             var bson = new BsonDocument
             {
                 {"RevisionId", revisionId},
-                {"LoginName", user == null ? urn : user["LoginName"].ToString()},
+                {"LoginName", user == null ? urn : userId}, //user == null ? urn : user["LoginName"].ToString()
                 {"TimeStamp", DateTime.Now},
                 {"Urn",urn}
             };
