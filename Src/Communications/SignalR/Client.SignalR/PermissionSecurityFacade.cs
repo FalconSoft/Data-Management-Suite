@@ -57,8 +57,16 @@ namespace FalconSoft.Data.Management.Client.SignalR
             CheckConnectionToServer();
             var tcs = new TaskCompletionSource<AccessLevel>();
             var task = tcs.Task;
-            _proxy.Invoke<AccessLevel>("CheckAccess", userToken, urn);
-            task.Wait();
+            _proxy.Invoke<AccessLevel>("CheckAccess", userToken, urn)
+                .ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        tcs.SetCanceled();
+                        return;
+                    }
+                    tcs.SetResult(t.Result);
+                });
             return task.Result;
         }
 
