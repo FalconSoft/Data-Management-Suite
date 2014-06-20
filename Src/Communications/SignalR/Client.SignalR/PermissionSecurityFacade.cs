@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
@@ -19,7 +17,6 @@ namespace FalconSoft.Data.Management.Client.SignalR
         private Task _startConnectionTask;
 
         private Action<string> _onMessageResiveAction;
-        private Action _onCompleteAction;
 
         public PermissionSecurityFacade(string connectionString)
         {
@@ -29,20 +26,40 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
         public Permission GetUserPermissions(string userToken)
         {
+            if (userToken == null)
+                return null;
+
             CheckConnectionToServer();
 
             var tcs = new TaskCompletionSource<Permission>();
             var task = tcs.Task;
+            
             _proxy.Invoke<Permission>("GetUserPermissions", userToken)
                 .ContinueWith(t => tcs.SetResult(t.Result.Id == null ? null : t.Result));
-
             return task.Result;
         }
 
         public void SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken, string grantedByUserToken,Action<string> messageAction = null)
         {
             _onMessageResiveAction = messageAction;
-            _proxy.Invoke("SaveUserPermissions", _connection.ConnectionId, permissions, targetUserToken, grantedByUserToken);
+            if (targetUserToken != null)
+            {
+                _proxy.Invoke("SaveUserPermissions", _connection.ConnectionId, permissions, targetUserToken,
+                    grantedByUserToken);
+            } else if (messageAction != null)
+            {
+                messageAction("Target user id do not input");
+            }
+        }
+
+        public AccessLevel CheckAccess(string userToken, string urn)
+        {
+            CheckConnectionToServer();
+            var tcs = new TaskCompletionSource<AccessLevel>();
+            var task = tcs.Task;
+            _proxy.Invoke<AccessLevel>("CheckAccess", userToken, urn);
+            task.Wait();
+            return task.Result;
         }
 
         private void InitialiseConnection(string connectionString)

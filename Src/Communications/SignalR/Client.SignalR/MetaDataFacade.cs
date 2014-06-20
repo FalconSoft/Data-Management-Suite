@@ -19,7 +19,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
         private IHubProxy _proxy;
         private Task _startConnectionTask;
         private Action _onCompleteAction;
-        private Timer _keepAliveTimer;
+        private readonly Timer _keepAliveTimer;
 
         public MetaDataFacade(string connectionString)
         {
@@ -56,12 +56,20 @@ namespace FalconSoft.Data.Management.Client.SignalR
                     _onCompleteAction();
             });
 
+            _proxy.On<string, string>("ErrorMessageHandledAction", (methodName, errorMessage) =>
+            {
+                if (ErrorMessageHandledAction != null)
+                {
+                    ErrorMessageHandledAction(methodName, errorMessage);
+                }
+                Trace.WriteLine(string.Format("MethodName : {0}     Error Message : {1}", methodName, errorMessage));
+            });
+
             _startConnectionTask = _connection.Start();
         }
 
         private void CheckConnectionToServer()
         {
-
             if (_connection.State == ConnectionState.Disconnected)
             {
                 InitialiseConnection(_connectionString);
@@ -225,6 +233,8 @@ namespace FalconSoft.Data.Management.Client.SignalR
                     }
                     tcs.SetResult(t.Result);
                 });
+            if (task.IsCanceled)
+                return null;
             return task.Result;
         }
 
@@ -391,6 +401,8 @@ namespace FalconSoft.Data.Management.Client.SignalR
                        });
             return task.Result;
         }
+
+        public Action<string, string> ErrorMessageHandledAction { get; set; }
 
         public event EventHandler<SourceObjectChangedEventArgs> ObjectInfoChanged;
 
