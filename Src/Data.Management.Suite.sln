@@ -71,7 +71,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReactiveWorksheets.Client.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReactiveWorksheets.Server.Core.Tests", "..\..\Data-Management-Suite-Private\Tests\RW.Server.Core.Test\ReactiveWorksheets.Server.Core.Tests.csproj", "{E3A5F647-13C0-4026-BE5A-078277AB7EB3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.EDI.FeedWatcher", "..\..\Data-Management-Suite-Private\Src\Clients\FalconSoft.Data.EDI.FeedWatcher\FalconSoft.Data.EDI.FeedWatcher.csproj", "{04C2C86E-C161-474B-96A4-FACE9C911B45}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.EDI.FeedWatcher", "..\..\Data-Management-Suite-Private\Src\FalconSoft.Data.EDI.FeedWatcher\FalconSoft.Data.EDI.FeedWatcher.csproj", "{04C2C86E-C161-474B-96A4-FACE9C911B45}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
