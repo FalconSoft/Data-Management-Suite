@@ -56,16 +56,13 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(string recordKey)
         {
-            var users = _mongoDatabase.GetCollection<BsonDocument>("Users");
             var cursorData = _collection.Find(Query.EQ("RecordKey", recordKey));
-            var cursorUser = users.FindAllAs<BsonDocument>();
 
             var list = new List<Dictionary<string, object>>();
             foreach (var cdata in cursorData)
             {
                 foreach (var bsondocument in cdata["Data"].AsBsonArray.Where(w => w.ToString() != "{ }"))
                 {
-                    //var user = cursorUser.FirstOrDefault(f => f["_id"].ToString() == bsondocument["UserId"].ToString());
                     var loginname = bsondocument["UserId"].ToString() == string.Empty ? _dataSourceProviderString : bsondocument["UserId"].ToString();
                     var dict = new Dictionary<string, object>
                     {
@@ -123,7 +120,6 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         }
         public IEnumerable<Dictionary<string, object>> GetTemporalDataByTag(TagInfo tagInfo)
         {
-
             var mainDataHistory = GetDataByLTEDate(tagInfo.TimeStamp, tagInfo.DataSourceProviderString).ToArray();
             var resultData = new List<Dictionary<string, object>>();
             foreach (var relationshipInfo in _dataSourceInfo.Relationships.Values)
@@ -146,7 +142,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             }
             if (!resultData.Any())
                 return mainDataHistory;
-            return resultData;
+            return resultData.GroupBy(gr=>gr[_dataSourceInfo.GetKeyFieldsName().First()]).Select(s=>s.Last());
         }
 
         public IEnumerable<Dictionary<string, object>> GetTemporalDataByRevisionId(object revisionId)
@@ -179,14 +175,11 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         public Guid AddRevision(string urn,string userId)
         {
             var revisions = _mongoDatabase.GetCollection("Revisions");
-            var users = _mongoDatabase.GetCollection<BsonDocument>("Users");
-            var cursorUser = users.FindAllAs<BsonDocument>();
-            var user = cursorUser.FirstOrDefault(f => f["_id"].ToString() == userId);
             var revisionId = Guid.NewGuid();
             var bson = new BsonDocument
             {
                 {"RevisionId", revisionId},
-                {"LoginName", user == null ? urn : userId}, //user == null ? urn : user["LoginName"].ToString()
+                {"LoginName", string.IsNullOrEmpty(userId) ? urn : userId},
                 {"TimeStamp", DateTime.Now},
                 {"Urn",urn}
             };
