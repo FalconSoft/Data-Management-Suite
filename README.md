@@ -1,7 +1,7 @@
 FalconSoft Data Management Suite
 ==================
 
-FalconSoft Data Management Suite is a set of reusable data management and analysis components designed and built by FalconSoft to significantly speed up and simplify development of real-time data management solutions within an enterprise.
+FalconSoft Data Management Suite is a set of reusable data management components, designed and built by FalconSoft, to significantly speed up and simplify development of real-time data management solutions within an enterprise.
 
 FalconSoft Data Management Suite' reference architecture and set of reusable components aimed to cover most common enterprise data management tasks, and allowing developers to focus rather on business tasks instead of technology issues.
 
@@ -55,13 +55,13 @@ A simple library what references server-side logic into clients AppDomain. It do
 
 ##Libraries / technologies used
  - .Net 4.0 - somebody still using Windows XP and we can't go to .Net 4.5 yet.
- - (MongoDb)[http://www.mongodb.org/] - is an open-source document database, and the leading NoSQL database
- - (Reactive Extensions (RX) )[http://msdn.microsoft.com/en-gb/data/gg577609.aspx] - is a library to compose asynchronous and event-based programs using observable collections and LINQ-style query operators.
- - (Json.Net)[http://json.codeplex.com/] -  is a popular high-performance JSON framework for .NET
- - (log4net)[http://logging.apache.org/log4net/] - is a logging library
+ - [MongoDb](http://www.mongodb.org/) - is an open-source document database, and the leading NoSQL database
+ - [Reactive Extensions (RX)](http://msdn.microsoft.com/en-gb/data/gg577609.aspx) - is a library to compose asynchronous and event-based programs using observable collections and LINQ-style query operators.
+ - [Json.Net](http://json.codeplex.com/) -  is a popular high-performance JSON framework for .NET
+ - [log4net](http://logging.apache.org/log4net) - is a logging library
  - [Asp.Net SignalR](http://www.asp.net/signalr) -  is a Microsoft Asp.Net technology to enable bi-directional communication between the client and server. However, communication layer can be elegantly implemented with other technologies e.g. RabbitMQ, ZeroMQ, Tibco ...
- - (DevExpress for WPF)[https://www.devexpress.com/Products/NET/Controls/WPF/] - is a commercial WPF controls library
- - (Extended WPF Toolkit™ Community Edition)[https://wpftoolkit.codeplex.com/] - is a collection of WPF controls, components and utilities for creating Windows applications.
- - (IronPython)[http://ironpython.net/] is an open-source implementation of the Python programming language which is tightly integrated with the .NET Framework.
- - (CS Script)[http://www.csscript.net/] is a CLR based scripting system which uses ECMA-compliant C# as a programming language.
- - (AvalonEdit)[http://avalonedit.net] - is a WPF-based text editor component
+ - [DevExpress for WPF](https://www.devexpress.com/Products/NET/Controls/WPF) - is a commercial WPF controls library
+ - [Extended WPF Toolkit™ Community Edition](https://wpftoolkit.codeplex.com) - is a collection of WPF controls, components and utilities for creating Windows applications.
+ - [IronPython](http://ironpython.net) is an open-source implementation of the Python programming language which is tightly integrated with the .NET Framework.
+ - [CS Script](http://www.csscript.net/) is a CLR based scripting system which uses ECMA-compliant C# as a programming language.
+ - [AvalonEdit](http://avalonedit.net) - is a WPF-based text editor component
