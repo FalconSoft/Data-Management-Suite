@@ -7,12 +7,14 @@ FalconSoft Data Management Suite' reference architecture and set of reusable com
 
 ###Core feadures
  - Real-time data updates
- - Data Virtualization - new way to consolidate data from different sources in real-time.
- - Versioned Data Repository
- - Full Audit trail
+ - Collaborative User Inputs
+ - Data Virtualization - virtual data integration layer that turns multiple data sources into unified and consistent data sets available to applications in real-time.
+ - Versioned Data Repository - versioned data control system to keep track allchange history
+ - Data Federation - joining things together
+ - Full Audit trail - who changed data, when changed, and why changed
  - Security / control
- - Customizable WPF GUI with high frequent and real-time updates
- - Advanced search
+ - Customizable WPF GUI with high frequent and real-time updates and multi user support
+ - Advanced search through data
 for more information look into...
 
 ###Project Structure
