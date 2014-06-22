@@ -5,7 +5,7 @@ FalconSoft Data Management Suite is a set of reusable data management and analys
 
 FalconSoft Data Management Suite' reference architecture and set of reusable components aimed to cover most common enterprise data management tasks, and allowing developers to focus rather on business tasks instead of technology issues.
 
-###Core feadures
+###Core features
  - Real-time data updates
  - Collaborative User Inputs
  - Data Virtualization - virtual data integration layer that turns multiple data sources into unified and consistent data sets available to applications in real-time.
@@ -34,7 +34,7 @@ FalconSoft Data Management Suite is organized into several high level assemblies
  - **Sample.DataSources** - sample data sources
 
 ####Communications
-FalconSoft Data Server implementation does not depend on any specific communication technology. Even more, we made it easy to implement communication level with differend kind of communication protocols, what better suits your infrastructure.
+FalconSoft Data Server implementation does not depend on any specific communication technology. Even more, we made it easy to implement communication level with different kind of communication protocols, what better suits your infrastructure.
 
 - SignalR
  * **Client.SignalR** - Client assembly what implements facades communication with [Microsoft SignalR](http://www.asp.net/signalr). 
