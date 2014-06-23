@@ -28,60 +28,22 @@ namespace FalconSoft.Data.Server.Persistence.Security
 
         private void CreatePowerAdmin(string userName, string password)
         {
+            var id = ObjectId.GenerateNewId().ToString();
             _mongoDatabase.GetCollection<User>("Users").Insert(new User
             {
-                Id = ObjectId.GenerateNewId().ToString(),
+                Id = id,
                 LoginName = userName,
                 Password = password
             });
 
-            var user = _mongoDatabase.GetCollection<User>("Users").FindOne(Query<User>.EQ(u => u.LoginName, userName));
-            if (user != null)
+            var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
+            collection.Insert(new Permission
             {
-                var collection = _mongoDatabase.GetCollection<Permission>(
-                    PermissionsCollectionName);
-                collection.Insert(new Permission
-                {
-                    Id = ObjectId.GenerateNewId().ToString(),
-                    UserRole = UserRole.Administrator,
-                    UserId = user.Id,
-                    DataSourceAccessPermissions = new Dictionary<string, DataSourceAccessPermission>
-                    {
-                        {
-                            "ExternalDataSource\\QuotesFeed",
-                            new DataSourceAccessPermission
-                            {
-                                AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,
-                                GrantedByUserId = user.Id
-                            }
-                        },
-                        {
-                            "ExternalDataSource\\MyTestData",
-                            new DataSourceAccessPermission
-                            {
-                                AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,
-                                GrantedByUserId = user.Id
-                            }
-                        },
-                        {
-                            "ExternalDataSource\\Calculator",
-                            new DataSourceAccessPermission
-                            {
-                                AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,
-                                GrantedByUserId = user.Id
-                            }
-                        },
-                        {
-                            "ExternalDataSource\\YahooEquityRefData",
-                            new DataSourceAccessPermission
-                            {
-                                AccessLevel = AccessLevel.DataModify | AccessLevel.MetaDataModify | AccessLevel.Read,
-                                GrantedByUserId = user.Id
-                            }
-                        },
-                    }
-                });
-            }
+                Id = ObjectId.GenerateNewId().ToString(),
+                UserId = id,
+                UserRole = UserRole.Administrator,
+                DataSourceAccessPermissions = new Dictionary<string, DataSourceAccessPermission>()
+            });
         }
         
         private void ConnectToDb()
