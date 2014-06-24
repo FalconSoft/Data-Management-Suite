@@ -46,7 +46,7 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName).RemoveAll();
         }
 
-        public DataSourceInfo[] GetAvailableDataSources(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
+        public DataSourceInfo[] GetAvailableDataSources()
         {
             ConnectToDb();
             return _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName).FindAll().ToArray();

@@ -56,9 +56,11 @@
     <Compile Include="..\..\Data.Server.VersionInfo.cs">
       <Link>Data.Server.VersionInfo.cs</Link>
     </Compile>
+    <Compile Include="ErrorData\ErrorDataPersistence.cs" />
     <Compile Include="MetaData\MetadataPersistence.cs" />
     <Compile Include="MongoDBExtention.cs" />
     <Compile Include="SearchIndexes\SearchIndexPersistence.cs" />
+    <Compile Include="Security\PermissionSecurityPersistance.cs" />
     <Compile Include="Security\SecurityPersistence.cs" />
     <Compile Include="TemporalData\DbRevision.cs" />
     <Compile Include="LiveData\LiveDataPersistence.cs" />

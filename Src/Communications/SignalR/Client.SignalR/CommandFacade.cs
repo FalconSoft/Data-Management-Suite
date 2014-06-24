@@ -11,7 +11,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
 {
     internal class CommandFacade : ICommandFacade
     {
-        private const int Limit = 100;
+        private const int Limit = 50;
 
         private readonly string _connectionString;
 
@@ -20,6 +20,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
         private Task _startConnectionTask;
         private Action<RevisionInfo> _onSuccessAction;
         private Action<Exception> _onFailedAction;
+        private Action<string,string> _onNotifyAction;
         private Action _onInitilizeCompleteAction;
 
         public CommandFacade(string connectionString)
@@ -44,6 +45,12 @@ namespace FalconSoft.Data.Management.Client.SignalR
                     _onFailedAction(ex);
             });
 
+            _proxy.On<string,string>("OnNotify", (key,msg) =>
+            {
+                if (_onNotifyAction != null)
+                    _onNotifyAction(key, msg);
+            });
+
             _proxy.On("InitilizeComplete", () =>
             {
                 if (_onInitilizeCompleteAction != null)
@@ -58,11 +65,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
             _connection.Stop();
         }
 
-        public void SubmitChanges<T>(string dataSourcePath, string comment, IEnumerable<T> changedRecords = null,
+        public void SubmitChanges<T>(string dataSourcePath, string userToken, IEnumerable<T> changedRecords = null,
             IEnumerable<string> deleted = null, Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null,
             Action<string, string> onNotification = null) { }
 
-        public void SubmitChanges(string dataSourcePath, string comment,
+        public void SubmitChanges(string dataSourcePath, string userToken,
             IEnumerable<Dictionary<string, object>> changedRecords = null, IEnumerable<string> deleted = null,
             Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null,
             Action<string, string> onNotification = null)
@@ -72,13 +79,14 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
                 _onSuccessAction = onSuccess;
                 _onFailedAction = onFail;
+                _onNotifyAction = onNotification;
                 var are = new AutoResetEvent(false);
 
                 _onInitilizeCompleteAction = () => are.Set();
 
                 CheckConnectionToServer();
 
-                _proxy.Invoke("InitilizeSubmit", _connection.ConnectionId, dataSourcePath, comment,
+                _proxy.Invoke("InitilizeSubmit", _connection.ConnectionId, dataSourcePath, userToken,
                     changedRecords == null, deleted == null);
                 are.WaitOne();
                 if (onNotification != null)

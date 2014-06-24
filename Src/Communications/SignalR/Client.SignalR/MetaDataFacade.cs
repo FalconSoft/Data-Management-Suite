@@ -19,7 +19,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
         private IHubProxy _proxy;
         private Task _startConnectionTask;
         private Action _onCompleteAction;
-        private Timer _keepAliveTimer;
+        private readonly Timer _keepAliveTimer;
 
         public MetaDataFacade(string connectionString)
         {
@@ -56,12 +56,20 @@ namespace FalconSoft.Data.Management.Client.SignalR
                     _onCompleteAction();
             });
 
+            _proxy.On<string, string>("ErrorMessageHandledAction", (methodName, errorMessage) =>
+            {
+                if (ErrorMessageHandledAction != null)
+                {
+                    ErrorMessageHandledAction(methodName, errorMessage);
+                }
+                Trace.WriteLine(string.Format("MethodName : {0}     Error Message : {1}", methodName, errorMessage));
+            });
+
             _startConnectionTask = _connection.Start();
         }
 
         private void CheckConnectionToServer()
         {
-
             if (_connection.State == ConnectionState.Disconnected)
             {
                 InitialiseConnection(_connectionString);
@@ -97,10 +105,10 @@ namespace FalconSoft.Data.Management.Client.SignalR
             Trace.WriteLine("******   IMetaDataAdminFacade reconecting");
         }
 
-        public DataSourceInfo[] GetAvailableDataSources(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
+        public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
             CheckConnectionToServer();
-            return GetAvailableDataSourcesServerCall(userId, minAccessLevel);
+            return GetAvailableDataSourcesServerCall(userToken, minAccessLevel);
         }
 
         private DataSourceInfo[] GetAvailableDataSourcesServerCall(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
@@ -123,17 +131,17 @@ namespace FalconSoft.Data.Management.Client.SignalR
             return task.Result;
         }
 
-        public DataSourceInfo GetDataSourceInfo(string dataSourceUrn)
+        public DataSourceInfo GetDataSourceInfo(string dataSourceUrn, string userToken)
         {
             CheckConnectionToServer();
-            return GetDataSourceInfoServerCall(dataSourceUrn);
+            return GetDataSourceInfoServerCall(dataSourceUrn , userToken);
         }
 
-        private DataSourceInfo GetDataSourceInfoServerCall(string dataSourceUrn)
+        private DataSourceInfo GetDataSourceInfoServerCall(string dataSourceUrn, string userToken)
         {
             var tcs = new TaskCompletionSource<DataSourceInfo>();
             var task = tcs.Task;
-            _proxy.Invoke<DataSourceInfo>("GetDataSourceInfo", dataSourceUrn)
+            _proxy.Invoke<DataSourceInfo>("GetDataSourceInfo", dataSourceUrn, userToken)
                 .ContinueWith(t =>
                 {
                     if (t.IsFaulted)
@@ -171,51 +179,51 @@ namespace FalconSoft.Data.Management.Client.SignalR
             return task.Result;
         }
 
-        public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userId)
+        public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userToken)
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
             CheckConnectionToServer();
-            _proxy.Invoke("UpdateDataSourceInfo", dataSource, oldDataSourceUrn, userId);
+            _proxy.Invoke("UpdateDataSourceInfo", dataSource, oldDataSourceUrn, userToken);
             task.Wait();
         }
 
-        public void CreateDataSourceInfo(DataSourceInfo dataSource, string userId)
+        public void CreateDataSourceInfo(DataSourceInfo dataSource, string userToken)
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("CreateDataSourceInfo", dataSource, userId);
+            _proxy.Invoke("CreateDataSourceInfo", dataSource, userToken);
            
             task.Wait();
         }
 
-        public void DeleteDataSourceInfo(string dataSourceUrn, string userId)
+        public void DeleteDataSourceInfo(string dataSourceUrn, string userToken)
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("DeleteDataSourceInfo", dataSourceUrn, userId);
+            _proxy.Invoke("DeleteDataSourceInfo", dataSourceUrn, userToken);
 
             task.Wait();
         }
 
-        public WorksheetInfo GetWorksheetInfo(string worksheetUrn)
+        public WorksheetInfo GetWorksheetInfo(string worksheetUrn, string userToken)
         {
             CheckConnectionToServer();
-            return GetWorksheetInfoServerCall(worksheetUrn);
+            return GetWorksheetInfoServerCall(worksheetUrn,userToken);
         }
-        
-        private WorksheetInfo GetWorksheetInfoServerCall(string worksheetUrn)
+
+        private WorksheetInfo GetWorksheetInfoServerCall(string worksheetUrn, string userToken)
         {
             var tcs = new TaskCompletionSource<WorksheetInfo>();
             var task = tcs.Task;
-            _proxy.Invoke<WorksheetInfo>("GetWorksheetInfo", worksheetUrn)
+            _proxy.Invoke<WorksheetInfo>("GetWorksheetInfo", worksheetUrn, userToken)
                 .ContinueWith(t =>
                 {
                     if (t.IsFaulted)
@@ -225,13 +233,15 @@ namespace FalconSoft.Data.Management.Client.SignalR
                     }
                     tcs.SetResult(t.Result);
                 });
+            if (task.IsCanceled)
+                return null;
             return task.Result;
         }
 
-        public WorksheetInfo[] GetAvailableWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
+        public WorksheetInfo[] GetAvailableWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
             CheckConnectionToServer();
-            return GetAvailableWorksheetsServerCall(userId, minAccessLevel);
+            return GetAvailableWorksheetsServerCall(userToken, minAccessLevel);
         }
 
         private WorksheetInfo[] GetAvailableWorksheetsServerCall(string userId, AccessLevel minAccessLevel)
@@ -251,46 +261,46 @@ namespace FalconSoft.Data.Management.Client.SignalR
             return task.Result;
         }
 
-        public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
+        public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("UpdateWorksheetInfo", wsInfo, oldWorksheetUrn, userId);
+            _proxy.Invoke("UpdateWorksheetInfo", wsInfo, oldWorksheetUrn, userToken);
            
             task.Wait();
         }
 
-        public void CreateWorksheetInfo(WorksheetInfo wsInfo, string userId)
+        public void CreateWorksheetInfo(WorksheetInfo wsInfo, string userToken)
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("CreateWorksheetInfo", wsInfo, userId);
+            _proxy.Invoke("CreateWorksheetInfo", wsInfo, userToken);
            
             task.Wait();
         }
 
-        public void DeleteWorksheetInfo(string worksheetUrn, string userId)
+        public void DeleteWorksheetInfo(string worksheetUrn, string userToken)
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("DeleteWorksheetInfo", worksheetUrn, userId);
+            _proxy.Invoke("DeleteWorksheetInfo", worksheetUrn, userToken);
            
             task.Wait();
         }
 
-        public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
+        public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
             CheckConnectionToServer();
-            return GetAvailableAggregatedWorksheetsServerCall(userId, minAccessLevel);
+            return GetAvailableAggregatedWorksheetsServerCall(userToken, minAccessLevel);
         }
 
         private AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheetsServerCall(string userId, AccessLevel minAccessLevel)
@@ -310,43 +320,43 @@ namespace FalconSoft.Data.Management.Client.SignalR
             return task.Result;
         }
 
-        public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
+        public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("UpdateAggregatedWorksheetInfo", wsInfo, oldWorksheetUrn, userId);
+            _proxy.Invoke("UpdateAggregatedWorksheetInfo", wsInfo, oldWorksheetUrn, userToken);
             
             task.Wait();
         }
 
-        public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userId)
+        public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userToken)
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("CreateAggregatedWorksheetInfo", wsInfo, userId);
+            _proxy.Invoke("CreateAggregatedWorksheetInfo", wsInfo, userToken);
             
             task.Wait();
         }
 
-        public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userId)
+        public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
             _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-                _proxy.Invoke("DeleteAggregatedWorksheetInfo", worksheetUrn, userId);
+                _proxy.Invoke("DeleteAggregatedWorksheetInfo", worksheetUrn, userToken);
             
             task.Wait();
         }
 
-        public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn)
+        public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
             CheckConnectionToServer();
             return GetAggregatedWorksheetInfoServerCall(worksheetUrn);
@@ -391,6 +401,8 @@ namespace FalconSoft.Data.Management.Client.SignalR
                        });
             return task.Result;
         }
+
+        public Action<string, string> ErrorMessageHandledAction { get; set; }
 
         public event EventHandler<SourceObjectChangedEventArgs> ObjectInfoChanged;
 

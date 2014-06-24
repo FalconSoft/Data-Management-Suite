@@ -16,7 +16,7 @@ namespace FalconSoft.Data.Console
     class Program
     {
         private static ILogger _logger;
-
+        
         public static ILogger Logger
         {
             get { return _logger ?? (_logger = new Logger()); }
@@ -50,16 +50,27 @@ namespace FalconSoft.Data.Console
         }
 
         public static IFacadesFactory FacadesFactory { get; private set; }
+        public static string ConsoleClientToken;
 
         static void Main(string[] args)
         {
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
-            var commandLineParser = new CommandLineParser();
 
+            ConsoleClientToken = FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console");
+            
+            var commandLineParser = new CommandLineParser();
+            var withArgs = false;
             while (true)
             {
                 System.Console.Write(">");
-                var commandArgs = (args == null || args.Length == 0)? System.Console.ReadLine().Split(' ') : args.ToArray();
+                string[] commandArgs;
+                if (args == null || args.Length == 0)
+                    commandArgs = System.Console.ReadLine().Split(' ');
+                else
+                {
+                    commandArgs = args.ToArray();
+                    withArgs = true;
+                }
 
                 args = null;
 
@@ -69,12 +80,15 @@ namespace FalconSoft.Data.Console
                     {
                         case CommandLineParser.CommandType.Create:
                             Create(commandLineParser.CreateArguments);
+                            if(withArgs) return;
                             break;
                         case CommandLineParser.CommandType.Get:
                             Get(commandLineParser.GetArguments);
+                            if (withArgs) return;
                             break;
                         case CommandLineParser.CommandType.Submit:
                             Submit(commandLineParser.SubmitArguments);
+                            if (withArgs) return;
                             break;
                         case CommandLineParser.CommandType.Subscribe:
                             Subscribe(commandLineParser.SubscribeArguments);
@@ -105,9 +119,19 @@ namespace FalconSoft.Data.Console
             {
                 dsInfoJson = reader.ReadToEnd();
             }
-            var datasource = JsonConvert.DeserializeObject<DataSourceInfo>(dsInfoJson);
+            DataSourceInfo dataSource;
+            try
+            {
+                dataSource = JsonConvert.DeserializeObject<DataSourceInfo>(dsInfoJson);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine(ex.Message);
+                return;
+            }
             var metadataAdminFacade = FacadesFactory.CreateMetaDataAdminFacade();
-            metadataAdminFacade.CreateDataSourceInfo(datasource, createArguments.UserName);
+            metadataAdminFacade.CreateDataSourceInfo(dataSource, createArguments.UserName??"1");
+            System.Console.WriteLine("Create Success "+dataSource.DataSourcePath);
         }
 
         private static void WriteHelpInfoToConsole(CommandLineParser commandLineParser)
@@ -121,7 +145,7 @@ namespace FalconSoft.Data.Console
         private static void Subscribe(CommandLineParser.SubscribeParams subscribeArguments)
         {
             _reactiveDataProvider2 = FacadesFactory.CreateReactiveDataQueryFacade();
-            _reactiveDataProvider2.GetDataChanges(subscribeArguments.DataSourceUrn)
+            _reactiveDataProvider2.GetDataChanges(ConsoleClientToken, subscribeArguments.DataSourceUrn)
                         .Buffer(TimeSpan.FromMilliseconds(1000))
                         .Subscribe(s =>
                         {
@@ -139,7 +163,7 @@ namespace FalconSoft.Data.Console
         {
             var reactiveDataQueryFacade = FacadesFactory.CreateReactiveDataQueryFacade();
             var startTime = DateTime.Now;
-            var data = reactiveDataQueryFacade.GetData(getArguments.DataSourceUrn).ToArray();
+            var data = reactiveDataQueryFacade.GetData(ConsoleClientToken, getArguments.DataSourceUrn).ToArray();
             var executionSpan = DateTime.Now - startTime;
             CSVHelper.WriteRecords(data, getArguments.FileName, getArguments.Separator);
             System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds.", getArguments.DataSourceUrn, getArguments.FileName, executionSpan);            
@@ -149,7 +173,7 @@ namespace FalconSoft.Data.Console
         {
             //get datasourceinfo 
             var metaDataFacade = FacadesFactory.CreateMetaDataFacade();
-            var dsInfo = metaDataFacade.GetDataSourceInfo(submitParams.DataSourceUrn);
+            var dsInfo = metaDataFacade.GetDataSourceInfo(submitParams.DataSourceUrn, ConsoleClientToken);
 
             var sw = new Stopwatch();
             Trace.WriteLine("   Parsing start");
@@ -158,7 +182,8 @@ namespace FalconSoft.Data.Console
             var recordsToDelete = CSVHelper.ReadRecordsToDelete(submitParams.DeleteFileName);
             
             var commandFacade = FacadesFactory.CreateCommandFacade();
-            commandFacade.SubmitChanges(submitParams.DataSourceUrn, "console", recordsToUpdate);
+            commandFacade.SubmitChanges(submitParams.DataSourceUrn, ConsoleClientToken, recordsToUpdate, null, (r) => System.Console.WriteLine("Submit Success"), (ex) => System.Console.WriteLine("Submit Failed"),
+                (key, msg) => System.Console.WriteLine(msg));
         }
     }
 }

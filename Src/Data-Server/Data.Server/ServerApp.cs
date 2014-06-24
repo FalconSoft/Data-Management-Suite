@@ -11,6 +11,7 @@ using FalconSoft.Data.Management.Components.Facades;
 using FalconSoft.Data.Management.Components.ReactiveEngine;
 using FalconSoft.Data.Server.DefaultMongoDbSource;
 using FalconSoft.Data.Server.Persistence;
+using FalconSoft.Data.Server.Persistence.ErrorData;
 using FalconSoft.Data.Server.Persistence.LiveData;
 using FalconSoft.Data.Server.Persistence.MetaData;
 using FalconSoft.Data.Server.Persistence.SearchIndexes;
@@ -65,6 +66,8 @@ namespace FalconSoft.Data.Server
 
         private static ISecurityFacade _securityFacade;
 
+        private static IPermissionSecurityFacade _permissionSecurityFacade;
+
         private static Func<string, ILiveDataPersistence> _liveDataPersistenceFactory;
 
         private static IWorksheetPersistence _worksheetsPersistence;
@@ -73,7 +76,13 @@ namespace FalconSoft.Data.Server
 
         private static ISearchIndexPersistence _searchIndexPersistence;
 
+        private static IErrorDataPersistence _errorDataPersistence;
+
         private static ISecurityPersistence _securityPersistence;
+
+        private static IPermissionSecurityPersistance _permissionSecurityPersistance;
+
+        private static IDataSwitMembershipProvider _dataSwitMembershipProvider;
 
         private static IMetaDataPersistence _metaDataPersistence;
 
@@ -97,7 +106,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _metaDataFacade ?? (_metaDataFacade = new MetaDataFacade(ProvidersRegistry, WorksheetsPersistence, MetaDataPersistence, ServerInfo));
+                return _metaDataFacade ?? (_metaDataFacade = new MetaDataFacade(ProvidersRegistry, WorksheetsPersistence, MetaDataPersistence, DataSwitMembershipProvider, ServerInfo));
             }
         }
 
@@ -105,7 +114,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _dataQueryFacade ?? (_dataQueryFacade = new ReactiveDataFacade(MessageBus, LiveDataPersistenceFactory, ProvidersRegistry, ReactiveEngine));
+                return _dataQueryFacade ?? (_dataQueryFacade = new ReactiveDataFacade(MessageBus, LiveDataPersistenceFactory, ProvidersRegistry, ReactiveEngine, DataSwitMembershipProvider));
             }
         }
 
@@ -122,7 +131,7 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _commandFacade ?? (_commandFacade = new CommandFacade(CommandAggregator));
+                return _commandFacade ?? (_commandFacade = new CommandFacade(CommandAggregator,DataSwitMembershipProvider));
             }
         }
 
@@ -138,7 +147,16 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _securityFacade ?? (_securityFacade = new SecurityFacade(SecurityPersistence));
+                return _securityFacade ?? (_securityFacade = new SecurityFacade(SecurityPersistence, DataSwitMembershipProvider));
+            }
+        }
+
+        public static IPermissionSecurityFacade PermissionSecurityFacade
+        {
+            get
+            {
+                return _permissionSecurityFacade ??
+                       (_permissionSecurityFacade = new PermissionSecurityFacade(DataSwitMembershipProvider));
             }
         }
 
@@ -182,7 +200,8 @@ namespace FalconSoft.Data.Server
                 return _commandAggregator ??
                        (_commandAggregator = new CommandAggregator(ProvidersRegistry, LiveDataPersistenceFactory,
                                                                    TemporalDataPersistenseFactory,
-                                                                   DataProvidersCatalogs, ReactiveEngine, MetaDataPersistence, DefaultMetaDataProvider, Logger));
+                                                                   ErrorDataPersistence,
+                                                                   DataProvidersCatalogs, ReactiveEngine, MetaDataPersistence, DefaultMetaDataProvider, Logger, SecurityPersistence));
             }
         }
 
@@ -244,12 +263,39 @@ namespace FalconSoft.Data.Server
             }
         }
 
+        public static IErrorDataPersistence ErrorDataPersistence
+        {
+            get
+            {
+                return _errorDataPersistence ??
+                       (_errorDataPersistence = new ErrorDataPersistence(_persistenceDataConnectionString));
+            }
+        }
+
         public static ISecurityPersistence SecurityPersistence
         {
             get
             {
                 return _securityPersistence ??
                        (_securityPersistence = new SecurityPersistence(_persistenceDataConnectionString));
+            }
+        }
+
+        public static IPermissionSecurityPersistance PermissionSecurityPersistance
+        {
+            get
+            {
+                return _permissionSecurityPersistance ??
+                       (_permissionSecurityPersistance = new PermissionSecurityPersistance(_persistenceDataConnectionString));
+            }
+        }
+
+        public static IDataSwitMembershipProvider DataSwitMembershipProvider
+        {
+            get
+            {
+                return _dataSwitMembershipProvider ??
+                       (_dataSwitMembershipProvider = new DataSwitMembershipProvider(PermissionSecurityPersistance));
             }
         }
 

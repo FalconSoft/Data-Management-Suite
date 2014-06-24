@@ -86,6 +86,7 @@
     <Compile Include="HubServer.cs" />
     <Compile Include="Hubs\CommandsHub.cs" />
     <Compile Include="Hubs\MetaDataHub.cs" />
+    <Compile Include="Hubs\PermissionSecurityHub.cs" />
     <Compile Include="Hubs\ReactiveDataQueryHub.cs" />
     <Compile Include="Hubs\SearchHub.cs" />
     <Compile Include="Hubs\SecurityHub.cs" />

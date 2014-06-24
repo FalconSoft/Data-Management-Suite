@@ -56,5 +56,10 @@ namespace FalconSoft.Data.Management.InProcessServer.Client
         {
             return ServerApp.SecurityFacade;
         }
+
+        public IPermissionSecurityFacade CreatePermissionSecurityFacade()
+        {
+            return ServerApp.PermissionSecurityFacade;
+        }
     }
 }

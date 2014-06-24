@@ -11,7 +11,7 @@ namespace FalconSoft.Data.Management.Server.SignalR
 
         public DataServerHost(string connectionString, ILogger logger, ICommandFacade commandFacade, IMetaDataAdminFacade metaDataAdminFacade,
                 IReactiveDataQueryFacade reactiveDataQueryFacade, ITemporalDataQueryFacade temporalDataQueryFacade,
-                ISearchFacade searchFacade, ISecurityFacade securityFacade)
+                ISearchFacade searchFacade, ISecurityFacade securityFacade, IPermissionSecurityFacade permissionSecurityFacade)
         {
             HubServer.ConnectionString = connectionString;
             HubServer.Logger = logger;
@@ -21,6 +21,7 @@ namespace FalconSoft.Data.Management.Server.SignalR
             HubServer.TemporalDataQueryFacade = temporalDataQueryFacade;
             HubServer.SearchFacade = searchFacade;
             HubServer.SecurityFacade = securityFacade;
+            HubServer.PermissionSecurityFacade = permissionSecurityFacade;
         }
 
         public void StartServer()
