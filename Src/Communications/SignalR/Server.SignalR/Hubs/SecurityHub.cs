@@ -17,7 +17,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             _securityFacade = securityFacade;
         }
 
-        public string Authenticate(string login, string password)
+        public KeyValuePair<bool, string> Authenticate(string login, string password)
         {
             try
             {
@@ -25,8 +25,8 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
             catch (Exception ex)
             {
-                Clients.Caller.ErrorMessageHandledAction("UpdateDataSourceInfo", ex.Message);
-                return null;
+                Clients.Caller.ErrorMessageHandledAction("Authenticate", ex.Message);
+                return new KeyValuePair<bool, string>(false, ex.Message);
             }
         }
 
@@ -38,7 +38,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
             catch (Exception ex)
             {
-                Clients.Caller.ErrorMessageHandledAction("UpdateDataSourceInfo", ex.Message);
+                Clients.Caller.ErrorMessageHandledAction("GetUsers", ex.Message);
                 return null;
             }
         }
@@ -51,7 +51,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
             catch (Exception ex)
             {
-                Clients.Caller.ErrorMessageHandledAction("UpdateDataSourceInfo", ex.Message);
+                Clients.Caller.ErrorMessageHandledAction("GetUser", ex.Message);
                 return null;
             }
         }
@@ -65,7 +65,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
             catch (Exception ex)
             {
-                Clients.Caller.ErrorMessageHandledAction("UpdateDataSourceInfo", ex.Message);
+                Clients.Caller.ErrorMessageHandledAction("SaveNewUser", ex.Message);
             }
         }
 
@@ -78,7 +78,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
             catch (Exception ex)
             {
-                Clients.Caller.ErrorMessageHandledAction("UpdateDataSourceInfo", ex.Message);
+                Clients.Caller.ErrorMessageHandledAction("UpdateUser", ex.Message);
             }
         }
 
@@ -91,7 +91,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
             catch (Exception ex)
             {
-                Clients.Caller.ErrorMessageHandledAction("UpdateDataSourceInfo", ex.Message);
+                Clients.Caller.ErrorMessageHandledAction("RemoveUser", ex.Message);
             }
         }
     }

@@ -56,7 +56,7 @@ namespace FalconSoft.Data.Console
         {
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
 
-            ConsoleClientToken = FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console");
+            ConsoleClientToken = FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console").Value;
             
             var commandLineParser = new CommandLineParser();
             var withArgs = false;

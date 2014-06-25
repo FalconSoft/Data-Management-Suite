@@ -77,12 +77,12 @@ namespace FalconSoft.Data.Management.Client.SignalR
             Trace.WriteLine("******   ISecurityFacade reconecting");
         }
 
-        public string Authenticate(string userName, string password)
+        public KeyValuePair<bool, string> Authenticate(string userName, string password)
         {
             CheckConnectionToServer();
-            var tcs = new TaskCompletionSource<string>();
+            var tcs = new TaskCompletionSource<KeyValuePair<bool, string>>();
             var task = tcs.Task;
-            _proxy.Invoke<string>("Authenticate", userName, password)
+            _proxy.Invoke<KeyValuePair<bool, string>>("Authenticate", userName, password)
                 .ContinueWith(t =>
                 {
                     if (t.IsFaulted)
@@ -92,7 +92,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
                     else tcs.SetResult(t.Result);
                 });
 
-            return string.IsNullOrEmpty(task.Result) ? null : task.Result;
+            return task.Result;
         }
 
         public List<User> GetUsers(string userToken)
