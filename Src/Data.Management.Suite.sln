@@ -73,6 +73,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReactiveWorksheets.Server.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.EDI.FeedWatcher", "..\..\Data-Management-Suite-Private\Src\FalconSoft.Data.EDI.FeedWatcher\FalconSoft.Data.EDI.FeedWatcher.csproj", "{04C2C86E-C161-474B-96A4-FACE9C911B45}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.PythonEngine", "FalconSoft.PythonEngine\FalconSoft.PythonEngine.csproj", "{62C5F485-45DA-45CD-935A-365E4AFCB932}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -293,6 +295,16 @@ Global
 		{04C2C86E-C161-474B-96A4-FACE9C911B45}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{04C2C86E-C161-474B-96A4-FACE9C911B45}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{04C2C86E-C161-474B-96A4-FACE9C911B45}.Release|x86.ActiveCfg = Release|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
