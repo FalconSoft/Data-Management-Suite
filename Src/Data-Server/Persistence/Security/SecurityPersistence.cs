@@ -69,8 +69,17 @@ namespace FalconSoft.Data.Server.Persistence.Security
         public void UpdateUser(User user, UserRole userRole, string userToken)
         {
             ConnectToDb();
+            var query = Update<User>.Set(u => u.LoginName, user.LoginName)
+                .Set(u => u.FirstName, user.FirstName)
+                .Set(u => u.LastName, user.LastName)
+                .Set(u => u.Password, user.Password)
+                .Set(u => u.EMail, user.EMail)
+                .Set(u => u.Department, user.Department)
+                .Set(u => u.CorporateTitle, user.CorporateTitle)
+                .Set(u => u.UserGroupId, user.UserGroupId);
+
             _mongoDatabase.GetCollection<User>(UsersCollectionName)
-                .Update(Query<User>.EQ(u => u.Id, user.Id), Update<User>.Set(u => u.LoginName, user.LoginName));
+                .Update(Query<User>.EQ(u => u.Id, user.Id), query);
         }
 
         public void RemoveUser(User user, string userToken)
