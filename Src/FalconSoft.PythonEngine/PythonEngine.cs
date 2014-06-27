@@ -67,29 +67,34 @@ namespace FalconSoft.PythonEngine
             var variables = GetInputVariables(formulaString);
             foreach (var inParam in variables)
             {
-                PyScope.SetVariable(inParam, inParams[inParam]);
+                if(inParams.ContainsKey(inParam))
+                    PyScope.SetVariable(inParam, inParams[inParam]);
             }
             var sSource = PyEngine.CreateScriptSourceFromString(formulaString);
 
             try
             {
                 sSource.Execute(PyScope);
-                string result;
+                object result;
                 PyScope.TryGetVariable(outparam, out result);
-                return result;
+                return result.ToString();
             }
             catch (Exception ex)
             {
                 var eo = PyEngine.GetService<ExceptionOperations>();
                 var error = eo.FormatException(ex);
-                return string.Empty;
+                return "Error";
             }
         }
 
         private IEnumerable<string> GetInputVariables(string formula)
         {
-            var regex = new Regex(@"(?<=\[\')(.*?)(?=\'\])");
-            return regex.Matches(formula).Select(s => s.ToString()).ToList();
+            var regex = new Regex(@"\w+");
+            return regex.Matches(formula).Select(s => s.ToString()).Where(w =>
+            {
+                int t;
+                return !int.TryParse(w, out t);
+            }).ToList();
         }
     }
 }
