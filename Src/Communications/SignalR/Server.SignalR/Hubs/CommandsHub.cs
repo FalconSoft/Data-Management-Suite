@@ -114,13 +114,11 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
             var deleteEnumerator = _isDeleteDataNull ? null : _toDelteSubjects[connectionId].ToEnumerable();
             var changeRecord = _isChangeDataNull ? null : _toUpdateSubjects[connectionId].ToEnumerable();
-            Task task;
-            if (deleteEnumerator != null && changeRecord != null)
-            {
-                var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord.ToArray() : null); //LoggedInUser.UserToken .ToArray() - BAD FIX 
+
+            var changeRecordsTask = Task<IEnumerable<Dictionary<string, object>>>.Factory.StartNew(() => changeRecord != null ? changeRecord.ToArray() : null); //LoggedInUser.UserToken .ToArray() - BAD FIX 
                 var deleteToArrayTask = Task<IEnumerable<string>>.Factory.StartNew(() => deleteEnumerator != null ? deleteEnumerator.ToArray() : null); //TODO .ToArray() - BAD FIX
                 
-                task = Task.Factory.StartNew(() =>
+                var task = Task.Factory.StartNew(() =>
                 {
                     changeRecordsTask.Wait();
                     deleteToArrayTask.Wait();
@@ -132,21 +130,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
                         ex => Clients.Client(connectionId).OnFail(ex),
                         (key, msg) => Clients.Client(connectionId).OnNotify(key,msg));
                 });
-            }
-            else
-                task = Task.Factory.StartNew(() => _commandFacade.SubmitChanges(_dataSourceInfoPath, _userToken,
-                    changeRecord, deleteEnumerator,
-                    r =>
-                    {
-                        _logger.Debug("Success SubmitData. Return RevisionInfo : " + connectionId);
-                        Clients.Client(connectionId).OnSuccess(r);
-                    },
-                    ex =>
-                    {
-                        _logger.Debug("On submitChangest exception throw : " + connectionId, ex);
-                        Clients.Client(connectionId).OnFail(ex);
-                    },
-                    (key, msg) => Clients.Client(connectionId).OnNotify(key, msg)));
+            
             _workingTasks.Add(connectionId, task);
             Clients.Client(connectionId).InitilizeComplete();
         }
@@ -248,7 +232,8 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             if (_toUpdateSubjects.ContainsKey(connectionId) &&
                 _onUpdateNextCall[connectionId] &&
                 _onUpdateCompleteCall[connectionId] &&
-                (_toUpdateCounter[connectionId] == _toUpdateCount[connectionId]))
+                (_toUpdateCounter[connectionId] == _toUpdateCount[connectionId]) &&
+                (_toUpdateCounter[connectionId] != 0))
             {
                 _toUpdateSubjects[connectionId].OnCompleted();
                 _logger.Debug("To update data transfer complete : " + connectionId);
@@ -271,7 +256,8 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             if (_toDelteSubjects.ContainsKey(connectionId) &&
                 _onDeleteNextCall[connectionId] &&
                 _onDeleteCompleteCall[connectionId] &&
-                (_toDeleteCounter[connectionId] == _toDeleteCount[connectionId]))
+                (_toDeleteCounter[connectionId] == _toDeleteCount[connectionId]) &&
+                (_toDeleteCounter[connectionId] != 0))
             {
                 _toDelteSubjects[connectionId].OnCompleted();
                 _logger.Debug("To delete data transfer complete : " + connectionId);
