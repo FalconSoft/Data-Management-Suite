@@ -54,6 +54,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
             }
         }
 
+      
         public Permission GetUserPermissions(string userToken)
         {
             var collection = _mongoDatabase.GetCollection(typeof (Permission), PermissionsCollectionName);
@@ -80,8 +81,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
                             }
                             else
                             {
-                                permissionsCollection[accessLevel.Key].AccessLevel =
-                                    accessLevel.Value;
+                                permissionsCollection[accessLevel.Key].AccessLevel = accessLevel.Value;
                                 permissionsCollection[accessLevel.Key].GrantedByUserId = grantedByUserToken;
                             }
                         }
@@ -94,8 +94,10 @@ namespace FalconSoft.Data.Server.Persistence.Security
                             });
                         }
                     }
+
                     collection.Update(Query<Permission>.EQ(p => p.UserId, targetUserToken),
                         Update<Permission>.Set(p => p.DataSourceAccessPermissions, permissionsCollection));
+
                     if (NotifyPermissionChanged != null)
                         NotifyPermissionChanged(this, new PermissionEventArgs(targetUserToken, permissions));
                 }
@@ -115,6 +117,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
                                     })
                     };
                     collection.Insert(permission);
+
                     if (NotifyPermissionChanged != null)
                         NotifyPermissionChanged(this, new PermissionEventArgs(targetUserToken, permissions));
                 }
@@ -152,12 +155,30 @@ namespace FalconSoft.Data.Server.Persistence.Security
 
         public AccessLevel CheckAccess(string userToken, string urn)
         {
-            var collection = _mongoDatabase.GetCollection(typeof(Permission), PermissionsCollectionName);
-            var permission = collection.FindAllAs<Permission>().FirstOrDefault(p => p.UserId == userToken);
-            if (permission!=null)
+            var permission = GetUserPermissions(userToken);
+
+            if (permission != null)
+            {
+                if (permission.IsAdministrator)
+                    return (AccessLevel) 7;
+
                 if (permission.DataSourceAccessPermissions.ContainsKey(urn))
-            return  permission.DataSourceAccessPermissions[urn].AccessLevel;
+                    return permission.DataSourceAccessPermissions[urn].AccessLevel;
+            }
             return 0;
+        }
+
+        public void NotifyAdministrators(Dictionary<string, AccessLevel> permissions)
+        {
+            var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
+            var administartorPermissions =
+                collection.FindAs<Permission>(Query<Permission>.EQ(p => p.UserRole, UserRole.Administrator));
+
+            foreach (var administartorPermission in administartorPermissions)
+            {
+                if (NotifyPermissionChanged != null)
+                    NotifyPermissionChanged(this, new PermissionEventArgs(administartorPermission.UserId, permissions));
+            }
         }
 
         public event EventHandler<PermissionEventArgs> NotifyPermissionChanged;

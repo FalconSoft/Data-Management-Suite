@@ -140,6 +140,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             if (_connection.State == ConnectionState.Disconnected)
             {
+                _allowToRestoreConnection = true;
                 InitialiseConnection(_connectionString);
             }
             if (!_startConnectionTask.IsCompleted)

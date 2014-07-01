@@ -237,9 +237,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             {
                 _toUpdateSubjects[connectionId].OnCompleted();
                 _logger.Debug("To update data transfer complete : " + connectionId);
-                //if (!_workingTasks[connectionId].IsCompleted)
-                //    _workingTasks[connectionId].Wait();
-
+                
                 if (_workingTasks.ContainsKey(connectionId))
                     _workingTasks.Remove(connectionId);
                 _toUpdateSubjects.Remove(connectionId);
@@ -261,9 +259,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             {
                 _toDelteSubjects[connectionId].OnCompleted();
                 _logger.Debug("To delete data transfer complete : " + connectionId);
-                //if (!_workingTasks[connectionId].IsCompleted)
-                //    _workingTasks[connectionId].Wait();
-
+               
                 if (_workingTasks.ContainsKey(connectionId))
                     _workingTasks.Remove(connectionId);
                 _toDelteSubjects.Remove(connectionId);
