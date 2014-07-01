@@ -83,7 +83,7 @@ namespace FalconSoft.PythonEngine
             {
                 var eo = PyEngine.GetService<ExceptionOperations>();
                 var error = eo.FormatException(ex);
-                return "Error";
+                return "Error: " + ex.Message;
             }
         }
 
