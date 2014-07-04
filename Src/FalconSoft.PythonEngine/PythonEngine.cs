@@ -13,25 +13,25 @@ namespace FalconSoft.PythonEngine
         private static readonly ScriptEngine PyEngine = Python.CreateEngine();
         private static readonly ScriptScope PyScope = PyEngine.CreateScope();
 
-        public string GetScriptResult(string formulaString, Dictionary<string, object> row)
-        {
-            if (string.IsNullOrEmpty(formulaString)) return string.Empty;
-            PyScope.SetVariable("row", row);
-            var sSource = formulaString.IndexOf("Result", StringComparison.OrdinalIgnoreCase) != -1 ? PyEngine.CreateScriptSourceFromString(formulaString) : PyEngine.CreateScriptSourceFromString("Result=" + formulaString);
-            try
-            {
-                sSource.Execute(PyScope);
-                object res;
-                PyScope.TryGetVariable("Result", out res);
-                return res.ToString();
-            }
-            catch (Exception ex)
-            {
-                var eo = PyEngine.GetService<ExceptionOperations>();
-                var error = eo.FormatException(ex);
-                return "Error";
-            }
-        }
+        //public string GetScriptResult(string formulaString, Dictionary<string, object> row)
+        //{
+        //    if (string.IsNullOrEmpty(formulaString)) return string.Empty;
+        //    PyScope.SetVariable("row", row);
+        //    var sSource = formulaString.IndexOf("Result", StringComparison.OrdinalIgnoreCase) != -1 ? PyEngine.CreateScriptSourceFromString(formulaString) : PyEngine.CreateScriptSourceFromString("Result=" + formulaString);
+        //    try
+        //    {
+        //        sSource.Execute(PyScope);
+        //        object res;
+        //        PyScope.TryGetVariable("Result", out res);
+        //        return res.ToString();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        var eo = PyEngine.GetService<ExceptionOperations>();
+        //        var error = eo.FormatException(ex);
+        //        return "Error";
+        //    }
+        //}
 
         //public Dictionary<string, PythonResult> GetFormulaResult(string formulaString, Dictionary<string, object> inParams, Dictionary<string, object> outParams)
         //{
@@ -84,6 +84,35 @@ namespace FalconSoft.PythonEngine
                 var eo = PyEngine.GetService<ExceptionOperations>();
                 var error = eo.FormatException(ex);
                 return "Error: " + ex.Message;
+            }
+        }
+
+        public Dictionary<string, object> GetScriptResult(string formulaString, Dictionary<string, object> inParams)
+        {
+            if (string.IsNullOrEmpty(formulaString)) return null;
+            var variables = GetInputVariables(formulaString);
+            foreach (var inParam in variables)
+            {
+                if (inParams.ContainsKey(inParam))
+                    PyScope.SetVariable(inParam, inParams[inParam]);
+            }
+            var sSource = PyEngine.CreateScriptSourceFromString(formulaString);
+
+            try
+            {
+                sSource.Execute(PyScope);
+                var result = new Dictionary<string, object>();
+                foreach (var variableName in PyScope.GetVariableNames())
+                {
+                    result[variableName] = PyScope.GetVariable(variableName);
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var eo = PyEngine.GetService<ExceptionOperations>();
+                var error = eo.FormatException(ex);
+                return null;
             }
         }
 
