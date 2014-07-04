@@ -34,8 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FalconSoft.Data.Management.Common">
-      <HintPath>..\..\packages\FalconSoft.Data.Management.Common.1.0.2\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>..\..\packages\FalconSoft.Data.Management.Common.1.0.3\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
     </Reference>
     <Reference Include="MongoDB.Bson, Version=1.9.1.221, Culture=neutral, PublicKeyToken=f686731cfb9cc103, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
