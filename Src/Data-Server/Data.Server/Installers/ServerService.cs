@@ -26,7 +26,7 @@ namespace FalconSoft.Data.Server.Installers
 
         public void Start()
         {
-           // try
+            try
             {
                 var bootstrapper = new Bootstrapper();
                 bootstrapper.Configure(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MongoDataConnectionString"]);
@@ -34,11 +34,11 @@ namespace FalconSoft.Data.Server.Installers
                 bootstrapper.Run();
                 ServerApp.Logger.Info("Bootstrapper started running...");
             }
-            //catch (Exception ex)
-            //{
-            //    ServerApp.Logger.Error("Failed to Configure and Run Bootstrapper", ex);
-            //    throw;
-            //}
+            catch (Exception ex)
+            {
+                ServerApp.Logger.Error("Failed to Configure and Run Bootstrapper", ex);
+                throw;
+            }
 
             DataServerHost = new DataServerHost
                             (
