@@ -26,16 +26,21 @@ namespace FalconSoft.Data.Server.EDI.Feeds
 
         }
 
+        readonly object _locker = new object();
         private void OnCreated(object sender, FileSystemEventArgs e)
         {
-            foreach (var dataProvider in DataProviders.OrderBy(k => k.ProviderInfo.ParentDataSourcePath))
+            lock (_locker)
             {
-                if (!string.IsNullOrEmpty(dataProvider.ProviderInfo.ParentDataSourcePath))
+                foreach (var dataProvider in DataProviders.OrderBy(k => k.ProviderInfo.ParentDataSourcePath))
                 {
-                    (dataProvider.DataProvider as EDIDataProvider).SendInheritData(e.FullPath);
+                    if (!string.IsNullOrEmpty(dataProvider.ProviderInfo.ParentDataSourcePath))
+                    {
+                        (dataProvider.DataProvider as EDIDataProvider).SendInheritData(e.FullPath);
+                    }
+                    else (dataProvider.DataProvider as EDIDataProvider).SendData(e.FullPath);
                 }
-                else (dataProvider.DataProvider as EDIDataProvider).SendData(e.FullPath);
             }
+           
         }
         private void OnChanged(object sender, FileSystemEventArgs e)
         {
