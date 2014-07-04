@@ -73,6 +73,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReactiveWorksheets.Server.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.EDI.FeedWatcher", "..\..\Data-Management-Suite-Private\Src\FalconSoft.Data.EDI.FeedWatcher\FalconSoft.Data.EDI.FeedWatcher.csproj", "{04C2C86E-C161-474B-96A4-FACE9C911B45}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.PythonEngine", "FalconSoft.PythonEngine\FalconSoft.PythonEngine.csproj", "{62C5F485-45DA-45CD-935A-365E4AFCB932}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.Server.EDI.Feeds", "Data-Server\DataSources\EDI\FalconSoft.Data.Server.EDI.Feeds.csproj", "{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -293,6 +297,26 @@ Global
 		{04C2C86E-C161-474B-96A4-FACE9C911B45}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{04C2C86E-C161-474B-96A4-FACE9C911B45}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{04C2C86E-C161-474B-96A4-FACE9C911B45}.Release|x86.ActiveCfg = Release|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{62C5F485-45DA-45CD-935A-365E4AFCB932}.Release|x86.ActiveCfg = Release|Any CPU
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -300,6 +324,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{65AE3850-946A-4459-AD0A-11821C451EA3} = {D8D07837-FDF8-4F87-A2F1-7AF048AE3FFE}
 		{4ACA894F-3B93-4857-9005-FA31E890DC3E} = {D8D07837-FDF8-4F87-A2F1-7AF048AE3FFE}
+		{13D10909-262E-4EC1-8EFE-B0B5CB7BD8FF} = {D8D07837-FDF8-4F87-A2F1-7AF048AE3FFE}
 		{322CB0EC-5C6C-400C-9315-2A679DA9CDA9} = {E606AEF1-47AA-46A2-AF00-F1C917B1F0FD}
 		{CA16FFE9-BC48-4DC6-BBCE-9A7A3EECA424} = {E606AEF1-47AA-46A2-AF00-F1C917B1F0FD}
 		{11E812AA-3DC2-4862-A334-AE22D8A6E443} = {43D6A22A-8BEA-475D-9E36-6062C62EAACB}

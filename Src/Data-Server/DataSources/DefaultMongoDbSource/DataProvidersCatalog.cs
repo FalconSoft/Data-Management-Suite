@@ -29,7 +29,16 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
             foreach (var dataSource in collectionDs)
             {
-                var dataProvider = new DataProvider(_connectionString, dataSource);
+                IDataProvider dataProvider;
+                if (string.IsNullOrEmpty(dataSource.Description))
+                    dataProvider = new DataProvider(_connectionString, dataSource);
+                else
+                {
+                    dataProvider = new PythonDataProvider(dataSource);
+                }
+
+
+
                 var dataProviderContext = new DataProvidersContext
                     {
                         Urn = dataSource.DataSourcePath,
@@ -39,7 +48,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
                     };
 
                 var metaDataProvider = dataProviderContext.MetaDataProvider as MetaDataProvider;
-                if (metaDataProvider != null) metaDataProvider.OnDataSourceInfoChanged = dataProvider.UpdateSourceInfo;
+                if (metaDataProvider != null & (dataProvider is DataProvider)) metaDataProvider.OnDataSourceInfoChanged = (dataProvider as DataProvider).UpdateSourceInfo;
                 listDataProviders.Add(dataProviderContext);
             }
             return listDataProviders;
@@ -64,7 +73,15 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             if (!_mongoDatabase.CollectionExists(historyCollectionName))
                 _mongoDatabase.CreateCollection(historyCollectionName);
 
-            var dataProvider = new DataProvider(_connectionString, dataSource);
+            IDataProvider dataProvider;
+            if (string.IsNullOrEmpty(dataSource.Description))
+                dataProvider = new DataProvider(_connectionString, dataSource);
+            else
+            {
+                dataProvider = new PythonDataProvider(dataSource);
+            }
+
+            //var dataProvider = new DataProvider(_connectionString, dataSource);
 
             var dataProviderContext = new DataProvidersContext
                 {
@@ -75,7 +92,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
                 };
 
             var metaDataProvider = dataProviderContext.MetaDataProvider as MetaDataProvider;
-            if (metaDataProvider != null) metaDataProvider.OnDataSourceInfoChanged = dataProvider.UpdateSourceInfo;
+            if (metaDataProvider != null & (dataProvider is DataProvider)) metaDataProvider.OnDataSourceInfoChanged = (dataProvider as DataProvider).UpdateSourceInfo;
 
             DataProviderAdded(this, dataProviderContext);
             return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
