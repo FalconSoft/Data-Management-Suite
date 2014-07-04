@@ -34,7 +34,7 @@ namespace FalconSoft.Data.Server.EDI.Feeds
 
         public RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange, IEnumerable<string> recordsToDelete, string comment = null)
         {
-            return new RevisionInfo(){IsSuccessfull = false};
+            return new RevisionInfo(){IsSuccessfull = true};
         }
 
 
