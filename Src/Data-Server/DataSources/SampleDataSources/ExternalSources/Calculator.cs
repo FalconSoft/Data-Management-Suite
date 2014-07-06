@@ -12,8 +12,8 @@ namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
         {
             if (filterRules != null && filterRules.Length >= 1)
             {
-                double inParam1 = double.Parse(filterRules[0].Value);
-                double inParam2 = double.Parse(filterRules[1].Value);
+                double inParam1 = (!string.IsNullOrWhiteSpace(filterRules[0].Value))? double.Parse(filterRules[0].Value) : 0;
+                double inParam2 = (!string.IsNullOrWhiteSpace(filterRules[1].Value))? double.Parse(filterRules[1].Value) : 0;
 
                 var result = new Dictionary<string, object>();
                 result["in1"] = inParam1;
