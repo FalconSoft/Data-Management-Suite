@@ -175,7 +175,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
         }
 
-        public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
+        public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel)
         {
             try
             {
@@ -183,7 +183,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
             catch (Exception ex)
             {
-                Clients.Caller.ErrorMessageHandledAction("GetAggregatedWorksheetInfo", ex.Message);
+                Clients.Caller.ErrorMessageHandledAction("GetAvailableAggregatedWorksheets", ex.Message);
                 return new AggregatedWorksheetInfo[0];
             }
         }
