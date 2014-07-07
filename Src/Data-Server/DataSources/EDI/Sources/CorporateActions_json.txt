@@ -142,7 +142,7 @@
         },
         "secid" : {
             "Name" : "secid",
-            "DataType" : 2,
+            "DataType" : 1,
             "Size" : null,
             "DefaultValue" : null,
             "IsNullable" : false,
