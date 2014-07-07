@@ -183,9 +183,9 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
+            //_onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
             CheckConnectionToServer();
-            _proxy.Invoke("UpdateDataSourceInfo", dataSource, oldDataSourceUrn, userToken);
+            _proxy.Invoke<object>("UpdateDataSourceInfo", dataSource, oldDataSourceUrn, userToken).ContinueWith(t => tcs.SetResult(new object()));
             task.Wait();
         }
 
@@ -193,10 +193,10 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
+            //_onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("CreateDataSourceInfo", dataSource, userToken);
+            _proxy.Invoke<object>("CreateDataSourceInfo", _connection.ConnectionId, dataSource, userToken).ContinueWith(t => tcs.SetResult(new object())); 
            
             task.Wait();
         }
@@ -205,10 +205,10 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
+            //_onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("DeleteDataSourceInfo", dataSourceUrn, userToken);
+            _proxy.Invoke<object>("DeleteDataSourceInfo", dataSourceUrn, userToken).ContinueWith(t=>tcs.SetResult(new object()));
 
             task.Wait();
         }
@@ -265,10 +265,10 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
+            //_onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("UpdateWorksheetInfo", wsInfo, oldWorksheetUrn, userToken);
+            _proxy.Invoke<object>("UpdateWorksheetInfo", wsInfo, oldWorksheetUrn, userToken).ContinueWith(t => tcs.SetResult(new object()));
            
             task.Wait();
         }
@@ -277,10 +277,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
+            //_onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
+
 
             CheckConnectionToServer();
-            _proxy.Invoke("CreateWorksheetInfo", wsInfo, userToken);
+            _proxy.Invoke<object>("CreateWorksheetInfo", wsInfo, userToken).ContinueWith(t => tcs.SetResult(new object()));
            
             task.Wait();
         }
@@ -289,11 +290,10 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
+            //_onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("DeleteWorksheetInfo", worksheetUrn, userToken);
-           
+            _proxy.Invoke<object>("DeleteWorksheetInfo", worksheetUrn, userToken).ContinueWith(t => tcs.SetResult(new object()));
             task.Wait();
         }
 
@@ -324,10 +324,10 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
+            //_onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("UpdateAggregatedWorksheetInfo", wsInfo, oldWorksheetUrn, userToken);
+            _proxy.Invoke<object>("UpdateAggregatedWorksheetInfo", wsInfo, oldWorksheetUrn, userToken).ContinueWith(t => tcs.SetResult(new object()));
             
             task.Wait();
         }
@@ -336,10 +336,10 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
+            //_onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-            _proxy.Invoke("CreateAggregatedWorksheetInfo", wsInfo, userToken);
+            _proxy.Invoke<object>("CreateAggregatedWorksheetInfo", wsInfo, userToken).ContinueWith(t => tcs.SetResult(new object()));
             
             task.Wait();
         }
@@ -348,10 +348,10 @@ namespace FalconSoft.Data.Management.Client.SignalR
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
+           // _onCompleteAction = () => { if (!task.IsCompleted) tcs.SetResult(new object()); };
 
             CheckConnectionToServer();
-                _proxy.Invoke("DeleteAggregatedWorksheetInfo", worksheetUrn, userToken);
+            _proxy.Invoke<object>("DeleteAggregatedWorksheetInfo", worksheetUrn, userToken).ContinueWith(t => tcs.SetResult(new object()));
             
             task.Wait();
         }
