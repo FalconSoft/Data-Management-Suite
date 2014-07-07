@@ -359,14 +359,14 @@ namespace FalconSoft.Data.Management.Client.SignalR
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
             CheckConnectionToServer();
-            return GetAggregatedWorksheetInfoServerCall(worksheetUrn);
+            return GetAggregatedWorksheetInfoServerCall(worksheetUrn, userToken);
         }
 
-        public AggregatedWorksheetInfo GetAggregatedWorksheetInfoServerCall(string worksheetUrn)
+        public AggregatedWorksheetInfo GetAggregatedWorksheetInfoServerCall(string worksheetUrn, string userToken)
         {
             var tcs = new TaskCompletionSource<AggregatedWorksheetInfo>();
             var task = tcs.Task;
-            _proxy.Invoke<AggregatedWorksheetInfo>("GetAggregatedWorksheetInfo", worksheetUrn)
+            _proxy.Invoke<AggregatedWorksheetInfo>("GetAggregatedWorksheetInfo", worksheetUrn, userToken)
                        .ContinueWith(t =>
                        {
                            if (t.IsFaulted)
