@@ -22,16 +22,23 @@ namespace FalconSoft.ExcelAddIn
 
 
         [ExcelFunction]
-        public static object RDP(string dataSourcePath,string primaryFieldName, string primaryKey, string outfieldName)
+        public static object RDP(object dataSourcePath)
         {
-            //var query = new []{ new FilterRule {FieldName = primaryFieldName, Operation = Operations.Equal, Value = primaryKey} };
-            //var result = FacadesFactory.CreateReactiveDataQueryFacade().GetData(ConsoleClientToken, dataSourcePath, query);
-            //return result.Last(f=>f.ContainsKey(outfieldName))[outfieldName];
-            return
-                FacadesFactory.CreateReactiveDataQueryFacade()
-                    .GetData(ConsoleClientToken, dataSourcePath)
-                    .First()
-                    .Keys.First();
+            string msg = "hello";
+            try
+            {
+               // var query = new[] { new FilterRule { FieldName = primaryFieldName, Operation = Operations.Equal, Value = primaryKey } };
+                var result = FacadesFactory.CreateReactiveDataQueryFacade().GetData(ConsoleClientToken, dataSourcePath.ToString(), null);
+                msg = result.ToString();
+            }
+            catch (Exception ex)
+            {
+
+                msg = ex.Message;
+            }
+
+
+            return msg;
         } 
 
 
