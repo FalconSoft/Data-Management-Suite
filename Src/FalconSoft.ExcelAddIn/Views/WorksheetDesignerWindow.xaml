@@ -4,9 +4,13 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:views="clr-namespace:FalconSoft.ReactiveWorksheets.Admin.Views;assembly=FalconSoft.ReactiveWorksheets.Admin"
+             xmlns:viewModels="clr-namespace:FalconSoft.ReactiveWorksheets.Admin.ViewModels;assembly=FalconSoft.ReactiveWorksheets.Admin"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
+    <Window.DataContext>
+        <viewModels:WorksheetDesignerViewModel />
+    </Window.DataContext>
     <Grid>
-        <views:WorksheetDesignerView HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <views:WorksheetDesignerView DataContext="{Binding}" />
     </Grid>
 </Window>

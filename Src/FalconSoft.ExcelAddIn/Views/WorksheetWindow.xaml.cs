@@ -1,4 +1,6 @@
-﻿namespace FalconSoft.ExcelAddIn.Views
+﻿using FalconSoft.ReactiveWorksheets.ViewModels;
+
+namespace FalconSoft.ExcelAddIn.Views
 {
     /// <summary>
     /// Interaction logic for WorksheetWindow.xaml
@@ -8,6 +10,7 @@
         public WorksheetWindow()
         {
             InitializeComponent();
+            DataContext = new WorksheetViewModel(null);
         }
     }
 }
