@@ -38,6 +38,10 @@
     <Reference Include="DevExpress.Xpf.Docking.v14.1, Version=14.1.3.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="ExcelDna.Integration">
       <HintPath>..\packages\Excel-DNA.0.32.0\tools\ExcelDna.Integration.dll</HintPath>
+    <Reference Include="ExcelDna.Integration, Version=0.32.5236.31783, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Excel-DNA.Lib.0.32.0\lib\ExcelDna.Integration.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -51,6 +55,7 @@
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\CustomRibbon.cs" />
+    <Compile Include="ReactiveDataFunctions.cs" />
     <Compile Include="Utils\UserForm.cs" />
     <Compile Include="Views\WorksheetDesignerWindow.xaml.cs">
       <DependentUpon>WorksheetDesignerWindow.xaml</DependentUpon>
@@ -60,6 +65,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
     <Content Include="FalconSoft.ExcelAddIn-AddIn.dna">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
@@ -102,6 +110,13 @@
     <ProjectReference Include="..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Components\FalconSoft.Data.Management.Components.csproj">
       <Project>{ca16ffe9-bc48-4dc6-bbce-9a7a3eeca424}</Project>
       <Name>FalconSoft.Data.Management.Components</Name>
+    <ProjectReference Include="..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
+      <Project>{322CB0EC-5C6C-400C-9315-2A679DA9CDA9}</Project>
+      <Name>FalconSoft.Data.Management.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Communications\SignalR\Client.SignalR\FalconSoft.Data.Management.Client.SignalR.csproj">
+      <Project>{750EA2E3-E290-4E44-BBF0-033FF8B9FC9D}</Project>
+      <Name>FalconSoft.Data.Management.Client.SignalR</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
