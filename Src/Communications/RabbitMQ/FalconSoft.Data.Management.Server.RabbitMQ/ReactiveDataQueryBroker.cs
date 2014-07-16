@@ -117,25 +117,56 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
-            _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
-            _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath, filterRules).Subscribe(
-                rcpArgs =>
+            try
+            {
+                _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
+                _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath, filterRules).Subscribe(
+                    rcpArgs =>
+                    {
+                        var userTokenLocal = string.Copy(userToken);
+                        var dataSourcePathLocal = string.Copy(dataSourcePath);
+                        var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
+                        var message = new RabbitMQResponce {Data = rcpArgs};
+                        _commandChannel.BasicPublish("GetDataChangesTopic",
+                            routingKey, null, CastToBytes(message));
+                    }, () =>
+                    {
+                        var userTokenLocal = string.Copy(userToken);
+                        var dataSourcePathLocal = string.Copy(dataSourcePath);
+                        var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
+                        var message = new RabbitMQResponce {LastMessage = true};
+                        _commandChannel.BasicPublish("GetDataChangesTopic",
+                            routingKey, null, CastToBytes(message));
+                    });
+                if (true)
                 {
                     var userTokenLocal = string.Copy(userToken);
                     var dataSourcePathLocal = string.Copy(dataSourcePath);
                     var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
-                    var message = new RabbitMQResponce {Data = rcpArgs};
+                    var message = new RabbitMQResponce
+                    {
+                        Data = new[]
+                        {
+                            new RecordChangedParam
+                            {
+                                RecordKey = "1",
+                                ChangeSource = "n",
+                                ChangedAction = RecordChangedAction.AddedOrUpdated,
+                                OriginalRecordKey = "1",
+                                RecordValues = new Dictionary<string, object> {{"id", 1}, {"Value", 32}},
+                                UserToken = userTokenLocal
+                            },
+                        }
+                    };
                     _commandChannel.BasicPublish("GetDataChangesTopic",
                         routingKey, null, CastToBytes(message));
-                }, () =>
-                {
-                    var userTokenLocal = string.Copy(userToken);
-                    var dataSourcePathLocal = string.Copy(dataSourcePath);
-                    var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
-                    var message = new RabbitMQResponce { LastMessage = true };
-                    _commandChannel.BasicPublish("GetDataChangesTopic",
-                        routingKey, null, CastToBytes(message));
-                });
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         private byte[] CastToBytes(object obj)

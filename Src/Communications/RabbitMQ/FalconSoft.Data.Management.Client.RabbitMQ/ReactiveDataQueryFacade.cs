@@ -76,12 +76,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
 
             var queueName = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.QueueBind(queueName, "GetDataChangesTopic", dataSourcePath);
-            _commandChannel.QueueBind(queueName, "GetDataChangesTopic", userToken);
+            _commandChannel.QueueBind(queueName, "GetDataChangesTopic", dataSourcePath + "." + userToken);
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(queueName, true, consumer);
-
             
             var message = MethdoArgsToByte("GetDataChanges", userToken, new object[] { dataSourcePath, filterRules });
 
