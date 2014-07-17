@@ -62,6 +62,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinaryConverter.cs" />
+    <Compile Include="CommandBroker.cs" />
+    <Compile Include="MetaDataBroker.cs" />
     <Compile Include="ReactiveDataQueryBroker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

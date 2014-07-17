@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Threading.Tasks;
 using FalconSoft.Data.Management.Server.RabbitMQ;
 
 namespace FalconSoft.Data.Server.RabbitMQ
@@ -15,6 +16,7 @@ namespace FalconSoft.Data.Server.RabbitMQ
                 ServerApp.Logger.Info("Bootstrapper configured...");
                 bootstrapper.Run();
                 ServerApp.Logger.Info("Bootstrapper started running...");
+                
             }
             catch (Exception ex)
             {
@@ -24,10 +26,23 @@ namespace FalconSoft.Data.Server.RabbitMQ
 
             AppDomain.CurrentDomain.UnhandledException += (sender, args) => ServerApp.Logger.Error("UnhandledException -> ", (Exception)args.ExceptionObject);
             ServerApp.Logger.Info("Server...");
-
             const string hostName = "localhost";
-            var reactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName, ServerApp.ReactiveDataQueryFacade,
-                ServerApp.Logger);
+            Task.Factory.StartNew(() =>
+            {
+                var reactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName,
+                    ServerApp.ReactiveDataQueryFacade,
+                    ServerApp.Logger);
+            });
+            Task.Factory.StartNew(() =>
+            {
+                var metaDataAdminBroker = new MetaDataBroker(hostName, ServerApp.MetaDataFacade, ServerApp.Logger);
+            });
+
+            Task.Factory.StartNew(() =>
+            {
+                var commandBroker = new CommandBroker(hostName, ServerApp.CommandFacade, ServerApp.Logger);
+            });
+           
             Console.WriteLine("Server runs. Press 'Enter' to stop server work.");
             Console.ReadLine();
         }

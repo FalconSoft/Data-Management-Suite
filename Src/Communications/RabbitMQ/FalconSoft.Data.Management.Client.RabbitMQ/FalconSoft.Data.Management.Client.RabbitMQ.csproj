@@ -59,7 +59,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinaryConverter.cs" />
+    <Compile Include="CommandFacade.cs" />
     <Compile Include="FacadeFactory.cs" />
+    <Compile Include="MetaDataFacade.cs" />
     <Compile Include="ReactiveDataQueryFacade.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

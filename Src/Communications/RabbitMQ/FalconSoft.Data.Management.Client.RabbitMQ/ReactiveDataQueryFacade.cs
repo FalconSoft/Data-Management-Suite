@@ -12,7 +12,7 @@ using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
-    public class ReactiveDataQueryFacade : IReactiveDataQueryFacade
+    internal class ReactiveDataQueryFacade : IReactiveDataQueryFacade
     {
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
@@ -52,6 +52,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             var subject = new Subject<Dictionary<string, object>>();
             Task.Factory.StartNew(() =>
             {
+                var queueName = string.Copy(replyTo);
                 while (true)
                 {
                     var ea = consumer.Queue.Dequeue();
@@ -66,6 +67,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         subject.OnNext(dictionary);
                     }
                 }
+                _commandChannel.QueueDelete(queueName);
                 subject.OnCompleted();
             });
             return subject.ToEnumerable();
@@ -75,11 +77,11 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
 
-            var queueName = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.QueueBind(queueName, "GetDataChangesTopic", dataSourcePath + "." + userToken);
+            var replyTo = _commandChannel.QueueDeclare().QueueName;
+            _commandChannel.QueueBind(replyTo, "GetDataChangesTopic", dataSourcePath + "." + userToken);
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(queueName, true, consumer);
+            _commandChannel.BasicConsume(replyTo, true, consumer);
             
             var message = MethdoArgsToByte("GetDataChanges", userToken, new object[] { dataSourcePath, filterRules });
 
@@ -87,6 +89,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             var subject = new Subject<RecordChangedParam[]>();
             Task.Factory.StartNew(() =>
             {
+                var queueName = string.Copy(replyTo);
                 while (true)
                 {
                     var ea = consumer.Queue.Dequeue();
@@ -100,6 +103,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     subject.OnNext(rcpArray);
 
                 }
+                _commandChannel.QueueDelete(queueName);
                 subject.OnCompleted();
             });
             return subject.AsObservable();
