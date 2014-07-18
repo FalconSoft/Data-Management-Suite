@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -12,12 +13,54 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
         private const string MetadataQueueName = "MetaDataFacadeRPC";
+        private const string MetadataExchangeName = "MetaDataFacadeExchange";
+        private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
 
         public MetaDataFacade(string hostName)
         {
             var factory = new ConnectionFactory { HostName = hostName };
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
+
+            _commandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
+
+            var queueName = _commandChannel.QueueDeclare().QueueName;
+            _commandChannel.QueueBind(queueName, MetadataExchangeName, "");
+
+            var consumer = new QueueingBasicConsumer(_commandChannel);
+            _commandChannel.BasicConsume(queueName, false, consumer);
+
+            Task.Factory.StartNew(() =>
+            {
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+
+                    var objectInfo = BinaryConverter.CastTo<SourceObjectChangedEventArgs>(ea.Body);
+
+                    if (ObjectInfoChanged != null)
+                        ObjectInfoChanged(this, objectInfo);
+                }
+            });
+
+            var queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
+            _commandChannel.QueueBind(queueName, MetadataExchangeName, "");
+
+            var consumerForExceptions = new QueueingBasicConsumer(_commandChannel);
+            _commandChannel.BasicConsume(queueNameForExceptions, false, consumer);
+
+            Task.Factory.StartNew(() =>
+            {
+                while (true)
+                {
+                    var ea = consumerForExceptions.Queue.Dequeue();
+
+                    var mea = BinaryConverter.CastTo<string>(ea.Body);
+
+                    if (ObjectInfoChanged != null)
+                        ac(this, objectInfo);
+                }
+            });
         }
 
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
@@ -47,8 +90,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 var ea = consumer.Queue.Dequeue();
                 if (ea.BasicProperties.CorrelationId == correlationId)
+                {
                     _commandChannel.QueueDelete(queueName);
-                return BinaryConverter.CastTo<DataSourceInfo[]>(ea.Body);
+                    return BinaryConverter.CastTo<DataSourceInfo[]>(ea.Body);
+                }
             }
         }
 
@@ -73,13 +118,15 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 MethodsArgs = new object[] { dataSourceUrn }
             };
             _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
-            
+
             while (true)
             {
                 var ea = consumer.Queue.Dequeue();
                 if (ea.BasicProperties.CorrelationId == correlationId)
+                {
                     _commandChannel.QueueDelete(queueName);
-                return BinaryConverter.CastTo<DataSourceInfo>(ea.Body);
+                    return BinaryConverter.CastTo<DataSourceInfo>(ea.Body);
+                }
             }
         }
 
@@ -152,8 +199,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 var ea = consumer.Queue.Dequeue();
                 if (ea.BasicProperties.CorrelationId == correlationId)
+                {
                     _commandChannel.QueueDelete(queueName);
-                return BinaryConverter.CastTo<WorksheetInfo>(ea.Body);
+                    return BinaryConverter.CastTo<WorksheetInfo>(ea.Body);
+                }
             }
         }
 
@@ -184,8 +233,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 var ea = consumer.Queue.Dequeue();
                 if (ea.BasicProperties.CorrelationId == correlationId)
+                {
                     _commandChannel.QueueDelete(queueName);
-                return BinaryConverter.CastTo<WorksheetInfo[]>(ea.Body);
+                    return BinaryConverter.CastTo<WorksheetInfo[]>(ea.Body);
+                }
             }
         }
 
@@ -258,8 +309,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 var ea = consumer.Queue.Dequeue();
                 if (ea.BasicProperties.CorrelationId == correlationId)
+                {
                     _commandChannel.QueueDelete(queueName);
-                return BinaryConverter.CastTo<AggregatedWorksheetInfo[]>(ea.Body);
+                    return BinaryConverter.CastTo<AggregatedWorksheetInfo[]>(ea.Body);
+                }
             }
         }
 
@@ -332,8 +385,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 var ea = consumer.Queue.Dequeue();
                 if (ea.BasicProperties.CorrelationId == correlationId)
+                {
                     _commandChannel.QueueDelete(queueName);
-                return BinaryConverter.CastTo<AggregatedWorksheetInfo>(ea.Body);
+                    return BinaryConverter.CastTo<AggregatedWorksheetInfo>(ea.Body);
+                }
             }
         }
 
@@ -364,9 +419,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 var ea = consumer.Queue.Dequeue();
                 if (ea.BasicProperties.CorrelationId == correlationId)
+                {
                     _commandChannel.QueueDelete(queueName);
-
-                return BinaryConverter.CastTo<ServerInfo>(ea.Body);
+                    return BinaryConverter.CastTo<ServerInfo>(ea.Body);
+                }
             }
         }
 

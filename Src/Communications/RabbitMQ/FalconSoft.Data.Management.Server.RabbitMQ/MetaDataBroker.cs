@@ -1,4 +1,5 @@
-﻿using FalconSoft.Data.Management.Common;
+﻿using System;
+using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
@@ -13,15 +14,28 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private IConnection _connection;
         private readonly IModel _commandChannel;
         private const string MetadataQueueName = "MetaDataFacadeRPC";
+        private const string MetadataExchangeName = "MetaDataFacadeExchange";
+        private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
 
         public MetaDataBroker(string hostName, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
         {
             _metaDataAdminFacade = metaDataAdminFacade;
             _logger = logger;
+
             var factory = new ConnectionFactory { HostName = hostName };
             _connection = factory.CreateConnection();
+            
             _commandChannel = _connection.CreateModel();
+            
             _commandChannel.QueueDeclare(MetadataQueueName, false, false, false, null);
+
+            _commandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
+            
+            _metaDataAdminFacade.ObjectInfoChanged += OnObjectInfoChanged;
+
+            _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
+
+            _metaDataAdminFacade.ErrorMessageHandledAction = OnErrorMessageHandledAction;
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(MetadataQueueName, false, consumer);
@@ -198,6 +212,21 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             props.CorrelationId = correlationId;
 
             _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+        }
+
+        // Pub/Sub notification to all users. Type : fanout
+        private void OnObjectInfoChanged(object sender, SourceObjectChangedEventArgs e)
+        {
+            var messageBytes = BinaryConverter.CastToBytes(e);
+            _commandChannel.BasicPublish(MetadataExchangeName, "", null, messageBytes);
+        }
+
+        // Pub/Sub notification to all users. Type : fanout
+        private void OnErrorMessageHandledAction(string arg1, string arg2)
+        {
+            var typle = Tuple.Create(arg1, arg2);
+            var messageBytes = BinaryConverter.CastToBytes(typle);
+            _commandChannel.BasicPublish(MetadataExchangeName, "", null, messageBytes);
         }
     }
 }
