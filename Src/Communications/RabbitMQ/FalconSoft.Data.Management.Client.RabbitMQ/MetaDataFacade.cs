@@ -233,7 +233,34 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            throw new NotImplementedException();
+            var correlationId = Guid.NewGuid().ToString();
+
+            var queueName = _commandChannel.QueueDeclare().QueueName;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+            props.ReplyTo = queueName;
+
+            var consumer = new QueueingBasicConsumer(_commandChannel);
+
+            _commandChannel.BasicConsume(queueName, false, consumer);
+
+            var methodArgs = new MethodArgs
+            {
+                MethodName = "GetAvailableAggregatedWorksheets",
+                UserToken = userToken,
+                MethodsArgs = new object[] { minAccessLevel }
+            };
+
+            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+            while (true)
+            {
+                var ea = consumer.Queue.Dequeue();
+                if (ea.BasicProperties.CorrelationId == correlationId)
+                    _commandChannel.QueueDelete(queueName);
+                return BinaryConverter.CastTo<AggregatedWorksheetInfo[]>(ea.Body);
+            }
         }
 
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
