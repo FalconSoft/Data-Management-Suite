@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -16,9 +15,9 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
         private readonly string _connectionString;
         private MongoDatabase _mongoDatabase;
 
-        public DataProvidersCatalog()
+        public DataProvidersCatalog(string connectionString)
         {
-            _connectionString = ConfigurationManager.AppSettings["MongoDataConnectionString"];
+            _connectionString = connectionString;
         }
 
         public IEnumerable<DataProvidersContext> GetProviders()
@@ -36,8 +35,6 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
                 {
                     dataProvider = new PythonDataProvider(dataSource);
                 }
-
-
 
                 var dataProviderContext = new DataProvidersContext
                     {

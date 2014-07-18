@@ -29,7 +29,8 @@ namespace FalconSoft.Data.Server.Installers
             try
             {
                 var bootstrapper = new Bootstrapper();
-                bootstrapper.Configure(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MongoDataConnectionString"]);
+                bootstrapper.Configure(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"],
+                    ConfigurationManager.AppSettings["MongoDataConnectionString"], ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["CatalogDlls"]);
                 ServerApp.Logger.Info("Bootstrapper configured...");
                 bootstrapper.Run();
                 ServerApp.Logger.Info("Bootstrapper started running...");
