@@ -97,6 +97,27 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                             (AccessLevel)message.MethodsArgs[0]);
                         break;
                     }
+                case "UpdateAggregatedWorksheetInfo":
+                    {
+                        UpdateAggregatedWorksheetInfo((AggregatedWorksheetInfo)message.MethodsArgs[0],(string)message.MethodsArgs[1], 
+                            message.UserToken);
+                        break;
+                    }
+                case "CreateAggregatedWorksheetInfo":
+                    {
+                        CreateAggregatedWorksheetInfo((AggregatedWorksheetInfo)message.MethodsArgs[0], message.UserToken);
+                        break;
+                    }
+                case "DeleteAggregatedWorksheetInfo":
+                    {
+                        DeleteAggregatedWorksheetInfo((string)message.MethodsArgs[0], message.UserToken);
+                        break;
+                    }
+                case "GetAggregatedWorksheetInfo":
+                {
+                    GetAggregatedWorksheetInfo(basicProperties, (string) message.MethodsArgs[0], message.UserToken);
+                        break;
+                    }
             }
         }
 
@@ -189,6 +210,35 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private void GetAvailableAggregatedWorksheets(IBasicProperties basicProperties, string userToken, AccessLevel accessLevel)
         {
             var data = _metaDataAdminFacade.GetAvailableAggregatedWorksheets(userToken, accessLevel);
+
+            var correlationId = basicProperties.CorrelationId;
+
+            var replyTo = basicProperties.ReplyTo;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+        }
+
+        public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
+        {
+            _metaDataAdminFacade.UpdateAggregatedWorksheetInfo(wsInfo, oldWorksheetUrn, userToken);
+        }
+
+        public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userToken)
+        {
+           _metaDataAdminFacade.CreateAggregatedWorksheetInfo(wsInfo, userToken);
+        }
+
+        public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userToken)
+        {
+           _metaDataAdminFacade.DeleteAggregatedWorksheetInfo(worksheetUrn, userToken);
+        }
+
+        public void GetAggregatedWorksheetInfo(IBasicProperties basicProperties, string worksheetUrn, string userToken)
+        {
+            var data = _metaDataAdminFacade.GetAggregatedWorksheetInfo(worksheetUrn, userToken);
 
             var correlationId = basicProperties.CorrelationId;
 
