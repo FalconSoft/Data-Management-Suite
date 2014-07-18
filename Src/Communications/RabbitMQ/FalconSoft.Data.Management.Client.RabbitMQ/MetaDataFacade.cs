@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -13,8 +9,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
     internal class MetaDataFacade : IMetaDataAdminFacade
     {
-        private IConnection _connection;
-        private IModel _commandChannel;
+        private readonly IConnection _connection;
+        private readonly IModel _commandChannel;
         private const string MetadataQueueName = "MetaDataFacadeRPC";
 
         public MetaDataFacade(string hostName)
@@ -26,18 +22,48 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            throw new NotImplementedException();
-        }
-
-        public DataSourceInfo GetDataSourceInfo(string dataSourceUrn, string userToken)
-        {
             var correlationId = Guid.NewGuid().ToString();
+            
             var queueName = _commandChannel.QueueDeclare().QueueName;
+            
             var props = _commandChannel.CreateBasicProperties();
             props.CorrelationId = correlationId;
             props.ReplyTo = queueName;
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
+            
+            _commandChannel.BasicConsume(queueName, false, consumer);
+
+            var methodArgs = new MethodArgs
+            {
+                MethodName = "GetAvailableDataSources",
+                UserToken = userToken,
+                MethodsArgs = new object[] { minAccessLevel }
+            };
+
+            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+            while (true)
+            {
+                var ea = consumer.Queue.Dequeue();
+                if (ea.BasicProperties.CorrelationId == correlationId)
+                    _commandChannel.QueueDelete(queueName);
+                return BinaryConverter.CastTo<DataSourceInfo[]>(ea.Body);
+            }
+        }
+
+        public DataSourceInfo GetDataSourceInfo(string dataSourceUrn, string userToken)
+        {
+            var correlationId = Guid.NewGuid().ToString();
+            
+            var queueName = _commandChannel.QueueDeclare().QueueName;
+            
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+            props.ReplyTo = queueName;
+
+            var consumer = new QueueingBasicConsumer(_commandChannel);
+            
             _commandChannel.BasicConsume(queueName, false, consumer);
 
             var methodArgs = new MethodArgs
@@ -47,8 +73,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 MethodsArgs = new object[] { dataSourceUrn }
             };
             _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
-
-
+            
             while (true)
             {
                 var ea = consumer.Queue.Dequeue();
@@ -60,42 +85,150 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userToken)
         {
-            throw new NotImplementedException();
+            var message = new MethodArgs
+            {
+                MethodName = "UpdateDataSourceInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] {dataSource, oldDataSourceUrn}
+            };
+
+            var messageBytes = BinaryConverter.CastToBytes(message);
+
+            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
         }
 
         public void CreateDataSourceInfo(DataSourceInfo dataSource, string userToken)
         {
-            throw new NotImplementedException();
+            var message = new MethodArgs
+            {
+                MethodName = "CreateDataSourceInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] { dataSource }
+            };
+
+            var messageBytes = BinaryConverter.CastToBytes(message);
+
+            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
         }
 
         public void DeleteDataSourceInfo(string dataSourceUrn, string userToken)
         {
-            throw new NotImplementedException();
+            var message = new MethodArgs
+            {
+                MethodName = "DeleteDataSourceInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] { dataSourceUrn }
+            };
+
+            var messageBytes = BinaryConverter.CastToBytes(message);
+
+            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
         }
 
         public WorksheetInfo GetWorksheetInfo(string worksheetUrn, string userToken)
         {
-            throw new NotImplementedException();
+            var correlationId = Guid.NewGuid().ToString();
+
+            var queueName = _commandChannel.QueueDeclare().QueueName;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+            props.ReplyTo = queueName;
+
+            var consumer = new QueueingBasicConsumer(_commandChannel);
+
+            _commandChannel.BasicConsume(queueName, false, consumer);
+
+            var methodArgs = new MethodArgs
+            {
+                MethodName = "GetWorksheetInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] { worksheetUrn }
+            };
+
+            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+            while (true)
+            {
+                var ea = consumer.Queue.Dequeue();
+                if (ea.BasicProperties.CorrelationId == correlationId)
+                    _commandChannel.QueueDelete(queueName);
+                return BinaryConverter.CastTo<WorksheetInfo>(ea.Body);
+            }
         }
 
         public WorksheetInfo[] GetAvailableWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            throw new NotImplementedException();
+            var correlationId = Guid.NewGuid().ToString();
+
+            var queueName = _commandChannel.QueueDeclare().QueueName;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+            props.ReplyTo = queueName;
+
+            var consumer = new QueueingBasicConsumer(_commandChannel);
+
+            _commandChannel.BasicConsume(queueName, false, consumer);
+
+            var methodArgs = new MethodArgs
+            {
+                MethodName = "GetAvailableWorksheets",
+                UserToken = userToken,
+                MethodsArgs = new object[] { minAccessLevel }
+            };
+
+            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+            while (true)
+            {
+                var ea = consumer.Queue.Dequeue();
+                if (ea.BasicProperties.CorrelationId == correlationId)
+                    _commandChannel.QueueDelete(queueName);
+                return BinaryConverter.CastTo<WorksheetInfo[]>(ea.Body);
+            }
         }
 
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
         {
-            throw new NotImplementedException();
+            var message = new MethodArgs
+            {
+                MethodName = "UpdateWorksheetInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] { wsInfo, oldWorksheetUrn }
+            };
+
+            var messageBytes = BinaryConverter.CastToBytes(message);
+
+            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
         }
 
         public void CreateWorksheetInfo(WorksheetInfo wsInfo, string userToken)
         {
-            throw new NotImplementedException();
+            var message = new MethodArgs
+            {
+                MethodName = "CreateWorksheetInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] { wsInfo }
+            };
+
+            var messageBytes = BinaryConverter.CastToBytes(message);
+
+            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
         }
 
         public void DeleteWorksheetInfo(string worksheetUrn, string userToken)
         {
-            throw new NotImplementedException();
+            var message = new MethodArgs
+            {
+                MethodName = "DeleteWorksheetInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] { worksheetUrn }
+            };
+
+            var messageBytes = BinaryConverter.CastToBytes(message);
+
+            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
         }
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
@@ -105,32 +238,115 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
         {
-            throw new NotImplementedException();
+            var message = new MethodArgs
+            {
+                MethodName = "UpdateAggregatedWorksheetInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] { wsInfo, oldWorksheetUrn }
+            };
+
+            var messageBytes = BinaryConverter.CastToBytes(message);
+
+            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
         }
 
         public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userToken)
         {
-            throw new NotImplementedException();
+            var message = new MethodArgs
+            {
+                MethodName = "CreateAggregatedWorksheetInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] { wsInfo }
+            };
+
+            var messageBytes = BinaryConverter.CastToBytes(message);
+
+            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
         }
 
         public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
-            throw new NotImplementedException();
+            var message = new MethodArgs
+            {
+                MethodName = "DeleteAggregatedWorksheetInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] { worksheetUrn }
+            };
+
+            var messageBytes = BinaryConverter.CastToBytes(message);
+
+            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
         }
 
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
-            throw new NotImplementedException();
+            var correlationId = Guid.NewGuid().ToString();
+
+            var queueName = _commandChannel.QueueDeclare().QueueName;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+            props.ReplyTo = queueName;
+
+            var consumer = new QueueingBasicConsumer(_commandChannel);
+
+            _commandChannel.BasicConsume(queueName, false, consumer);
+
+            var methodArgs = new MethodArgs
+            {
+                MethodName = "GetAggregatedWorksheetInfo",
+                UserToken = userToken,
+                MethodsArgs = new object[] { worksheetUrn }
+            };
+
+            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+            while (true)
+            {
+                var ea = consumer.Queue.Dequeue();
+                if (ea.BasicProperties.CorrelationId == correlationId)
+                    _commandChannel.QueueDelete(queueName);
+                return BinaryConverter.CastTo<AggregatedWorksheetInfo>(ea.Body);
+            }
         }
 
         public ServerInfo GetServerInfo()
         {
-            throw new NotImplementedException();
+            var correlationId = Guid.NewGuid().ToString();
+
+            var queueName = _commandChannel.QueueDeclare().QueueName;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+            props.ReplyTo = queueName;
+
+            var consumer = new QueueingBasicConsumer(_commandChannel);
+
+            _commandChannel.BasicConsume(queueName, false, consumer);
+
+            var methodArgs = new MethodArgs
+            {
+                MethodName = "GetServerInfo",
+                UserToken = null,
+                MethodsArgs = null
+            };
+
+            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+            while (true)
+            {
+                var ea = consumer.Queue.Dequeue();
+                if (ea.BasicProperties.CorrelationId == correlationId)
+                    _commandChannel.QueueDelete(queueName);
+
+                return BinaryConverter.CastTo<ServerInfo>(ea.Body);
+            }
         }
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            _commandChannel.Close();
+            _connection.Close();
         }
 
         public event EventHandler<SourceObjectChangedEventArgs> ObjectInfoChanged;

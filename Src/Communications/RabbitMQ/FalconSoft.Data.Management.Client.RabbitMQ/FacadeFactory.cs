@@ -70,10 +70,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public ISecurityFacade CreateSecurityFacade()
         {
-            //if (string.IsNullOrWhiteSpace(_serverUrl))
+            if (string.IsNullOrWhiteSpace(_serverUrl))
             throw new ApplicationException("Server Url is not initialized in bootstrapper");
 
-            //return new SecurityFacade(_serverUrl);
+            return new SecurityFacade(_serverUrl);
         }
     }
 }

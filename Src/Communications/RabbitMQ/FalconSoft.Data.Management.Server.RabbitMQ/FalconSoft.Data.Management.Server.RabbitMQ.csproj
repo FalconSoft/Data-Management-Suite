@@ -67,6 +67,7 @@
     <Compile Include="MetaDataBroker.cs" />
     <Compile Include="ReactiveDataQueryBroker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SecurityBroker.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">

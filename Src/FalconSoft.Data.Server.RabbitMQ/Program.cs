@@ -42,6 +42,11 @@ namespace FalconSoft.Data.Server.RabbitMQ
             {
                 var commandBroker = new CommandBroker(hostName, ServerApp.CommandFacade, ServerApp.Logger);
             });
+
+            Task.Factory.StartNew(() =>
+            {
+                var sucurityBroker = new SecurityBroker(hostName, ServerApp.SecurityFacade, ServerApp.Logger);
+            });
            
             Console.WriteLine("Server runs. Press 'Enter' to stop server work.");
             Console.ReadLine();
