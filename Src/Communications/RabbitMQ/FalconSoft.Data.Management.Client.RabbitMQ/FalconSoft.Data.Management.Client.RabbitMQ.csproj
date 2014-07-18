@@ -63,9 +63,12 @@
     <Compile Include="CommandFacade.cs" />
     <Compile Include="FacadeFactory.cs" />
     <Compile Include="MetaDataFacade.cs" />
+    <Compile Include="PermissionSecurityFacade.cs" />
     <Compile Include="ReactiveDataQueryFacade.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SearchFacade.cs" />
     <Compile Include="SecurityFacade.cs" />
+    <Compile Include="TemporalDataQueryFacade.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">

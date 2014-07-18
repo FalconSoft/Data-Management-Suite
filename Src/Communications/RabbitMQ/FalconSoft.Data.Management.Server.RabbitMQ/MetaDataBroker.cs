@@ -24,13 +24,13 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             var factory = new ConnectionFactory { HostName = hostName };
             _connection = factory.CreateConnection();
-            
+
             _commandChannel = _connection.CreateModel();
-            
+
             _commandChannel.QueueDeclare(MetadataQueueName, false, false, false, null);
 
             _commandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
-            
+
             _metaDataAdminFacade.ObjectInfoChanged += OnObjectInfoChanged;
 
             _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
@@ -109,6 +109,28 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     {
                         GetAvailableAggregatedWorksheets(basicProperties, message.UserToken,
                             (AccessLevel)message.MethodsArgs[0]);
+                        break;
+                    }
+                case "UpdateAggregatedWorksheetInfo":
+                    {
+                        UpdateAggregatedWorksheetInfo((AggregatedWorksheetInfo)message.MethodsArgs[0],
+                            (string)message.MethodsArgs[1],
+                            message.UserToken);
+                        break;
+                    }
+                case "CreateAggregatedWorksheetInfo":
+                    {
+                        CreateAggregatedWorksheetInfo((AggregatedWorksheetInfo)message.MethodsArgs[0], message.UserToken);
+                        break;
+                    }
+                case "DeleteAggregatedWorksheetInfo":
+                    {
+                        DeleteAggregatedWorksheetInfo((string)message.MethodsArgs[0], message.UserToken);
+                        break;
+                    }
+                case "GetAggregatedWorksheetInfo":
+                    {
+                        GetAggregatedWorksheetInfo(basicProperties, (string)message.MethodsArgs[0], message.UserToken);
                         break;
                     }
             }
@@ -200,7 +222,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _metaDataAdminFacade.DeleteWorksheetInfo(worksheetUrn, userToken);
         }
 
-        private void GetAvailableAggregatedWorksheets(IBasicProperties basicProperties, string userToken, AccessLevel accessLevel)
+        private void GetAvailableAggregatedWorksheets(IBasicProperties basicProperties, string userToken,
+            AccessLevel accessLevel)
         {
             var data = _metaDataAdminFacade.GetAvailableAggregatedWorksheets(userToken, accessLevel);
 
@@ -228,5 +251,35 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var messageBytes = BinaryConverter.CastToBytes(typle);
             _commandChannel.BasicPublish(MetadataExchangeName, "", null, messageBytes);
         }
+
+        public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
+        {
+            _metaDataAdminFacade.UpdateAggregatedWorksheetInfo(wsInfo, oldWorksheetUrn, userToken);
+        }
+
+        public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userToken)
+        {
+            _metaDataAdminFacade.CreateAggregatedWorksheetInfo(wsInfo, userToken);
+        }
+
+        public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userToken)
+        {
+            _metaDataAdminFacade.DeleteAggregatedWorksheetInfo(worksheetUrn, userToken);
+        }
+
+        public void GetAggregatedWorksheetInfo(IBasicProperties basicProperties, string worksheetUrn, string userToken)
+        {
+            var data = _metaDataAdminFacade.GetAggregatedWorksheetInfo(worksheetUrn, userToken);
+
+            var correlationId = basicProperties.CorrelationId;
+
+            var replyTo = basicProperties.ReplyTo;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+        }
     }
+
 }

@@ -200,17 +200,20 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 onNotifcation("Some text", "Transfer complete");
             }
 
-            while (true)
+            Task.Factory.StartNew(() =>
             {
-                var ea = consumer.Queue.Dequeue();
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
 
-                var ri = BinaryConverter.CastTo<RevisionInfo>(ea.Body);
+                    var ri = BinaryConverter.CastTo<RevisionInfo>(ea.Body);
 
-                if (onSuccess != null)
-                    onSuccess(ri);
-                
-                break;
-            }
+                    if (onSuccess != null)
+                        onSuccess(ri);
+
+                    break;
+                }
+            });
         }
 
         public void Dispose()

@@ -27,16 +27,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public IEnumerable<Dictionary<string, object>> GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
              FilterRule[] filterRules = null)
         {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<T> GetData<T>(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
-        {
             var correlationId = Guid.NewGuid().ToString();
             var consumer = new QueueingBasicConsumer(_commandChannel);
             var replyTo = _commandChannel.QueueDeclare().QueueName;
@@ -46,7 +36,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             props.ReplyTo = replyTo;
             props.CorrelationId = correlationId;
 
-            var message = MethdoArgsToByte("GetData", userToken, new object[] { dataSourcePath, filterRules });
+            var message = MethdoArgsToByte("GetAggregatedData", userToken, new object[] { dataSourcePath, aggregatedWorksheet, filterRules });
 
             _commandChannel.BasicPublish("", RPCQueryName, props, message);
             var subject = new Subject<Dictionary<string, object>>();
@@ -73,6 +63,54 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             return subject.ToEnumerable();
         }
 
+        public IEnumerable<T> GetData<T>(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
+        {
+            var correlationId = Guid.NewGuid().ToString();
+
+            var consumer = new QueueingBasicConsumer(_commandChannel);
+
+            var replyTo = _commandChannel.QueueDeclare().QueueName;
+            _commandChannel.BasicConsume(replyTo, true, consumer);
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.ReplyTo = replyTo;
+            props.CorrelationId = correlationId;
+
+            var message = MethdoArgsToByte("GetData", userToken, new object[] { dataSourcePath, filterRules });
+
+            _commandChannel.BasicPublish("", RPCQueryName, props, message);
+
+            var subject = new Subject<Dictionary<string, object>>();
+
+            Task.Factory.StartNew(() =>
+            {
+                var queueName = string.Copy(replyTo);
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+
+                    var responce = CastTo<RabbitMQResponce>(ea.Body);
+
+                    if (responce.LastMessage) break;
+
+                    var list = (List<Dictionary<string, object>>)responce.Data;
+                    foreach (var dictionary in list)
+                    {
+                        subject.OnNext(dictionary);
+                    }
+                }
+                _commandChannel.QueueDelete(queueName);
+
+                subject.OnCompleted();
+            });
+            return subject.ToEnumerable();
+        }
+
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
             _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
@@ -82,11 +120,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(replyTo, true, consumer);
-            
+
             var message = MethdoArgsToByte("GetDataChanges", userToken, new object[] { dataSourcePath, filterRules });
 
             _commandChannel.BasicPublish("", RPCQueryName, null, message);
+
             var subject = new Subject<RecordChangedParam[]>();
+
             Task.Factory.StartNew(() =>
             {
                 var queueName = string.Copy(replyTo);
@@ -104,6 +144,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 }
                 _commandChannel.QueueDelete(queueName);
+
                 subject.OnCompleted();
             });
             return subject.AsObservable();
@@ -112,7 +153,75 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken,
             Action<string, RecordChangedParam[]> onSuccess, Action<string, Exception> onFail)
         {
-            throw new NotImplementedException();
+            var correlationId = Guid.NewGuid().ToString();
+
+            var onSuccessQueueName = _commandChannel.QueueDeclare().QueueName;
+
+            var onFailQueueName = _commandChannel.QueueDeclare().QueueName;
+
+            var onSuccessConsumer = new QueueingBasicConsumer(_commandChannel);
+            _commandChannel.BasicConsume(onSuccessQueueName, false, onSuccessConsumer);
+
+            var onFailConsumer = new QueueingBasicConsumer(_commandChannel);
+            _commandChannel.BasicConsume(onFailQueueName, false, onFailConsumer);
+
+            var message = new MethodArgs
+             {
+                 MethodName = "ResolveRecordbyForeignKey",
+                 UserToken = userToken,
+                 MethodsArgs = new object[] { changedRecord, dataSourceUrn, onSuccessQueueName, onFailQueueName }
+             };
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            var messageBytes = BinaryConverter.CastToBytes(message);
+
+            _commandChannel.BasicPublish("", RPCQueryName, props, messageBytes);
+
+            var breakFlag = true;
+
+            // Wait for notification on success
+            Task.Factory.StartNew(() =>
+            {
+                while (breakFlag)
+                {
+                    var ea = onSuccessConsumer.Queue.Dequeue();
+
+                    if (correlationId == ea.BasicProperties.CorrelationId)
+                    {
+                        var array = BinaryConverter.CastTo<object[]>(ea.Body);
+
+                        if (onSuccess != null)
+                        {
+                            onSuccess((string)array[0], (RecordChangedParam[])array[1]);
+                        }
+
+                        breakFlag = false;
+                    }
+                }
+            });
+
+            // Wait for notification on fail
+            Task.Factory.StartNew(() =>
+            {
+                while (breakFlag)
+                {
+                    var ea = onFailConsumer.Queue.Dequeue();
+
+                    if (correlationId == ea.BasicProperties.CorrelationId)
+                    {
+                        var array = BinaryConverter.CastTo<object[]>(ea.Body);
+
+                        if (onSuccess != null)
+                        {
+                            onSuccess((string)array[0], (RecordChangedParam[])array[1]);
+                        }
+
+                        breakFlag = false;
+                    }
+                }
+            });
         }
 
         public void Dispose()

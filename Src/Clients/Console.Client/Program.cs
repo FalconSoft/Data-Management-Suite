@@ -27,7 +27,7 @@ namespace FalconSoft.Data.Console
         {
             if (facadeType.Equals("RabbitMQ", StringComparison.OrdinalIgnoreCase))
             {
-                return new RabbitMqRFacadesFactory("localhost");
+                return new RabbitMqFacadesFactory("localhost");
             }
             if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
             {

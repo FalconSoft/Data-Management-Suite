@@ -55,373 +55,422 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 {
                     var ea = consumerForExceptions.Queue.Dequeue();
 
-                    var mea = BinaryConverter.CastTo<string>(ea.Body);
+                    var array = BinaryConverter.CastTo<string>(ea.Body).Split('#');
 
                     if (ObjectInfoChanged != null)
-                        ac(this, objectInfo);
+                        ErrorMessageHandledAction(array[0], array[1]);
                 }
             });
         }
 
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            var correlationId = Guid.NewGuid().ToString();
-            
-            var queueName = _commandChannel.QueueDeclare().QueueName;
-            
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = queueName;
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-            
-            _commandChannel.BasicConsume(queueName, false, consumer);
-
-            var methodArgs = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "GetAvailableDataSources",
-                UserToken = userToken,
-                MethodsArgs = new object[] { minAccessLevel }
-            };
+                var correlationId = Guid.NewGuid().ToString();
 
-            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+                var queueName = channel.QueueDeclare().QueueName;
 
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-                if (ea.BasicProperties.CorrelationId == correlationId)
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var methodArgs = new MethodArgs
                 {
-                    _commandChannel.QueueDelete(queueName);
-                    return BinaryConverter.CastTo<DataSourceInfo[]>(ea.Body);
+                    MethodName = "GetAvailableDataSources",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {minAccessLevel}
+                };
+
+                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        channel.QueueDelete(queueName);
+                        return BinaryConverter.CastTo<DataSourceInfo[]>(ea.Body);
+                    }
                 }
             }
         }
 
         public DataSourceInfo GetDataSourceInfo(string dataSourceUrn, string userToken)
         {
-            var correlationId = Guid.NewGuid().ToString();
-            
-            var queueName = _commandChannel.QueueDeclare().QueueName;
-            
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = queueName;
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-            
-            _commandChannel.BasicConsume(queueName, false, consumer);
-
-            var methodArgs = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "GetDataSourceInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { dataSourceUrn }
-            };
-            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+                var correlationId = Guid.NewGuid().ToString();
 
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-                if (ea.BasicProperties.CorrelationId == correlationId)
+                var queueName = channel.QueueDeclare().QueueName;
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var methodArgs = new MethodArgs
                 {
-                    _commandChannel.QueueDelete(queueName);
-                    return BinaryConverter.CastTo<DataSourceInfo>(ea.Body);
+                    MethodName = "GetDataSourceInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {dataSourceUrn}
+                };
+                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        channel.QueueDelete(queueName);
+                        return BinaryConverter.CastTo<DataSourceInfo>(ea.Body);
+                    }
                 }
             }
         }
 
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userToken)
         {
-            var message = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "UpdateDataSourceInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] {dataSource, oldDataSourceUrn}
-            };
+                var message = new MethodArgs
+                {
+                    MethodName = "UpdateDataSourceInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {dataSource, oldDataSourceUrn}
+                };
 
-            var messageBytes = BinaryConverter.CastToBytes(message);
+                var messageBytes = BinaryConverter.CastToBytes(message);
 
-            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+            }
         }
 
         public void CreateDataSourceInfo(DataSourceInfo dataSource, string userToken)
         {
-            var message = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "CreateDataSourceInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { dataSource }
-            };
+                var message = new MethodArgs
+                {
+                    MethodName = "CreateDataSourceInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {dataSource}
+                };
 
-            var messageBytes = BinaryConverter.CastToBytes(message);
+                var messageBytes = BinaryConverter.CastToBytes(message);
 
-            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+            }
         }
 
         public void DeleteDataSourceInfo(string dataSourceUrn, string userToken)
         {
-            var message = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "DeleteDataSourceInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { dataSourceUrn }
-            };
+                var message = new MethodArgs
+                {
+                    MethodName = "DeleteDataSourceInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {dataSourceUrn}
+                };
 
-            var messageBytes = BinaryConverter.CastToBytes(message);
+                var messageBytes = BinaryConverter.CastToBytes(message);
 
-            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+            }
         }
 
         public WorksheetInfo GetWorksheetInfo(string worksheetUrn, string userToken)
         {
-            var correlationId = Guid.NewGuid().ToString();
-
-            var queueName = _commandChannel.QueueDeclare().QueueName;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = queueName;
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-
-            _commandChannel.BasicConsume(queueName, false, consumer);
-
-            var methodArgs = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "GetWorksheetInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { worksheetUrn }
-            };
+                var correlationId = Guid.NewGuid().ToString();
 
-            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+                var queueName = channel.QueueDeclare().QueueName;
 
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-                if (ea.BasicProperties.CorrelationId == correlationId)
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var methodArgs = new MethodArgs
                 {
-                    _commandChannel.QueueDelete(queueName);
-                    return BinaryConverter.CastTo<WorksheetInfo>(ea.Body);
+                    MethodName = "GetWorksheetInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {worksheetUrn}
+                };
+
+                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        channel.QueueDelete(queueName);
+                        return BinaryConverter.CastTo<WorksheetInfo>(ea.Body);
+                    }
                 }
             }
         }
 
         public WorksheetInfo[] GetAvailableWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            var correlationId = Guid.NewGuid().ToString();
-
-            var queueName = _commandChannel.QueueDeclare().QueueName;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = queueName;
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-
-            _commandChannel.BasicConsume(queueName, false, consumer);
-
-            var methodArgs = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "GetAvailableWorksheets",
-                UserToken = userToken,
-                MethodsArgs = new object[] { minAccessLevel }
-            };
+                var correlationId = Guid.NewGuid().ToString();
 
-            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+                var queueName = channel.QueueDeclare().QueueName;
 
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-                if (ea.BasicProperties.CorrelationId == correlationId)
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var methodArgs = new MethodArgs
                 {
-                    _commandChannel.QueueDelete(queueName);
-                    return BinaryConverter.CastTo<WorksheetInfo[]>(ea.Body);
+                    MethodName = "GetAvailableWorksheets",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {minAccessLevel}
+                };
+
+                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        channel.QueueDelete(queueName);
+                        return BinaryConverter.CastTo<WorksheetInfo[]>(ea.Body);
+                    }
                 }
             }
         }
 
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
         {
-            var message = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "UpdateWorksheetInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { wsInfo, oldWorksheetUrn }
-            };
+                var message = new MethodArgs
+                {
+                    MethodName = "UpdateWorksheetInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {wsInfo, oldWorksheetUrn}
+                };
 
-            var messageBytes = BinaryConverter.CastToBytes(message);
+                var messageBytes = BinaryConverter.CastToBytes(message);
 
-            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+            }
         }
 
         public void CreateWorksheetInfo(WorksheetInfo wsInfo, string userToken)
         {
-            var message = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "CreateWorksheetInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { wsInfo }
-            };
+                var message = new MethodArgs
+                {
+                    MethodName = "CreateWorksheetInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {wsInfo}
+                };
 
-            var messageBytes = BinaryConverter.CastToBytes(message);
+                var messageBytes = BinaryConverter.CastToBytes(message);
 
-            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+            }
         }
 
         public void DeleteWorksheetInfo(string worksheetUrn, string userToken)
         {
-            var message = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "DeleteWorksheetInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { worksheetUrn }
-            };
+                var message = new MethodArgs
+                {
+                    MethodName = "DeleteWorksheetInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {worksheetUrn}
+                };
 
-            var messageBytes = BinaryConverter.CastToBytes(message);
+                var messageBytes = BinaryConverter.CastToBytes(message);
 
-            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+            }
         }
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            var correlationId = Guid.NewGuid().ToString();
-
-            var queueName = _commandChannel.QueueDeclare().QueueName;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = queueName;
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-
-            _commandChannel.BasicConsume(queueName, false, consumer);
-
-            var methodArgs = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "GetAvailableAggregatedWorksheets",
-                UserToken = userToken,
-                MethodsArgs = new object[] { minAccessLevel }
-            };
+                var correlationId = Guid.NewGuid().ToString();
 
-            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+                var queueName = channel.QueueDeclare().QueueName;
 
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-                if (ea.BasicProperties.CorrelationId == correlationId)
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var methodArgs = new MethodArgs
                 {
-                    _commandChannel.QueueDelete(queueName);
-                    return BinaryConverter.CastTo<AggregatedWorksheetInfo[]>(ea.Body);
+                    MethodName = "GetAvailableAggregatedWorksheets",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {minAccessLevel}
+                };
+
+                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        channel.QueueDelete(queueName);
+                        return BinaryConverter.CastTo<AggregatedWorksheetInfo[]>(ea.Body);
+                    }
                 }
             }
         }
 
-        public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
+        public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn,
+            string userToken)
         {
-            var message = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "UpdateAggregatedWorksheetInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { wsInfo, oldWorksheetUrn }
-            };
+                var message = new MethodArgs
+                {
+                    MethodName = "UpdateAggregatedWorksheetInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {wsInfo, oldWorksheetUrn}
+                };
 
-            var messageBytes = BinaryConverter.CastToBytes(message);
+                var messageBytes = BinaryConverter.CastToBytes(message);
 
-            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+            }
         }
 
         public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userToken)
         {
-            var message = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "CreateAggregatedWorksheetInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { wsInfo }
-            };
+                var message = new MethodArgs
+                {
+                    MethodName = "CreateAggregatedWorksheetInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {wsInfo}
+                };
 
-            var messageBytes = BinaryConverter.CastToBytes(message);
+                var messageBytes = BinaryConverter.CastToBytes(message);
 
-            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+            }
         }
 
         public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
-            var message = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "DeleteAggregatedWorksheetInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { worksheetUrn }
-            };
+                var message = new MethodArgs
+                {
+                    MethodName = "DeleteAggregatedWorksheetInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {worksheetUrn}
+                };
 
-            var messageBytes = BinaryConverter.CastToBytes(message);
+                var messageBytes = BinaryConverter.CastToBytes(message);
 
-            _commandChannel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+            }
         }
 
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
-            var correlationId = Guid.NewGuid().ToString();
-
-            var queueName = _commandChannel.QueueDeclare().QueueName;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = queueName;
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-
-            _commandChannel.BasicConsume(queueName, false, consumer);
-
-            var methodArgs = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "GetAggregatedWorksheetInfo",
-                UserToken = userToken,
-                MethodsArgs = new object[] { worksheetUrn }
-            };
+                var correlationId = Guid.NewGuid().ToString();
 
-            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+                var queueName = channel.QueueDeclare().QueueName;
 
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-                if (ea.BasicProperties.CorrelationId == correlationId)
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var methodArgs = new MethodArgs
                 {
-                    _commandChannel.QueueDelete(queueName);
-                    return BinaryConverter.CastTo<AggregatedWorksheetInfo>(ea.Body);
+                    MethodName = "GetAggregatedWorksheetInfo",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {worksheetUrn}
+                };
+
+                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        channel.QueueDelete(queueName);
+                        return BinaryConverter.CastTo<AggregatedWorksheetInfo>(ea.Body);
+                    }
                 }
             }
         }
 
         public ServerInfo GetServerInfo()
         {
-            var correlationId = Guid.NewGuid().ToString();
-
-            var queueName = _commandChannel.QueueDeclare().QueueName;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = queueName;
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-
-            _commandChannel.BasicConsume(queueName, false, consumer);
-
-            var methodArgs = new MethodArgs
+            using (var channel = _connection.CreateModel())
             {
-                MethodName = "GetServerInfo",
-                UserToken = null,
-                MethodsArgs = null
-            };
+                var correlationId = Guid.NewGuid().ToString();
 
-            _commandChannel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+                var queueName = channel.QueueDeclare().QueueName;
 
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-                if (ea.BasicProperties.CorrelationId == correlationId)
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var methodArgs = new MethodArgs
                 {
-                    _commandChannel.QueueDelete(queueName);
-                    return BinaryConverter.CastTo<ServerInfo>(ea.Body);
+                    MethodName = "GetServerInfo",
+                    UserToken = null,
+                    MethodsArgs = null
+                };
+
+                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        channel.QueueDelete(queueName);
+                        return BinaryConverter.CastTo<ServerInfo>(ea.Body);
+                    }
                 }
             }
         }

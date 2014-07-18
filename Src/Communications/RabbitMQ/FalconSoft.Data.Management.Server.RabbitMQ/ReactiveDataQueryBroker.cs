@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Metadata;
 using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Server.RabbitMQ
@@ -40,6 +41,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             switch (message.MethodName)
             {
+                case "GetAggregatedData":
+                    {
+                        GetAggregatedData(basicProperties, message.UserToken, (string)message.MethodsArgs[0],
+                            (AggregatedWorksheetInfo)message.MethodsArgs[1], (FilterRule[])message.MethodsArgs[2]);
+                        break;
+                    }
                 case "GetData":
                     {
                         GetData(basicProperties, message.UserToken, (string)message.MethodsArgs[0], message.MethodsArgs[1] as FilterRule[]);
@@ -50,7 +57,86 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         GetDataChanges(message.UserToken, (string)message.MethodsArgs[0], message.MethodsArgs[1] as FilterRule[]);
                         break;
                     }
+                case "ResolveRecordbyForeignKey":
+                {
+                    ResolveRecordbyForeignKey(basicProperties, message.UserToken,
+                        (RecordChangedParam[]) message.MethodsArgs[0], (string) message.MethodsArgs[1],
+                        (string) message.MethodsArgs[2], (string) message.MethodsArgs[3]);
+                    break;
+                }
             }
+        }
+
+        // TODO: filter rules do not catche by thread and coud be changed while thread is running
+        private void GetAggregatedData(IBasicProperties basicProperties, string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheetInfo, FilterRule[] filterRules)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+                    
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
+                    
+                    var userTokenLocal = string.Copy(userToken);
+                    
+                    var dataSourcePathLocal = string.Copy(dataSourcePath);
+                    
+                    var data = _reactiveDataQueryFacade.GetAggregatedData(userTokenLocal, dataSourcePathLocal, aggregatedWorksheetInfo, filterRules);
+                    
+                    var list = new List<Dictionary<string, object>>();
+                    
+                    var responce = new RabbitMQResponce();
+                    
+                    foreach (var d in data)
+                    {
+                        list.Add(d);
+                        if (list.Count == Limit)
+                        {
+                            var props = _commandChannel.CreateBasicProperties();
+                            props.CorrelationId = correlationId;
+                            
+                            responce.Id++;
+                            responce.Data = list;
+                            
+                            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                            
+                            list.Clear();
+                        }
+                    }
+                    
+                    if (list.Count != 0)
+                    {
+                        var props = _commandChannel.CreateBasicProperties();
+                        props.CorrelationId = correlationId;
+                        
+                        responce.Id++;
+                        responce.Data = list;
+                        
+                        _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                        
+                        list.Clear();
+                        
+                        responce.LastMessage = true;
+                        
+                        _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                    }
+                    else
+                    {
+                        var props = _commandChannel.CreateBasicProperties();
+                        props.CorrelationId = correlationId;
+                        
+                        responce.Id++;
+                        responce.LastMessage = true;
+                        
+                        _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                }
+            });
         }
 
         // TODO: filter rules do not catche by thread and coud be changed while thread is running
@@ -61,12 +147,19 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 try
                 {
                     var replyTo = string.Copy(basicProperties.ReplyTo);
+                    
                     var correlationId = string.Copy(basicProperties.CorrelationId);
+                    
                     var userTokenLocal = string.Copy(userToken);
+                    
                     var dataSourcePathLocal = string.Copy(dataSourcePath);
+                    
                     var data = _reactiveDataQueryFacade.GetData(userTokenLocal, dataSourcePathLocal, filterRules);
+                    
                     var list = new List<Dictionary<string, object>>();
+                    
                     var responce = new RabbitMQResponce();
+                    
                     foreach (var d in data)
                     {
                         list.Add(d);
@@ -74,9 +167,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         {
                             var props = _commandChannel.CreateBasicProperties();
                             props.CorrelationId = correlationId;
+                            
                             responce.Id++;
                             responce.Data = list;
+                            
                             _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                            
                             list.Clear();
                         }
                     }
@@ -84,19 +180,26 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     {
                         var props = _commandChannel.CreateBasicProperties();
                         props.CorrelationId = correlationId;
+                        
                         responce.Id++;
                         responce.Data = list;
+                        
                         _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                        
                         list.Clear();
+                        
                         responce.LastMessage = true;
+                        
                         _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
                     }
                     else
                     {
                         var props = _commandChannel.CreateBasicProperties();
                         props.CorrelationId = correlationId;
+                        
                         responce.Id++;
                         responce.LastMessage = true;
+                        
                         _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
                     }
                 }
@@ -113,21 +216,30 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             try
             {
                 _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
+                
                 _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath, filterRules).Subscribe(
                     rcpArgs =>
                     {
                         var userTokenLocal = string.Copy(userToken);
+                        
                         var dataSourcePathLocal = string.Copy(dataSourcePath);
+                        
                         var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
-                        var message = new RabbitMQResponce {Data = rcpArgs};
+                        
+                        var message = new RabbitMQResponce { Data = rcpArgs };
+                        
                         _commandChannel.BasicPublish("GetDataChangesTopic",
                             routingKey, null, BinaryConverter.CastToBytes(message));
                     }, () =>
                     {
                         var userTokenLocal = string.Copy(userToken);
+                        
                         var dataSourcePathLocal = string.Copy(dataSourcePath);
+                        
                         var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
-                        var message = new RabbitMQResponce {LastMessage = true};
+                        
+                        var message = new RabbitMQResponce { LastMessage = true };
+                        
                         _commandChannel.BasicPublish("GetDataChangesTopic",
                             routingKey, null, BinaryConverter.CastToBytes(message));
                     });
@@ -160,6 +272,45 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 throw;
             }
+        }
+
+        private void ResolveRecordbyForeignKey(IBasicProperties basicProperties, 
+            string userToken,
+            RecordChangedParam[] changedRecords,
+            string dataSourcePath,
+            string onSuccessQueueName,
+            string onFailQueueName)
+        {
+            var correlationId = string.Copy(basicProperties.CorrelationId);
+            var onSuccessQueueNameLocal = string.Copy(onSuccessQueueName);
+            var onFailQueueNameLocal = string.Copy(onFailQueueName);
+
+            var onSuccess = new Action<string,RecordChangedParam[]>((str, rcpArray) =>
+            {
+                var props = _commandChannel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+
+                var message = new object[] {str, rcpArray};
+
+                var messageBytes = BinaryConverter.CastToBytes(message);
+
+                _commandChannel.BasicPublish("", onSuccessQueueNameLocal, props, messageBytes);
+            });
+
+            var onFail = new Action<string, Exception>((str, exception) =>
+            {
+                var props = _commandChannel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+
+                var message = new object[] { str, exception };
+
+                var messageBytes = BinaryConverter.CastToBytes(message);
+
+                _commandChannel.BasicPublish("", onFailQueueNameLocal, props, messageBytes);
+            });
+
+            _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecords, dataSourcePath, userToken, onSuccess,
+                onFail);
         }
     }
 }
