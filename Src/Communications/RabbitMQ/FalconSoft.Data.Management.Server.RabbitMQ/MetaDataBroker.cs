@@ -87,14 +87,18 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         break;
                     }
                 case "DeleteWorksheetInfo":
-                {
-                    DeleteWorksheetInfo(message.UserToken, (string) message.MethodsArgs[0]);
-                    break;
-                }
+                    {
+                        DeleteWorksheetInfo(message.UserToken, (string)message.MethodsArgs[0]);
+                        break;
+                    }
+                case "GetAvailableAggregatedWorksheets":
+                    {
+                        GetAvailableAggregatedWorksheets(basicProperties, message.UserToken,
+                            (AccessLevel)message.MethodsArgs[0]);
+                        break;
+                    }
             }
         }
-
-        
 
         private void GetAvailableDataSources(IBasicProperties basicProperties, string userToken, AccessLevel accessLevel)
         {
@@ -180,6 +184,20 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private void DeleteWorksheetInfo(string userToken, string worksheetUrn)
         {
             _metaDataAdminFacade.DeleteWorksheetInfo(worksheetUrn, userToken);
+        }
+
+        private void GetAvailableAggregatedWorksheets(IBasicProperties basicProperties, string userToken, AccessLevel accessLevel)
+        {
+            var data = _metaDataAdminFacade.GetAvailableAggregatedWorksheets(userToken, accessLevel);
+
+            var correlationId = basicProperties.CorrelationId;
+
+            var replyTo = basicProperties.ReplyTo;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
         }
     }
 }

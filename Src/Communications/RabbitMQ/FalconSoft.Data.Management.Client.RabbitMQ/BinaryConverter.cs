@@ -3,6 +3,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
+    //TODO: This methods must be thread safe
     public static class BinaryConverter
     {
         public static byte[] CastToBytes(object obj)
