@@ -65,9 +65,12 @@
     <Compile Include="BinaryConverter.cs" />
     <Compile Include="CommandBroker.cs" />
     <Compile Include="MetaDataBroker.cs" />
+    <Compile Include="PermissionSecurityBroker.cs" />
     <Compile Include="ReactiveDataQueryBroker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SearchBroker.cs" />
     <Compile Include="SecurityBroker.cs" />
+    <Compile Include="TemporalDataQueryBroker.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">

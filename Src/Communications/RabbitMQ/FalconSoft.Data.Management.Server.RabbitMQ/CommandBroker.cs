@@ -92,8 +92,6 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             //collect changed records
             if (toUpdateQueueNameLocal != null)
             {
-                _commandChannel.QueueDeclare(toUpdateQueueNameLocal, false, false, false, null);
-               
                 Task.Factory.StartNew(() =>
                 {
                     var consumer = new QueueingBasicConsumer(_commandChannel);
@@ -127,7 +125,6 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             //collect record keys to delete
             if (toDeleteQueueNameLocal != null)
             {
-                _commandChannel.QueueDeclare(toDeleteQueueNameLocal, false, false, false, null);
                 Task.Factory.StartNew(() =>
                 {
                     var consumer = new QueueingBasicConsumer(_commandChannel);

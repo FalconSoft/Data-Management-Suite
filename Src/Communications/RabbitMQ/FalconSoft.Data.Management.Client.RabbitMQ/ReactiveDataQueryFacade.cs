@@ -36,7 +36,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             props.ReplyTo = replyTo;
             props.CorrelationId = correlationId;
 
-            var message = MethdoArgsToByte("GetAggregatedData", userToken, new object[] { dataSourcePath, aggregatedWorksheet, filterRules });
+            var message = MethdoArgsToByte("GetAggregatedData", userToken,
+                new object[] { dataSourcePath, aggregatedWorksheet, filterRules });
 
             _commandChannel.BasicPublish("", RPCQueryName, props, message);
             var subject = new Subject<Dictionary<string, object>>();

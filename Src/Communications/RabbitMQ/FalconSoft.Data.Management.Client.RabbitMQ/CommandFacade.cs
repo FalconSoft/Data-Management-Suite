@@ -36,11 +36,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (changedRecords != null)
             {
                 toUpdateQueueName = Guid.NewGuid().ToString();
+                _commandChannel.QueueDeclare(toUpdateQueueName, false, false, false, null);
             }
 
             if (deleted != null)
             {
                 toDeleteQueueName = Guid.NewGuid().ToString();
+                _commandChannel.QueueDeclare(toDeleteQueueName, false, false, false, null);
             }
 
             var message = new MethodArgs

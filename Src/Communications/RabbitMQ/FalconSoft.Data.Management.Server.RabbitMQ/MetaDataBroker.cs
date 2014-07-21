@@ -55,7 +55,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 case "CreateDataSourceInfo":
                     {
-                        CreateDataSourceInfo(message.UserToken, (DataSourceInfo)message.MethodsArgs[0]);
+                        CreateDataSourceInfo(basicProperties, message.UserToken, (DataSourceInfo)message.MethodsArgs[0]);
                         break;
                     }
                 case "GetDataSourceInfo":
@@ -70,7 +70,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                 case "UpdateDataSourceInfo":
                     {
-                        UpdateDataSourceInfo(message.UserToken, (DataSourceInfo)message.MethodsArgs[0],
+                        UpdateDataSourceInfo(basicProperties, message.UserToken, (DataSourceInfo)message.MethodsArgs[0],
                             (string)message.MethodsArgs[1]);
                         break;
                     }
@@ -97,7 +97,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                 case "CreateWorksheetInfo":
                     {
-                        CreateWorksheetInfo(message.UserToken, (WorksheetInfo)message.MethodsArgs[0]);
+                        CreateWorksheetInfo(basicProperties, message.UserToken, (WorksheetInfo)message.MethodsArgs[0]);
                         break;
                     }
                 case "DeleteWorksheetInfo":
@@ -164,14 +164,32 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
         }
 
-        private void UpdateDataSourceInfo(string userToken, DataSourceInfo dataSourceInfo, string oldDataSourcePath)
+        private void UpdateDataSourceInfo(IBasicProperties basicProperties, string userToken, DataSourceInfo dataSourceInfo, string oldDataSourcePath)
         {
             _metaDataAdminFacade.UpdateDataSourceInfo(dataSourceInfo, oldDataSourcePath, userToken);
+            
+            var correlationId = basicProperties.CorrelationId;
+
+            var replyTo = basicProperties.ReplyTo;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(new object()));
         }
 
-        private void CreateDataSourceInfo(string userToken, DataSourceInfo dataSourceInfo)
+        private void CreateDataSourceInfo(IBasicProperties basicProperties, string userToken, DataSourceInfo dataSourceInfo)
         {
             _metaDataAdminFacade.CreateDataSourceInfo(dataSourceInfo, userToken);
+
+            var correlationId = basicProperties.CorrelationId;
+
+            var replyTo = basicProperties.ReplyTo;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            _commandChannel.BasicPublish("", replyTo, props, null);
         }
 
         private void DeleteDataSourceInfo(string userToken, string dataSourthPath)
@@ -212,9 +230,18 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _metaDataAdminFacade.UpdateWorksheetInfo(worksheetInfo, oldWorksheetUrn, userToken);
         }
 
-        private void CreateWorksheetInfo(string userToken, WorksheetInfo worksheetInfo)
+        private void CreateWorksheetInfo(IBasicProperties basicProperties, string userToken, WorksheetInfo worksheetInfo)
         {
             _metaDataAdminFacade.CreateWorksheetInfo(worksheetInfo, userToken);
+
+            var correlationId = basicProperties.CorrelationId;
+
+            var replyTo = basicProperties.ReplyTo;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(new object()));
         }
 
         private void DeleteWorksheetInfo(string userToken, string worksheetUrn)
@@ -226,6 +253,35 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             AccessLevel accessLevel)
         {
             var data = _metaDataAdminFacade.GetAvailableAggregatedWorksheets(userToken, accessLevel);
+
+            var correlationId = basicProperties.CorrelationId;
+
+            var replyTo = basicProperties.ReplyTo;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+        }
+
+        private void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
+        {
+            _metaDataAdminFacade.UpdateAggregatedWorksheetInfo(wsInfo, oldWorksheetUrn, userToken);
+        }
+
+        private void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userToken)
+        {
+            _metaDataAdminFacade.CreateAggregatedWorksheetInfo(wsInfo, userToken);
+        }
+
+        private void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userToken)
+        {
+            _metaDataAdminFacade.DeleteAggregatedWorksheetInfo(worksheetUrn, userToken);
+        }
+
+        private void GetAggregatedWorksheetInfo(IBasicProperties basicProperties, string worksheetUrn, string userToken)
+        {
+            var data = _metaDataAdminFacade.GetAggregatedWorksheetInfo(worksheetUrn, userToken);
 
             var correlationId = basicProperties.CorrelationId;
 
@@ -249,36 +305,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             var typle = Tuple.Create(arg1, arg2);
             var messageBytes = BinaryConverter.CastToBytes(typle);
-            _commandChannel.BasicPublish(MetadataExchangeName, "", null, messageBytes);
-        }
-
-        public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
-        {
-            _metaDataAdminFacade.UpdateAggregatedWorksheetInfo(wsInfo, oldWorksheetUrn, userToken);
-        }
-
-        public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userToken)
-        {
-            _metaDataAdminFacade.CreateAggregatedWorksheetInfo(wsInfo, userToken);
-        }
-
-        public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userToken)
-        {
-            _metaDataAdminFacade.DeleteAggregatedWorksheetInfo(worksheetUrn, userToken);
-        }
-
-        public void GetAggregatedWorksheetInfo(IBasicProperties basicProperties, string worksheetUrn, string userToken)
-        {
-            var data = _metaDataAdminFacade.GetAggregatedWorksheetInfo(worksheetUrn, userToken);
-
-            var correlationId = basicProperties.CorrelationId;
-
-            var replyTo = basicProperties.ReplyTo;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-
-            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+            _commandChannel.BasicPublish(ExceptionsExchangeName, "", null, messageBytes);
         }
     }
 

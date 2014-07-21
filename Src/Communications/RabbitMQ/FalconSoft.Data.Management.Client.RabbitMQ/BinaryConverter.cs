@@ -3,25 +3,32 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
-    //TODO: This methods must be thread safe
-    public static class BinaryConverter
+    internal static class BinaryConverter
     {
+        private static readonly object Lock = new object();
+
         public static byte[] CastToBytes(object obj)
         {
-            var bf = new BinaryFormatter();
-            var ms = new MemoryStream();
-            bf.Serialize(ms, obj);
+            lock (Lock)
+            {
+                var bf = new BinaryFormatter();
+                var ms = new MemoryStream();
+                bf.Serialize(ms, obj);
 
-            return ms.ToArray();
+                return ms.ToArray();
+            }
         }
 
         public static T CastTo<T>(byte[] byteArray)
         {
-            var memStream = new MemoryStream();
-            var binForm = new BinaryFormatter();
-            memStream.Write(byteArray, 0, byteArray.Length);
-            memStream.Seek(0, SeekOrigin.Begin);
-            return (T)binForm.Deserialize(memStream);
+            lock (Lock)
+            {
+                var memStream = new MemoryStream();
+                var binForm = new BinaryFormatter();
+                memStream.Write(byteArray, 0, byteArray.Length);
+                memStream.Seek(0, SeekOrigin.Begin);
+                return (T) binForm.Deserialize(memStream);
+            }
         }
     }
 }

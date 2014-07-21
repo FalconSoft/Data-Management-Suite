@@ -28,12 +28,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.QueueDeclare(SecurityFacadeQueueName, false, false, false, null);
 
-            var consummer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(SecurityFacadeQueueName, false, consummer);
+            var consumer = new QueueingBasicConsumer(_commandChannel);
+            _commandChannel.BasicConsume(SecurityFacadeQueueName, false, consumer);
 
             while (true)
             {
-                var ea = consummer.Queue.Dequeue();
+                var ea = consumer.Queue.Dequeue();
 
                 var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
                 ExecuteMethodSwitch(message, ea.BasicProperties);

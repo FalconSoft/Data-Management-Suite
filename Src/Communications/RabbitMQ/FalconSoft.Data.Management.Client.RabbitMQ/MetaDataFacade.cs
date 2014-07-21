@@ -28,7 +28,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             _commandChannel.QueueBind(queueName, MetadataExchangeName, "");
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(queueName, false, consumer);
+            _commandChannel.BasicConsume(queueName, true, consumer);
 
             Task.Factory.StartNew(() =>
             {
@@ -43,8 +43,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 }
             });
 
+            _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
+
             var queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.QueueBind(queueName, MetadataExchangeName, "");
+            _commandChannel.QueueBind(queueName, ExceptionsExchangeName, "");
 
             var consumerForExceptions = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(queueNameForExceptions, false, consumer);
@@ -140,6 +142,18 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             using (var channel = _connection.CreateModel())
             {
+                var correlationId = Guid.NewGuid().ToString();
+
+                var queueName = channel.QueueDeclare().QueueName;
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
                 var message = new MethodArgs
                 {
                     MethodName = "UpdateDataSourceInfo",
@@ -149,7 +163,16 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 var messageBytes = BinaryConverter.CastToBytes(message);
 
-                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, props, messageBytes);
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        break;
+                    }
+                }
             }
         }
 
@@ -157,6 +180,18 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             using (var channel = _connection.CreateModel())
             {
+                var correlationId = Guid.NewGuid().ToString();
+
+                var queueName = channel.QueueDeclare().QueueName;
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
                 var message = new MethodArgs
                 {
                     MethodName = "CreateDataSourceInfo",
@@ -166,7 +201,16 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 var messageBytes = BinaryConverter.CastToBytes(message);
 
-                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, props, messageBytes);
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        break;
+                    }
+                }
             }
         }
 
@@ -282,6 +326,18 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             using (var channel = _connection.CreateModel())
             {
+                var correlationId = Guid.NewGuid().ToString();
+
+                var queueName = channel.QueueDeclare().QueueName;
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
                 var message = new MethodArgs
                 {
                     MethodName = "CreateWorksheetInfo",
@@ -291,7 +347,16 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 var messageBytes = BinaryConverter.CastToBytes(message);
 
-                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
+                channel.BasicPublish("", MetadataQueueName, props, messageBytes);
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        break;
+                    }
+                }
             }
         }
 
