@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
@@ -13,7 +11,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
     {
         private readonly IPermissionSecurityFacade _permissionSecurityFacade;
         private readonly ILogger _logger;
-        private IConnection _connection;
+        private readonly IConnection _connection;
         private readonly IModel _commandChannel;
         private const string PermissionSecurityFacadeQueueName = "PermissionSecurityFacadeRPC";
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
@@ -74,51 +72,23 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void GetUserPermissions(IBasicProperties basicProperties, string userToken)
         {
-            var replyTo = basicProperties.ReplyTo;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = basicProperties.CorrelationId;
-
             var data = _permissionSecurityFacade.GetUserPermissions(userToken);
 
-            var dataBytes = BinaryConverter.CastToBytes(data);
-
-            _commandChannel.BasicPublish("", replyTo, props, dataBytes);
+            RPCSendTaskExecutionResults(basicProperties, data);
         }
 
         private void SaveUserPermissions(IBasicProperties basicProperties, string userToken, Dictionary<string, AccessLevel> permissions, string targetUserToken)
         {
-            var action = new Action<string>(message =>
-            {
-                var replyTo = string.Copy(basicProperties.ReplyTo);
-
-                var correlationId = string.Copy(basicProperties.CorrelationId);
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                var props = _commandChannel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-
-                _commandChannel.BasicPublish("", replyTo, props, messageBytes);
-            });
+            var action = new Action<string>(message => RPCSendTaskExecutionResults(basicProperties, message));
 
             _permissionSecurityFacade.SaveUserPermissions(permissions, targetUserToken, userToken, action);
         }
 
         private void CheckAccess(IBasicProperties basicProperties, string userToken, string dataSourcePath)
         {
-            var correlationId = basicProperties.CorrelationId;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-
-            var replyTo = basicProperties.ReplyTo;
-
             var data = _permissionSecurityFacade.CheckAccess(userToken, dataSourcePath);
 
-            var dataBytes = BinaryConverter.CastToBytes(data);
-
-            _commandChannel.BasicPublish("", replyTo, props, dataBytes);
+            RPCSendTaskExecutionResults(basicProperties, data);
         }
 
         private void GetPermissionChanged(string userToken)
@@ -131,6 +101,18 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                 _commandChannel.BasicPublish(PermissionSecurityFacadeExchangeName, severity, null, dataBytes);
             });
+        }
+
+        private void RPCSendTaskExecutionResults<T>(IBasicProperties basicProperties, T data)
+        {
+            var correlationId = basicProperties.CorrelationId;
+
+            var replyTo = basicProperties.ReplyTo;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
         }
     }
 }

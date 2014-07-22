@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -27,41 +28,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public IEnumerable<Dictionary<string, object>> GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
              FilterRule[] filterRules = null)
         {
-            var correlationId = Guid.NewGuid().ToString();
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-            var replyTo = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.BasicConsume(replyTo, true, consumer);
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.ReplyTo = replyTo;
-            props.CorrelationId = correlationId;
-
-            var message = MethdoArgsToByte("GetAggregatedData", userToken,
+            return RPCServerTaskExecute<Dictionary<string, object>>(_connection, RPCQueryName, "GetAggregatedData", userToken,
                 new object[] { dataSourcePath, aggregatedWorksheet, filterRules });
-
-            _commandChannel.BasicPublish("", RPCQueryName, props, message);
-            var subject = new Subject<Dictionary<string, object>>();
-            Task.Factory.StartNew(() =>
-            {
-                var queueName = string.Copy(replyTo);
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-
-                    var responce = CastTo<RabbitMQResponce>(ea.Body);
-
-                    if (responce.LastMessage) break;
-
-                    var list = (List<Dictionary<string, object>>)responce.Data;
-                    foreach (var dictionary in list)
-                    {
-                        subject.OnNext(dictionary);
-                    }
-                }
-                _commandChannel.QueueDelete(queueName);
-                subject.OnCompleted();
-            });
-            return subject.ToEnumerable();
         }
 
         public IEnumerable<T> GetData<T>(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
@@ -71,45 +39,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
-            var correlationId = Guid.NewGuid().ToString();
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-
-            var replyTo = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.BasicConsume(replyTo, true, consumer);
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.ReplyTo = replyTo;
-            props.CorrelationId = correlationId;
-
-            var message = MethdoArgsToByte("GetData", userToken, new object[] { dataSourcePath, filterRules });
-
-            _commandChannel.BasicPublish("", RPCQueryName, props, message);
-
-            var subject = new Subject<Dictionary<string, object>>();
-
-            Task.Factory.StartNew(() =>
-            {
-                var queueName = string.Copy(replyTo);
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-
-                    var responce = CastTo<RabbitMQResponce>(ea.Body);
-
-                    if (responce.LastMessage) break;
-
-                    var list = (List<Dictionary<string, object>>)responce.Data;
-                    foreach (var dictionary in list)
-                    {
-                        subject.OnNext(dictionary);
-                    }
-                }
-                _commandChannel.QueueDelete(queueName);
-
-                subject.OnCompleted();
-            });
-            return subject.ToEnumerable();
+            return RPCServerTaskExecute<Dictionary<string, object>>(_connection, RPCQueryName, "GetData", userToken,
+                new object[] { dataSourcePath, filterRules });
         }
 
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
@@ -227,8 +158,58 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-            _connection.Close();
-            _commandChannel.Close();
+            //_commandChannel.Close();
+            //_connection.Close();
+        }
+
+        private IEnumerable<T> RPCServerTaskExecute<T>(IConnection connection,
+            string commandQueueName, string methodName, string userToken, object[] methodArgs)
+        {
+            var channel = connection.CreateModel();
+
+            var correlationId = Guid.NewGuid().ToString();
+
+            var consumer = new QueueingBasicConsumer(channel);
+
+            var replyTo = channel.QueueDeclare().QueueName;
+            channel.BasicConsume(replyTo, true, consumer);
+
+            var props = channel.CreateBasicProperties();
+            props.ReplyTo = replyTo;
+            props.CorrelationId = correlationId;
+
+            var message = MethdoArgsToByte(methodName, userToken, methodArgs);
+
+            channel.BasicPublish("", commandQueueName, props, message);
+
+            var subject = new Subject<T>();
+
+            Task.Factory.StartNew(() =>
+            {
+                var queueName = string.Copy(replyTo);
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+
+                    var responce = CastTo<RabbitMQResponce>(ea.Body);
+
+                    if (responce.LastMessage)
+                    {
+                        channel.Dispose();
+                        break;
+                    }
+
+                    var list = (List<T>)responce.Data;
+                    foreach (var dictionary in list)
+                    {
+                        subject.OnNext(dictionary);
+                    }
+                }
+                _commandChannel.QueueDelete(queueName);
+
+                subject.OnCompleted();
+            });
+            return subject.ToEnumerable();
         }
 
         private byte[] MethdoArgsToByte(string methodName, string userToken, object[] methodArgs)

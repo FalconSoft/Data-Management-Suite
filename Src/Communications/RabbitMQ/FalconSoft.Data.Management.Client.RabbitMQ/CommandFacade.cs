@@ -220,8 +220,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-            _connection.Close();
-            _commandChannel.Close();
+            //_commandChannel.Close();
+            //_connection.Close();
         }
     }
 }

@@ -20,82 +20,60 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public SearchData[] Search(string searchString)
         {
-            var correlationId = Guid.NewGuid().ToString();
-
-            var replyTo = _commandChannel.QueueDeclare().QueueName;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = replyTo;
-
-            var message = new MethodArgs
-            {
-                MethodName = "Search",
-                UserToken = null,
-                MethodsArgs = new object[] {searchString}
-            };
-
-            var messageBytes = BinaryConverter.CastToBytes(message);
-
-            _commandChannel.BasicPublish("", SearchFacadeQueueName, props, messageBytes);
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(replyTo, true, consumer);
-
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-
-                if (correlationId == ea.BasicProperties.CorrelationId)
-                {
-                    var responce = BinaryConverter.CastTo<SearchData[]>(ea.Body);
-
-                    return responce;
-                }
-            }
+            return RPCServerTaskExecute<SearchData[]>(_connection, SearchFacadeQueueName, "Search", null,
+                new object[] {searchString});
         }
 
         public HeaderInfo[] GetSearchableWorksheets(SearchData searchData)
         {
-            var correlationId = Guid.NewGuid().ToString();
-
-            var replyTo = _commandChannel.QueueDeclare().QueueName;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = replyTo;
-
-            var message = new MethodArgs
-            {
-                MethodName = "GetSearchableWorksheets",
-                UserToken = null,
-                MethodsArgs = new object[] { searchData }
-            };
-
-            var messageBytes = BinaryConverter.CastToBytes(message);
-
-            _commandChannel.BasicPublish("", SearchFacadeQueueName, props, messageBytes);
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(replyTo, true, consumer);
-
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-
-                if (correlationId == ea.BasicProperties.CorrelationId)
-                {
-                    var responce = BinaryConverter.CastTo<HeaderInfo[]>(ea.Body);
-
-                    return responce;
-                }
-            }
+            return RPCServerTaskExecute<HeaderInfo[]>(_connection, SearchFacadeQueueName, "GetSearchableWorksheets",
+                null, new object[] {searchData});
         }
 
         public void Dispose()
         {
-            _commandChannel.Close();
-            _connection.Close();
+            //_commandChannel.Close();
+            //_connection.Close();
+        }
+
+        private T RPCServerTaskExecute<T>(IConnection connection, string commandQueueName, string methodName, string userToken,
+            object[] methodArgs)
+        {
+            using (var channel = connection.CreateModel())
+            {
+                var correlationId = Guid.NewGuid().ToString();
+
+                var queueName = channel.QueueDeclare().QueueName;
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var message = new MethodArgs
+                {
+                    MethodName = methodName,
+                    UserToken = userToken,
+                    MethodsArgs = methodArgs
+                };
+
+                var messageBytes = BinaryConverter.CastToBytes(message);
+
+                channel.BasicPublish("", commandQueueName, props, messageBytes);
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        channel.QueueDelete(queueName);
+                        return BinaryConverter.CastTo<T>(ea.Body);
+                    }
+                }
+            }
         }
     }
 }

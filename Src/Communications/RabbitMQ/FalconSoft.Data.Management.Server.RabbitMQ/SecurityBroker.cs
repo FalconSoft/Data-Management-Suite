@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
@@ -16,6 +13,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
+        private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
 
         public SecurityBroker(string hostName, ISecurityFacade securityFacade, ILogger logger)
         {
@@ -25,6 +23,10 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var factory = new ConnectionFactory {HostName = hostName};
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
+
+            _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
+
+            _securityFacade.ErrorMessageHandledAction = OnErrorMessageHandledAction;
 
             _commandChannel.QueueDeclare(SecurityFacadeQueueName, false, false, false, null);
 
@@ -66,12 +68,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 }
                 case "UpdateUser":
                 {
-                    UpdateUser(message.UserToken, (User)message.MethodsArgs[0], (UserRole)message.MethodsArgs[1]);
+                    UpdateUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0], (UserRole)message.MethodsArgs[1]);
                     break;
                 }
                 case "RemoveUser":
                 {
-                    RemoveUser(message.UserToken, (User)message.MethodsArgs[0]);
+                    RemoveUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0]);
                     break;
                 }
             }
@@ -81,63 +83,79 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             var data = _securityFacade.Authenticate(userName, password);
 
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = basicProperties.CorrelationId;
-
-            var replyTo = basicProperties.ReplyTo;
-
-            _commandChannel.BasicPublish("",replyTo,props,BinaryConverter.CastToBytes(data));
+            RPCSendTaskExecutionResults(basicProperties, data);
         }
 
         private void GetUsers(IBasicProperties basicProperties, string userToken)
         {
             var data = _securityFacade.GetUsers(userToken);
 
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = basicProperties.CorrelationId;
-
-            var replyTo = basicProperties.ReplyTo;
-
-            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+            RPCSendTaskExecutionResults(basicProperties, data);
         }
 
         private void GetUser(IBasicProperties basicProperties, string userName)
         {
             var data = _securityFacade.GetUser(userName);
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = basicProperties.CorrelationId;
 
-            var replyTo = basicProperties.ReplyTo;
-
-            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+            RPCSendTaskExecutionResults(basicProperties, data);
         }
 
         private void SaveNewUser(IBasicProperties basicProperties, string userToken, User user, UserRole userRole)
         {
             var data = _securityFacade.SaveNewUser(user, userRole, userToken);
 
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = basicProperties.CorrelationId;
-
-            var replyTo = basicProperties.ReplyTo;
-
-            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+            RPCSendTaskExecutionResults(basicProperties, data);
         }
 
-        private void UpdateUser(string userToken, User user, UserRole userRole)
+        private void UpdateUser(IBasicProperties basicProperties, string userToken, User user, UserRole userRole)
         {
             _securityFacade.UpdateUser(user, userRole, userToken);
+
+            RPCSendTaskExecutionFinishNotification(basicProperties);
         }
 
-        private void RemoveUser(string userToken, User user)
+        private void RemoveUser(IBasicProperties basicProperties, string userToken, User user)
         {
             _securityFacade.RemoveUser(user, userToken);
+
+           RPCSendTaskExecutionFinishNotification(basicProperties);
+        }
+
+        private void OnErrorMessageHandledAction(string arg1, string arg2)
+        {
+            var typle = string.Format("{0}#{1}", arg1, arg2);
+            var messageBytes = BinaryConverter.CastToBytes(typle);
+            _commandChannel.BasicPublish(ExceptionsExchangeName, "", null, messageBytes);
         }
 
         public void Dispose()
         {
             _commandChannel.Close();
             _connection.Close();
+        }
+
+        private void RPCSendTaskExecutionResults<T>(IBasicProperties basicProperties, T data)
+        {
+            var correlationId = basicProperties.CorrelationId;
+
+            var replyTo = basicProperties.ReplyTo;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+        }
+
+        private void RPCSendTaskExecutionFinishNotification(IBasicProperties basicProperties)
+        {
+            var correlationId = basicProperties.CorrelationId;
+
+            var replyTo = basicProperties.ReplyTo;
+
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            _commandChannel.BasicPublish("", replyTo, props, null);
         }
     }
 }

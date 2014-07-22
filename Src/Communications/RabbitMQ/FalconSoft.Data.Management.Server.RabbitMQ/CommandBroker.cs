@@ -92,10 +92,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             //collect changed records
             if (toUpdateQueueNameLocal != null)
             {
-                Task.Factory.StartNew(() =>
+                var con = new QueueingBasicConsumer(_commandChannel);
+                _commandChannel.BasicConsume(toUpdateQueueNameLocal, false, con);
+
+                Task.Factory.StartNew(obj =>
                 {
-                    var consumer = new QueueingBasicConsumer(_commandChannel);
-                    _commandChannel.BasicConsume(toUpdateQueueNameLocal, false, consumer);
+                    var consumer = (QueueingBasicConsumer) obj;
                     
                     while (true)
                     {
@@ -119,16 +121,18 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                             toUpdateDataSubject.OnNext(dictionary);
                         }
                     }
-                });//,con);
+                },con);
             }
 
             //collect record keys to delete
             if (toDeleteQueueNameLocal != null)
             {
-                Task.Factory.StartNew(() =>
+                var con = new QueueingBasicConsumer(_commandChannel);
+                _commandChannel.BasicConsume(toDeleteQueueNameLocal, false, con);
+
+                Task.Factory.StartNew(obj =>
                 {
-                    var consumer = new QueueingBasicConsumer(_commandChannel);
-                    _commandChannel.BasicConsume(toDeleteQueueNameLocal, false, consumer);
+                    var consumer = (QueueingBasicConsumer) obj;
 
                     while (true)
                     {
@@ -152,7 +156,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                             toDeleteDataSubject.OnNext(dictionary);
                         }
                     }
-                });
+                }, con);
             }
         }
     }

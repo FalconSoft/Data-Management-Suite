@@ -55,21 +55,19 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void Search(IBasicProperties basicProperties, string userToken, string searchString)
         {
-            var correlationId = basicProperties.CorrelationId;
-
-            var replyTo = basicProperties.ReplyTo;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-
             var data = _searchFacade.Search(searchString);
 
-            var dataBytes = BinaryConverter.CastToBytes(data);
-
-            _commandChannel.BasicPublish("", replyTo, props, dataBytes);
+            RPCSendTaskExecutionResults(basicProperties, data);
         }
 
         private void GetSearchableWorksheets(IBasicProperties basicProperties, string userToken, SearchData searchData)
+        {
+            var data = _searchFacade.GetSearchableWorksheets(searchData);
+
+            RPCSendTaskExecutionResults(basicProperties, data);
+        }
+
+        private void RPCSendTaskExecutionResults<T>(IBasicProperties basicProperties, T data)
         {
             var correlationId = basicProperties.CorrelationId;
 
@@ -78,11 +76,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var props = _commandChannel.CreateBasicProperties();
             props.CorrelationId = correlationId;
 
-            var data = _searchFacade.GetSearchableWorksheets(searchData);
-
-            var dataBytes = BinaryConverter.CastToBytes(data);
-
-            _commandChannel.BasicPublish("", replyTo, props, dataBytes);
+            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
         }
     }
 }

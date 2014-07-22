@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -46,10 +47,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
 
             var queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.QueueBind(queueName, ExceptionsExchangeName, "");
+            _commandChannel.QueueBind(queueNameForExceptions, ExceptionsExchangeName, "");
 
             var consumerForExceptions = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(queueNameForExceptions, false, consumer);
+            _commandChannel.BasicConsume(queueNameForExceptions, false, consumerForExceptions);
 
             Task.Factory.StartNew(() =>
             {
@@ -59,7 +60,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                     var array = BinaryConverter.CastTo<string>(ea.Body).Split('#');
 
-                    if (ObjectInfoChanged != null)
+                    if (ErrorMessageHandledAction != null)
                         ErrorMessageHandledAction(array[0], array[1]);
                 }
             });
@@ -67,487 +68,185 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var methodArgs = new MethodArgs
-                {
-                    MethodName = "GetAvailableDataSources",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {minAccessLevel}
-                };
-
-                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
-
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
-                    {
-                        channel.QueueDelete(queueName);
-                        return BinaryConverter.CastTo<DataSourceInfo[]>(ea.Body);
-                    }
-                }
-            }
+            return RPCServerTaskExecute<DataSourceInfo[]>(_connection, MetadataQueueName, "GetAvailableDataSources",
+                userToken, new object[] {minAccessLevel});
         }
 
         public DataSourceInfo GetDataSourceInfo(string dataSourceUrn, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var methodArgs = new MethodArgs
-                {
-                    MethodName = "GetDataSourceInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {dataSourceUrn}
-                };
-                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
-
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
-                    {
-                        channel.QueueDelete(queueName);
-                        return BinaryConverter.CastTo<DataSourceInfo>(ea.Body);
-                    }
-                }
-            }
+            return RPCServerTaskExecute<DataSourceInfo>(_connection, MetadataQueueName, "GetDataSourceInfo", userToken,
+                new object[] {dataSourceUrn});
         }
 
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var message = new MethodArgs
-                {
-                    MethodName = "UpdateDataSourceInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {dataSource, oldDataSourceUrn}
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", MetadataQueueName, props, messageBytes);
-
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
-                    {
-                        break;
-                    }
-                }
-            }
+            RPCServerTaskExecute(_connection, MetadataQueueName, "UpdateDataSourceInfo", userToken,
+                new object[] {dataSource, oldDataSourceUrn});
         }
 
         public void CreateDataSourceInfo(DataSourceInfo dataSource, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var message = new MethodArgs
-                {
-                    MethodName = "CreateDataSourceInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {dataSource}
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", MetadataQueueName, props, messageBytes);
-
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
-                    {
-                        break;
-                    }
-                }
-            }
+            RPCServerTaskExecute(_connection, MetadataQueueName, "CreateDataSourceInfo", userToken,
+                new object[] {dataSource});
         }
 
         public void DeleteDataSourceInfo(string dataSourceUrn, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var message = new MethodArgs
-                {
-                    MethodName = "DeleteDataSourceInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {dataSourceUrn}
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
-            }
+            RPCServerTaskExecute(_connection, MetadataQueueName, "DeleteDataSourceInfo", userToken,
+                new object[] {dataSourceUrn});
         }
 
         public WorksheetInfo GetWorksheetInfo(string worksheetUrn, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var methodArgs = new MethodArgs
-                {
-                    MethodName = "GetWorksheetInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {worksheetUrn}
-                };
-
-                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
-
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
-                    {
-                        channel.QueueDelete(queueName);
-                        return BinaryConverter.CastTo<WorksheetInfo>(ea.Body);
-                    }
-                }
-            }
+            return RPCServerTaskExecute<WorksheetInfo>(_connection, MetadataQueueName, "GetWorksheetInfo", userToken,
+                new object[] {worksheetUrn});
         }
 
         public WorksheetInfo[] GetAvailableWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var methodArgs = new MethodArgs
-                {
-                    MethodName = "GetAvailableWorksheets",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {minAccessLevel}
-                };
-
-                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
-
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
-                    {
-                        channel.QueueDelete(queueName);
-                        return BinaryConverter.CastTo<WorksheetInfo[]>(ea.Body);
-                    }
-                }
-            }
+            return RPCServerTaskExecute<WorksheetInfo[]>(_connection, MetadataQueueName, "GetAvailableWorksheets",
+                userToken, new object[] {minAccessLevel});
         }
 
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var message = new MethodArgs
-                {
-                    MethodName = "UpdateWorksheetInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {wsInfo, oldWorksheetUrn}
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
-            }
+            RPCServerTaskExecute(_connection, MetadataQueueName, "UpdateWorksheetInfo", userToken,
+                new object[] {wsInfo, oldWorksheetUrn});
         }
 
         public void CreateWorksheetInfo(WorksheetInfo wsInfo, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var message = new MethodArgs
-                {
-                    MethodName = "CreateWorksheetInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {wsInfo}
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", MetadataQueueName, props, messageBytes);
-
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
-                    {
-                        break;
-                    }
-                }
-            }
+            RPCServerTaskExecute(_connection, MetadataQueueName, "CreateWorksheetInfo", userToken, new object[] {wsInfo});
         }
 
         public void DeleteWorksheetInfo(string worksheetUrn, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var message = new MethodArgs
-                {
-                    MethodName = "DeleteWorksheetInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {worksheetUrn}
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
-            }
+            RPCServerTaskExecute(_connection, MetadataQueueName, "DeleteWorksheetInfo", userToken,
+                new object[] {worksheetUrn});
         }
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var methodArgs = new MethodArgs
-                {
-                    MethodName = "GetAvailableAggregatedWorksheets",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {minAccessLevel}
-                };
-
-                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
-
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
-                    {
-                        channel.QueueDelete(queueName);
-                        return BinaryConverter.CastTo<AggregatedWorksheetInfo[]>(ea.Body);
-                    }
-                }
-            }
+            return RPCServerTaskExecute<AggregatedWorksheetInfo[]>(_connection, MetadataQueueName,
+                "GetAvailableAggregatedWorksheets", userToken, new object[] {minAccessLevel});
         }
 
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn,
             string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var message = new MethodArgs
-                {
-                    MethodName = "UpdateAggregatedWorksheetInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {wsInfo, oldWorksheetUrn}
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
-            }
+            RPCServerTaskExecute(_connection, MetadataQueueName, "UpdateAggregatedWorksheetInfo", userToken,
+                new object[] {wsInfo, oldWorksheetUrn});
         }
 
         public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var message = new MethodArgs
-                {
-                    MethodName = "CreateAggregatedWorksheetInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {wsInfo}
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
-            }
+            RPCServerTaskExecute(_connection, MetadataQueueName, "CreateAggregatedWorksheetInfo", userToken, new object[] { wsInfo });
         }
 
         public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var message = new MethodArgs
-                {
-                    MethodName = "DeleteAggregatedWorksheetInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {worksheetUrn}
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", MetadataQueueName, null, messageBytes);
-            }
+            RPCServerTaskExecute(_connection, MetadataQueueName, "DeleteAggregatedWorksheetInfo", userToken,
+                new object[] {worksheetUrn});
         }
 
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var methodArgs = new MethodArgs
-                {
-                    MethodName = "GetAggregatedWorksheetInfo",
-                    UserToken = userToken,
-                    MethodsArgs = new object[] {worksheetUrn}
-                };
-
-                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
-
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
-                    {
-                        channel.QueueDelete(queueName);
-                        return BinaryConverter.CastTo<AggregatedWorksheetInfo>(ea.Body);
-                    }
-                }
-            }
+            return RPCServerTaskExecute<AggregatedWorksheetInfo>(_connection, MetadataQueueName,
+                "GetAggregatedWorksheetInfo", userToken, new object[] {worksheetUrn});
         }
 
         public ServerInfo GetServerInfo()
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var methodArgs = new MethodArgs
-                {
-                    MethodName = "GetServerInfo",
-                    UserToken = null,
-                    MethodsArgs = null
-                };
-
-                channel.BasicPublish("", MetadataQueueName, props, BinaryConverter.CastToBytes(methodArgs));
-
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
-                    {
-                        channel.QueueDelete(queueName);
-                        return BinaryConverter.CastTo<ServerInfo>(ea.Body);
-                    }
-                }
-            }
+            return RPCServerTaskExecute<ServerInfo>(_connection, MetadataQueueName,"GetServerInfo", null, null);
         }
 
         public void Dispose()
         {
-            _commandChannel.Close();
-            _connection.Close();
+            //_commandChannel.Dispose();
+            //_connection.Dispose();
         }
 
         public event EventHandler<SourceObjectChangedEventArgs> ObjectInfoChanged;
 
         public Action<string, string> ErrorMessageHandledAction { get; set; }
+
+        private T RPCServerTaskExecute<T>(IConnection connection, string commandQueueName, string methodName, string userToken,
+            object[] methodArgs)
+        {
+            using (var channel = connection.CreateModel())
+            {
+                var correlationId = Guid.NewGuid().ToString();
+
+                var queueName = channel.QueueDeclare().QueueName;
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var message = new MethodArgs
+                {
+                    MethodName = methodName,
+                    UserToken = userToken,
+                    MethodsArgs = methodArgs
+                };
+
+                var messageBytes = BinaryConverter.CastToBytes(message);
+
+                channel.BasicPublish("", commandQueueName, props, messageBytes);
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        channel.QueueDelete(queueName);
+                        return BinaryConverter.CastTo<T>(ea.Body);
+                    }
+                }
+            }
+        }
+
+        private void RPCServerTaskExecute(IConnection connection, string commandQueueName, string methodName, string userToken,
+            object[] methodArgs)
+        {
+            using (var channel = connection.CreateModel())
+            {
+                var correlationId = Guid.NewGuid().ToString();
+
+                var queueName = channel.QueueDeclare().QueueName;
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var message = new MethodArgs
+                {
+                    MethodName = methodName,
+                    UserToken = userToken,
+                    MethodsArgs = methodArgs
+                };
+
+                var messageBytes = BinaryConverter.CastToBytes(message);
+
+                channel.BasicPublish("", commandQueueName, props, messageBytes);
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
     }
 }

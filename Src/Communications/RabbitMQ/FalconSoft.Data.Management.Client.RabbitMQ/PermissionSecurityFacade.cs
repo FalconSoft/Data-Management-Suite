@@ -26,38 +26,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public Permission GetUserPermissions(string userToken)
         {
-            var correlationId = Guid.NewGuid().ToString();
-
-            var replyTo = _commandChannel.QueueDeclare().QueueName;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = replyTo;
-
-            var message = new MethodArgs
-            {
-                MethodName = "GetUserPermissions",
-                UserToken = userToken
-            };
-
-            var messageBytes = BinaryConverter.CastToBytes(message);
-
-            _commandChannel.BasicPublish("", PermissionSecurityFacadeQueueName, props, messageBytes);
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(replyTo, false, consumer);
-
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-
-                if (correlationId == ea.BasicProperties.CorrelationId)
-                {
-                    var permission = BinaryConverter.CastTo<Permission>(ea.Body);
-
-                    return permission;
-                }
-            }
+            return RPCServerTaskExecute<Permission>(_connection, PermissionSecurityFacadeQueueName, "GetUserPermissions",
+                userToken, null);
         }
 
         public void SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken, string grantedByUserToken, Action<string> messageAction)
@@ -105,39 +75,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public AccessLevel CheckAccess(string userToken, string urn)
         {
-            var correlationId = Guid.NewGuid().ToString();
-
-            var replyTo = _commandChannel.QueueDeclare().QueueName;
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-            props.ReplyTo = replyTo;
-
-            var message = new MethodArgs
-            {
-                MethodName = "CheckAccess",
-                UserToken = userToken,
-                MethodsArgs = new object[] { urn }
-            };
-
-            var messageBytes = BinaryConverter.CastToBytes(message);
-
-            _commandChannel.BasicPublish("", PermissionSecurityFacadeQueueName, props, messageBytes);
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(replyTo, false, consumer);
-
-            while (true)
-            {
-                var ea = consumer.Queue.Dequeue();
-
-                if (correlationId == ea.BasicProperties.CorrelationId)
-                {
-                    var accessLevel = BinaryConverter.CastTo<AccessLevel>(ea.Body);
-
-                    return accessLevel;
-                }
-            }
+            return RPCServerTaskExecute<AccessLevel>(_connection, PermissionSecurityFacadeQueueName, "CheckAccess",
+                userToken, new object[] {urn});
         }
 
         public IObservable<Dictionary<string, AccessLevel>> GetPermissionChanged(string userToken)
@@ -149,6 +88,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             var queueName = _commandChannel.QueueDeclare().QueueName;
             _commandChannel.QueueBind(queueName, PermissionSecurityFacadeExchangeName, userToken);
 
+            
             var message = new MethodArgs
             {
                 MethodName = "GetPermissionChanged",
@@ -183,6 +123,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 return Disposable.Create(() =>
                 {
+                    con.OnCancel();
                     dispoce.Dispose();
                     taskComplete = false;
                 });
@@ -193,8 +134,48 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-            _commandChannel.Dispose();
-            _connection.Dispose();
+            //_commandChannel.Dispose();
+            //_connection.Dispose();
+        }
+
+        private T RPCServerTaskExecute<T>(IConnection connection, string commandQueueName, string methodName, string userToken,
+            object[] methodArgs)
+        {
+            using (var channel = connection.CreateModel())
+            {
+                var correlationId = Guid.NewGuid().ToString();
+
+                var queueName = channel.QueueDeclare().QueueName;
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = queueName;
+
+                var consumer = new QueueingBasicConsumer(channel);
+
+                channel.BasicConsume(queueName, false, consumer);
+
+                var message = new MethodArgs
+                {
+                    MethodName = methodName,
+                    UserToken = userToken,
+                    MethodsArgs = methodArgs
+                };
+
+                var messageBytes = BinaryConverter.CastToBytes(message);
+
+                channel.BasicPublish("", commandQueueName, props, messageBytes);
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        channel.QueueDelete(queueName);
+                        return BinaryConverter.CastTo<T>(ea.Body);
+                    }
+                }
+            }
         }
     }
 }

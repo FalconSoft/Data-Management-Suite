@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -93,13 +95,10 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         list.Add(d);
                         if (list.Count == Limit)
                         {
-                            var props = _commandChannel.CreateBasicProperties();
-                            props.CorrelationId = correlationId;
-
                             responce.Id++;
                             responce.Data = list;
 
-                            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                            RPCSendTaskExecutionResults(replyTo, correlationId, responce);
 
                             list.Clear();
                         }
@@ -107,29 +106,23 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                     if (list.Count != 0)
                     {
-                        var props = _commandChannel.CreateBasicProperties();
-                        props.CorrelationId = correlationId;
-
                         responce.Id++;
                         responce.Data = list;
 
-                        _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
 
                         list.Clear();
 
                         responce.LastMessage = true;
 
-                        _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
                     }
                     else
                     {
-                        var props = _commandChannel.CreateBasicProperties();
-                        props.CorrelationId = correlationId;
-
                         responce.Id++;
                         responce.LastMessage = true;
 
-                        _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
                     }
                 }
                 catch (Exception ex)
@@ -165,42 +158,33 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         list.Add(d);
                         if (list.Count == Limit)
                         {
-                            var props = _commandChannel.CreateBasicProperties();
-                            props.CorrelationId = correlationId;
-
                             responce.Id++;
                             responce.Data = list;
 
-                            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                            RPCSendTaskExecutionResults(replyTo, correlationId, responce);
 
                             list.Clear();
                         }
                     }
                     if (list.Count != 0)
                     {
-                        var props = _commandChannel.CreateBasicProperties();
-                        props.CorrelationId = correlationId;
-
                         responce.Id++;
                         responce.Data = list;
 
-                        _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
 
                         list.Clear();
 
                         responce.LastMessage = true;
 
-                        _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
                     }
                     else
                     {
-                        var props = _commandChannel.CreateBasicProperties();
-                        props.CorrelationId = correlationId;
-
                         responce.Id++;
                         responce.LastMessage = true;
 
-                        _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(responce));
+                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
                     }
                 }
                 catch (Exception ex)
@@ -243,30 +227,6 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         _commandChannel.BasicPublish("GetDataChangesTopic",
                             routingKey, null, BinaryConverter.CastToBytes(message));
                     });
-                //This just return bak one value to test connection.
-                //if (true)
-                //{
-                //    var userTokenLocal = string.Copy(userToken);
-                //    var dataSourcePathLocal = string.Copy(dataSourcePath);
-                //    var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
-                //    var message = new RabbitMQResponce
-                //    {
-                //        Data = new[]
-                //        {
-                //            new RecordChangedParam
-                //            {
-                //                RecordKey = "1",
-                //                ChangeSource = "n",
-                //                ChangedAction = RecordChangedAction.AddedOrUpdated,
-                //                OriginalRecordKey = "1",
-                //                RecordValues = new Dictionary<string, object> {{"id", 1}, {"Value", 32}},
-                //                UserToken = userTokenLocal
-                //            },
-                //        }
-                //    };
-                //    _commandChannel.BasicPublish("GetDataChangesTopic",
-                //        routingKey, null, CastToBytes(message));
-                //}
             }
             catch (Exception ex)
             {
@@ -287,30 +247,34 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             var onSuccess = new Action<string, RecordChangedParam[]>((str, rcpArray) =>
             {
-                var props = _commandChannel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-
                 var message = new object[] { str, rcpArray };
 
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                _commandChannel.BasicPublish("", onSuccessQueueNameLocal, props, messageBytes);
+                RPCSendTaskExecutionResults(onSuccessQueueNameLocal, correlationId, message);
             });
 
             var onFail = new Action<string, Exception>((str, exception) =>
             {
-                var props = _commandChannel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-
                 var message = new object[] { str, exception };
 
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                _commandChannel.BasicPublish("", onFailQueueNameLocal, props, messageBytes);
+                RPCSendTaskExecutionResults(onFailQueueNameLocal, correlationId, message);
             });
 
             _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecords, dataSourcePath, userToken, onSuccess,
                 onFail);
+        }
+
+        private void RPCSendTaskExecutionResults<T>(string replyTo, string correlationId, T data)
+        {
+            var props = _commandChannel.CreateBasicProperties();
+            props.CorrelationId = correlationId;
+
+            var bf = new BinaryFormatter();
+            var ms = new MemoryStream();
+            bf.Serialize(ms, data);
+
+            var messageBytes = ms.ToArray();
+
+            _commandChannel.BasicPublish("", replyTo, props, messageBytes);
         }
     }
 }
