@@ -17,7 +17,16 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public CommandFacade(string hostName)
         {
-            var factory = new ConnectionFactory{HostName = hostName};
+            var factory = new ConnectionFactory
+            {
+                HostName = hostName,
+                UserName = "test",
+                Password = "test",
+                VirtualHost = "/",
+                Protocol = Protocols.FromEnvironment(),
+                Port = AmqpTcpEndpoint.UseDefaultPort
+            };
+
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
         }

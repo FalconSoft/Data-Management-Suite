@@ -19,7 +19,15 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public PermissionSecurityFacade(string serverUrl)
         {
-            var factory = new ConnectionFactory { HostName = serverUrl };
+            var factory = new ConnectionFactory
+            {
+                HostName = serverUrl,
+                UserName = "test",
+                Password = "test",
+                VirtualHost = "/",
+                Protocol = Protocols.FromEnvironment(),
+                Port = AmqpTcpEndpoint.UseDefaultPort
+            };
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
         }

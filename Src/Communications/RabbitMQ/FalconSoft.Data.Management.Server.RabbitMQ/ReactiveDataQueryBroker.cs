@@ -23,7 +23,16 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _reactiveDataQueryFacade = reactiveDataQueryFacade;
             _logger = logger;
 
-            var factory = new ConnectionFactory { HostName = hostName };
+            var factory = new ConnectionFactory
+            {
+                HostName = hostName ,
+                UserName = "test",
+                Password = "test",
+                VirtualHost = "/",
+                Protocol = Protocols.FromEnvironment(),
+                Port = AmqpTcpEndpoint.UseDefaultPort
+            };
+
             IConnection connection = factory.CreateConnection();
             _commandChannel = connection.CreateModel();
             _commandChannel.QueueDeclare(RPCQueryName, false, false, false, null);

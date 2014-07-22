@@ -25,7 +25,15 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _temporalDataQueryFacade = temporalDataQueryFacade;
             _logger = logger;
 
-            var factory = new ConnectionFactory { HostName = hostName };
+            var factory = new ConnectionFactory
+            {
+                HostName = hostName,
+                UserName = "test",
+                Password = "test",
+                VirtualHost = "/",
+                Protocol = Protocols.FromEnvironment(),
+                Port = AmqpTcpEndpoint.UseDefaultPort
+            };
 
             var connection = factory.CreateConnection();
 
