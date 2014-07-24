@@ -7,6 +7,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Management.Common.Security;
 using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
@@ -17,13 +18,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly IModel _commandChannel;
         private const string TemporalDataQueryFacadeQueryName = "TemporalDataQueryFacadeRPC";
 
-        public TemporalDataQueryFacade(string serverUrl)
+        public TemporalDataQueryFacade(string serverUrl, string userName, string password)
         {
             var factory = new ConnectionFactory
             {
                 HostName = serverUrl,
-                UserName = "test",
-                Password = "test",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

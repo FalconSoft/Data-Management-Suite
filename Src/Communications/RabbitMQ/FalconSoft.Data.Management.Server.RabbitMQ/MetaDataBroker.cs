@@ -17,7 +17,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string MetadataExchangeName = "MetaDataFacadeExchange";
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
 
-        public MetaDataBroker(string hostName, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
+        public MetaDataBroker(string hostName, string userName, string password, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
         {
             _metaDataAdminFacade = metaDataAdminFacade;
             _logger = logger;
@@ -25,8 +25,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var factory = new ConnectionFactory
             {
                 HostName = hostName,
-                UserName = "test",
-                Password = "test",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

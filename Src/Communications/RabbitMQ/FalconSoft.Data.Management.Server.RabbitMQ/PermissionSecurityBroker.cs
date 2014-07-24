@@ -16,7 +16,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string PermissionSecurityFacadeQueueName = "PermissionSecurityFacadeRPC";
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
 
-        public PermissionSecurityBroker(string hostName, IPermissionSecurityFacade permissionSecurityFacade, ILogger logger)
+        public PermissionSecurityBroker(string hostName, string userName, string password, IPermissionSecurityFacade permissionSecurityFacade, ILogger logger)
         {
             _permissionSecurityFacade = permissionSecurityFacade;
             _logger = logger;
@@ -24,8 +24,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var factory = new ConnectionFactory
             {
                 HostName = hostName,
-                UserName = "test",
-                Password = "test",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

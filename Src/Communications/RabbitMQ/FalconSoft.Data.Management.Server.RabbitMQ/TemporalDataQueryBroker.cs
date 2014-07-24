@@ -20,7 +20,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string TemporalDataQueryFacadeQueryName = "TemporalDataQueryFacadeRPC";
         private const int Limit = 100;
 
-        public TemporalDataQueryBroker(string hostName, ITemporalDataQueryFacade temporalDataQueryFacade, ILogger logger)
+        public TemporalDataQueryBroker(string hostName, string userName, string password, ITemporalDataQueryFacade temporalDataQueryFacade, ILogger logger)
         {
             _temporalDataQueryFacade = temporalDataQueryFacade;
             _logger = logger;
@@ -28,8 +28,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var factory = new ConnectionFactory
             {
                 HostName = hostName,
-                UserName = "test",
-                Password = "test",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

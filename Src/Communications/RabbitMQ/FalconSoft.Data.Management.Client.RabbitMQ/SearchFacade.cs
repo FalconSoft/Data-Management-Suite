@@ -11,13 +11,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly IModel _commandChannel;
         private const string SearchFacadeQueueName = "SearchFacadeRPC";
 
-        public SearchFacade(string serverUrl)
+        public SearchFacade(string serverUrl, string userName, string password)
         {
             var factory = new ConnectionFactory
             {
                 HostName = serverUrl,
-                UserName = "test",
-                Password = "test",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

@@ -14,14 +14,14 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly IModel _commandChannel;
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
-        
-        public SecurityFacade(string hostName)
+
+        public SecurityFacade(string hostName, string userName, string password)
         {
             var factory = new ConnectionFactory
             {
                 HostName = hostName,
-                UserName = "test",
-                Password = "test",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

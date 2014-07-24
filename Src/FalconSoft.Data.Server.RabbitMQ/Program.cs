@@ -26,7 +26,7 @@ namespace FalconSoft.Data.Server.RabbitMQ
 
             AppDomain.CurrentDomain.UnhandledException += (sender, args) => ServerApp.Logger.Error("UnhandledException -> ", (Exception)args.ExceptionObject);
             ServerApp.Logger.Info("Server...");
-            const string hostName = "192.168.0.19";
+            const string hostName = "localhost";
             Task.Factory.StartNew(() =>
             {
                 var reactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName,

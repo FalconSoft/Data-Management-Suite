@@ -18,7 +18,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly ILogger _logger;
         private readonly IModel _commandChannel;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
-        public CommandBroker(string hostName, ICommandFacade commandFacade, ILogger logger)
+        public CommandBroker(string hostName, string userName, string password, ICommandFacade commandFacade, ILogger logger)
         {
             _commandFacade = commandFacade;
             _logger = logger;
@@ -26,9 +26,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var factory = new ConnectionFactory
             {
                 HostName = hostName,
-                UserName = "test",
-                Password = "test",
-                VirtualHost = "/",
+                UserName = userName,
+                Password = password,
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort
             };

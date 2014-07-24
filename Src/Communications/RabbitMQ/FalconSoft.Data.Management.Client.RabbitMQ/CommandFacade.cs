@@ -15,13 +15,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly IModel _commandChannel;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
 
-        public CommandFacade(string hostName)
+        public CommandFacade(string hostName, string userName, string password)
         {
             var factory = new ConnectionFactory
             {
                 HostName = hostName,
-                UserName = "test",
-                Password = "test",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort
