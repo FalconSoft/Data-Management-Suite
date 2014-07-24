@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using FalconSoft.Data.Management.Client.RabbitMQ;
 using FalconSoft.Data.Management.Client.SignalR;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -24,6 +25,10 @@ namespace FalconSoft.Data.Console
 
         private static IFacadesFactory GetFacadesFactory(string facadeType)
         {
+            if (facadeType.Equals("RabbitMQ", StringComparison.OrdinalIgnoreCase))
+            {
+                return new RabbitMqFacadesFactory("localhost", "RWClient", "RWClient");
+            }
             if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
             {
                 return new SignalRFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"]);
@@ -58,7 +63,7 @@ namespace FalconSoft.Data.Console
         {
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
 
-            ConsoleClientToken = FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console").Value;
+            ConsoleClientToken = FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console").Value; // "53babf2d75e0090dc894959c";
             
             var commandLineParser = new CommandLineParser();
             var withArgs = false;

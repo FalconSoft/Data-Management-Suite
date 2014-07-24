@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Configuration;
 using System.ServiceProcess;
+using System.Threading.Tasks;
+using FalconSoft.Data.Management.Server.RabbitMQ;
 using FalconSoft.Data.Server.Installers;
 
 namespace FalconSoft.Data.Server
@@ -9,7 +12,83 @@ namespace FalconSoft.Data.Server
         [STAThread]
         private static void Main()
         {
+            switch (ConfigurationManager.AppSettings["serverMessagingType"])
+            {
+                case "SignalR": RunSignalRServer();break;
+                case "RabbitMQ":RunRabbitMQServer();break;
+            }
+            
+        }
+
+        private static void RunRabbitMQServer()
+        {
+            try
+            {
+                var bootstrapper = new Bootstrapper();
+                bootstrapper.Configure(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MongoDataConnectionString"]);
+                ServerApp.Logger.Info("Bootstrapper configured...");
+                bootstrapper.Run();
+                ServerApp.Logger.Info("Bootstrapper started running...");
+                
+            }
+            catch (Exception ex)
+            {
+                ServerApp.Logger.Error("Failed to Configure and Run Bootstrapper", ex);
+                throw;
+            }
+
             AppDomain.CurrentDomain.UnhandledException += (sender, args) => ServerApp.Logger.Error("UnhandledException -> ", (Exception)args.ExceptionObject);
+            ServerApp.Logger.Info("Server...");
+            const string hostName = "192.168.0.15";
+            const string userName = "RWClient";
+            const string password = "RWClient";
+            Task.Factory.StartNew(() =>
+            {
+                var reactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName,
+                    ServerApp.ReactiveDataQueryFacade,
+                    ServerApp.Logger);
+            });
+            Task.Factory.StartNew(() =>
+            {
+                var metaDataAdminBroker = new MetaDataBroker(hostName, userName, password, ServerApp.MetaDataFacade, ServerApp.Logger);
+            });
+
+            Task.Factory.StartNew(() =>
+            {
+                var commandBroker = new CommandBroker(hostName, userName, password, ServerApp.CommandFacade, ServerApp.Logger);
+            });
+
+            Task.Factory.StartNew(() =>
+            {
+                var sucurityBroker = new SecurityBroker(hostName, userName, password, ServerApp.SecurityFacade, ServerApp.Logger);
+            });
+
+            Task.Factory.StartNew(() =>
+            {
+                var permissionSecurityBroker = new PermissionSecurityBroker(hostName, userName, password, ServerApp.PermissionSecurityFacade,
+                    ServerApp.Logger);
+            });
+
+            Task.Factory.StartNew(() =>
+            {
+                var serchBroker = new SearchBroker(hostName, userName, password, ServerApp.SearchFacade, ServerApp.Logger);
+            });
+
+            Task.Factory.StartNew(() =>
+            {
+                var temporalDataQueryBroker = new TemporalDataQueryBroker(hostName, userName, password, ServerApp.TemporalQueryFacade,
+                    ServerApp.Logger);
+            });
+
+            Console.WriteLine("Server runs. Press 'Enter' to stop server work.");
+            Console.ReadLine();
+        
+        }
+
+        private static void RunSignalRServer()
+        {
+            AppDomain.CurrentDomain.UnhandledException +=
+                (sender, args) => ServerApp.Logger.Error("UnhandledException -> ", (Exception) args.ExceptionObject);
             ServerApp.Logger.Info("Server...");
 
             var serverService = new ServerService();
@@ -19,7 +98,7 @@ namespace FalconSoft.Data.Server
                 Console.WindowWidth *= 2;
                 Console.WindowHeight *= 2;
                 serverService.Start();
-                if (Console.ReadLine()== "\n")
+                if (Console.ReadLine() == "\n")
                     serverService.Stop();
             }
             else
