@@ -18,13 +18,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
         private const string RPCQueryName = "ReactiveDataQueryFacadeRPC";
-        public ReactiveDataQueryFacade(string hostName)
+        public ReactiveDataQueryFacade(string hostName, string userName, string password)
         {
             var factory = new ConnectionFactory
             {
                 HostName = hostName,
-                UserName = "RWClient",
-                Password = "RWClient",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

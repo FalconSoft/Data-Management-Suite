@@ -17,13 +17,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const string MetadataExchangeName = "MetaDataFacadeExchange";
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
 
-        public MetaDataFacade(string hostName)
+        public MetaDataFacade(string hostName, string userName, string password)
         {
             var factory = new ConnectionFactory
             {
                 HostName = hostName,
-                UserName = "RWClient",
-                Password = "RWClient",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

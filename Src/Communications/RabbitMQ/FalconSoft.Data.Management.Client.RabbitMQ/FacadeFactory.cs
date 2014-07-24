@@ -6,10 +6,14 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
     public class RabbitMqFacadesFactory : IFacadesFactory
     {
         private readonly string _serverUrl;
+        private readonly string _userName;
+        private readonly string _password;
 
-        public RabbitMqFacadesFactory(string serverUrl)
+        public RabbitMqFacadesFactory(string serverUrl, string userName, string password)
         {
             _serverUrl = serverUrl;
+            _userName = userName;
+            _password = password;
         }
 
         public ICommandFacade CreateCommandFacade()
@@ -17,7 +21,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
 
-            return new CommandFacade(_serverUrl);
+            return new CommandFacade(_serverUrl, _userName, _password);
         }
 
         public IReactiveDataQueryFacade CreateReactiveDataQueryFacade()
@@ -25,7 +29,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
 
-            return new ReactiveDataQueryFacade(_serverUrl);
+            return new ReactiveDataQueryFacade(_serverUrl, _userName, _password);
         }
 
         public ITemporalDataQueryFacade CreateTemporalDataQueryFacade()
@@ -33,7 +37,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
 
-            return new TemporalDataQueryFacade(_serverUrl);
+            return new TemporalDataQueryFacade(_serverUrl, _userName, _password);
         }
 
         public IMetaDataAdminFacade CreateMetaDataAdminFacade()
@@ -41,7 +45,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
 
-            return new MetaDataFacade(_serverUrl);
+            return new MetaDataFacade(_serverUrl, _userName, _password);
         }
 
         public IMetaDataFacade CreateMetaDataFacade()
@@ -49,7 +53,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
 
-            return new MetaDataFacade(_serverUrl);
+            return new MetaDataFacade(_serverUrl, _userName, _password);
         }
 
         public ISearchFacade CreateSearchFacade()
@@ -57,7 +61,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
 
-            return new SearchFacade(_serverUrl);
+            return new SearchFacade(_serverUrl, _userName, _password);
         }
 
         public IPermissionSecurityFacade CreatePermissionSecurityFacade()
@@ -65,7 +69,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
 
-            return new PermissionSecurityFacade(_serverUrl);
+            return new PermissionSecurityFacade(_serverUrl, _userName, _password);
         }
 
         public ISecurityFacade CreateSecurityFacade()
@@ -73,7 +77,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
 
-            return new SecurityFacade(_serverUrl);
+            return new SecurityFacade(_serverUrl, _userName, _password);
         }
     }
 }

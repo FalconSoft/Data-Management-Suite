@@ -13,7 +13,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly IModel _commandChannel;
         private const string SearchFacadeQueueName = "SearchFacadeRPC";
 
-        public SearchBroker(string hostName, ISearchFacade searchFacade, ILogger logger)
+        public SearchBroker(string hostName, string userName, string password, ISearchFacade searchFacade, ILogger logger)
         {
             _searchFacade = searchFacade;
             _logger = logger;
@@ -21,8 +21,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var factory = new ConnectionFactory
             {
                 HostName = hostName,
-                UserName = "test",
-                Password = "test",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

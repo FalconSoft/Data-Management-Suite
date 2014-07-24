@@ -17,13 +17,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const string PermissionSecurityFacadeQueueName = "PermissionSecurityFacadeRPC";
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
 
-        public PermissionSecurityFacade(string serverUrl)
+        public PermissionSecurityFacade(string serverUrl, string userName, string password)
         {
             var factory = new ConnectionFactory
             {
                 HostName = serverUrl,
-                UserName = "RWClient",
-                Password = "RWClient",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

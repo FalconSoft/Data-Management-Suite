@@ -85,8 +85,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.Management.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.Management.Server.RabbitMQ", "Communications\RabbitMQ\FalconSoft.Data.Management.Server.RabbitMQ\FalconSoft.Data.Management.Server.RabbitMQ.csproj", "{47235916-5BF9-405B-9E21-C494CC5F6F93}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FalconSoft.Data.Server.RabbitMQ", "FalconSoft.Data.Server.RabbitMQ\FalconSoft.Data.Server.RabbitMQ.csproj", "{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -357,16 +355,6 @@ Global
 		{47235916-5BF9-405B-9E21-C494CC5F6F93}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{47235916-5BF9-405B-9E21-C494CC5F6F93}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{47235916-5BF9-405B-9E21-C494CC5F6F93}.Release|x86.ActiveCfg = Release|Any CPU
-		{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{BB4F9B23-7045-406C-9162-3BEE9ABFB91C}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

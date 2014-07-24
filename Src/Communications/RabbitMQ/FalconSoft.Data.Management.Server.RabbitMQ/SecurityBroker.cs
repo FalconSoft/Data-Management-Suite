@@ -15,7 +15,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
 
-        public SecurityBroker(string hostName, ISecurityFacade securityFacade, ILogger logger)
+        public SecurityBroker(string hostName, string userName, string password, ISecurityFacade securityFacade, ILogger logger)
         {
             _securityFacade = securityFacade;
             _logger = logger;
@@ -23,8 +23,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var factory = new ConnectionFactory
             {
                 HostName = hostName,
-                UserName = "test",
-                Password = "test",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort
