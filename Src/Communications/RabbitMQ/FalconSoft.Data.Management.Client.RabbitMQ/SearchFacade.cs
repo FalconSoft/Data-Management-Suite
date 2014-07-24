@@ -16,8 +16,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             var factory = new ConnectionFactory
             {
                 HostName = serverUrl,
-                UserName = "test",
-                Password = "test",
+                UserName = "RWClient",
+                Password = "RWClient",
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort
