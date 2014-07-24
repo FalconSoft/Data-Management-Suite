@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -20,7 +21,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string TemporalDataQueryFacadeQueryName = "TemporalDataQueryFacadeRPC";
         private const int Limit = 100;
 
-        public TemporalDataQueryBroker(string hostName, string userName, string password, ITemporalDataQueryFacade temporalDataQueryFacade, ILogger logger)
+        public TemporalDataQueryBroker(string hostName, string userName, string password, ITemporalDataQueryFacade temporalDataQueryFacade, ILogger logger, ManualResetEvent manualResetEvent)
         {
             _temporalDataQueryFacade = temporalDataQueryFacade;
             _logger = logger;
@@ -40,6 +41,10 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _commandChannel = connection.CreateModel();
 
             _commandChannel.QueueDeclare(TemporalDataQueryFacadeQueryName, false, false, false, null);
+
+            manualResetEvent.Set();
+
+            Console.WriteLine("TemporalDataQueryBroker starts");
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
 
@@ -109,17 +114,25 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             Task.Factory.StartNew(() =>
             {
-                var correlationId = string.Copy(basicProperties.CorrelationId);
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-                var replyTo = string.Copy(basicProperties.ReplyTo);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
 
-                var recordKeyLocal = string.Copy(recordKey);
+                    var recordKeyLocal = string.Copy(recordKey);
 
-                var dataSourcePathLocal = (DataSourceInfo)dataSourceInfo.Clone();
+                    var dataSourcePathLocal = (DataSourceInfo)dataSourceInfo.Clone();
 
-                var data = _temporalDataQueryFacade.GetRecordsHistory(dataSourcePathLocal, recordKeyLocal);
+                    var data = _temporalDataQueryFacade.GetRecordsHistory(dataSourcePathLocal, recordKeyLocal);
 
-                RPCEnumerableSendOfTaskResult(replyTo, correlationId, data);
+                    RPCEnumerableSendOfTaskResult(replyTo, correlationId, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetRecordsHistory failed", ex);
+                    throw;
+                }
             });
         }
 
@@ -127,15 +140,23 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             Task.Factory.StartNew(() =>
             {
-                var correlationId = string.Copy(basicProperties.CorrelationId);
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-                var replyTo = string.Copy(basicProperties.ReplyTo);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
 
-                var dataSourcePathLocal = (DataSourceInfo)dataSourceInfo.Clone();
+                    var dataSourcePathLocal = (DataSourceInfo)dataSourceInfo.Clone();
 
-                var data = _temporalDataQueryFacade.GetDataHistoryByTag(dataSourcePathLocal, tagInfo);
+                    var data = _temporalDataQueryFacade.GetDataHistoryByTag(dataSourcePathLocal, tagInfo);
 
-                RPCEnumerableSendOfTaskResult(replyTo, correlationId, data);
+                    RPCEnumerableSendOfTaskResult(replyTo, correlationId, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetDataHistoryByTag failed", ex);
+                    throw;
+                }
             });
         }
 
@@ -143,15 +164,23 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             Task.Factory.StartNew(() =>
             {
-                var correlationId = string.Copy(basicProperties.CorrelationId);
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-                var replyTo = string.Copy(basicProperties.ReplyTo);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
 
-                var dataSourcePathLocal = (DataSourceInfo)dataSourceInfo.Clone();
+                    var dataSourcePathLocal = (DataSourceInfo)dataSourceInfo.Clone();
 
-                var data = _temporalDataQueryFacade.GetRecordsAsOf(dataSourcePathLocal, timeStamp);
+                    var data = _temporalDataQueryFacade.GetRecordsAsOf(dataSourcePathLocal, timeStamp);
 
-                RPCEnumerableSendOfTaskResult(replyTo, correlationId, data);
+                    RPCEnumerableSendOfTaskResult(replyTo, correlationId, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetRecordsAsOf failed", ex);
+                    throw;
+                }
             });
         }
 
@@ -159,15 +188,23 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             Task.Factory.StartNew(() =>
             {
-                var correlationId = string.Copy(basicProperties.CorrelationId);
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-                var replyTo = string.Copy(basicProperties.ReplyTo);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
 
-                var dataSourcePathLocal = (DataSourceInfo)dataSourceInfo.Clone();
+                    var dataSourcePathLocal = (DataSourceInfo)dataSourceInfo.Clone();
 
-                var data = _temporalDataQueryFacade.GetTemporalDataByRevisionId(dataSourcePathLocal, revisionId);
+                    var data = _temporalDataQueryFacade.GetTemporalDataByRevisionId(dataSourcePathLocal, revisionId);
 
-                RPCEnumerableSendOfTaskResult(replyTo, correlationId, data);
+                    RPCEnumerableSendOfTaskResult(replyTo, correlationId, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetTemporalDataByRevisionId failed", ex);
+                    throw;
+                }
             });
         }
 
@@ -175,46 +212,103 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             Task.Factory.StartNew(() =>
             {
-                var correlationId = string.Copy(basicProperties.CorrelationId);
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-                var replyTo = string.Copy(basicProperties.ReplyTo);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
 
-                var dataSourcePathLocal = (DataSourceInfo)dataSourceInfo.Clone();
+                    var dataSourcePathLocal = (DataSourceInfo)dataSourceInfo.Clone();
 
-                var data = _temporalDataQueryFacade.GetRevisions(dataSourcePathLocal);
+                    var data = _temporalDataQueryFacade.GetRevisions(dataSourcePathLocal);
 
-                RPCEnumerableSendOfTaskResult(replyTo, correlationId, data);
+                    RPCEnumerableSendOfTaskResult(replyTo, correlationId, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetRevisions failed", ex);
+                    throw;
+                }
             });
         }
 
         private void GeTagInfos(IBasicProperties basicProperties, string userToken)
         {
-            var correlationId = string.Copy(basicProperties.CorrelationId);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            var replyTo = string.Copy(basicProperties.ReplyTo);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
 
-            var data = _temporalDataQueryFacade.GeTagInfos();
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
 
-            var array = data.ToArray();
+                    var data = _temporalDataQueryFacade.GeTagInfos();
 
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
+                    var array = data.ToArray();
 
-            _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(array));
+                    _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(array));
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GeTagInfos failed", ex);
+                    throw;
+                }
+            });
         }
 
         private void SaveTagInfo(IBasicProperties basicProperties, string userToken, TagInfo tagInfo)
         {
-            _temporalDataQueryFacade.SaveTagInfo(tagInfo);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionFinishNotification(basicProperties);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    _temporalDataQueryFacade.SaveTagInfo(tagInfo);
+
+                    RPCSendTaskExecutionFinishNotification(props);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("SaveTagInfo failed", ex);
+                    throw;
+                }
+            });
         }
 
         private void RemoveTagInfo(IBasicProperties basicProperties, string userToken, TagInfo tagInfo)
         {
-            _temporalDataQueryFacade.RemoveTagInfo(tagInfo);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionFinishNotification(basicProperties);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    _temporalDataQueryFacade.RemoveTagInfo(tagInfo);
+
+                    RPCSendTaskExecutionFinishNotification(props);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("SaveTagInfo failed", ex);
+                    throw;
+                }
+            });
         }
 
         private void RPCSendTaskExecutionFinishNotification(IBasicProperties basicProperties)
@@ -229,21 +323,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _commandChannel.BasicPublish("", replyTo, props, null);
         }
 
-        private void RPCSendTaskExecutionResults<T>(string replyTo, string correlationId, T data)
-        {
-            var props = _commandChannel.CreateBasicProperties();
-            props.CorrelationId = correlationId;
-
-            var bf = new BinaryFormatter();
-            var ms = new MemoryStream();
-            bf.Serialize(ms, data);
-
-            var messageBytes = ms.ToArray();
-
-            _commandChannel.BasicPublish("", replyTo, props, messageBytes);
-        }
-
-        private void RPCEnumerableSendOfTaskResult(string replyTo, string correlationId, IEnumerable<Dictionary<string,object>> data)
+        private void RPCEnumerableSendOfTaskResult(string replyTo, string correlationId, IEnumerable<Dictionary<string, object>> data)
         {
             var list = new List<Dictionary<string, object>>();
 

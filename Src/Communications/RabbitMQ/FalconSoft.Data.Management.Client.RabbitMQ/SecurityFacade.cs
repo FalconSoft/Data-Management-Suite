@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
@@ -36,17 +37,24 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             var consumerForExceptions = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(queueNameForExceptions, false, consumerForExceptions);
-            
+
             Task.Factory.StartNew(() =>
             {
                 while (true)
                 {
-                    var ea = consumerForExceptions.Queue.Dequeue();
-                    
-                    var array = BinaryConverter.CastTo<string>(ea.Body).Split('#');
+                    try
+                    {
+                        var ea = consumerForExceptions.Queue.Dequeue();
 
-                    if (ErrorMessageHandledAction != null)
-                        ErrorMessageHandledAction(array[0], array[1]);
+                        var array = BinaryConverter.CastTo<string>(ea.Body).Split('#');
+
+                        if (ErrorMessageHandledAction != null)
+                            ErrorMessageHandledAction(array[0], array[1]);
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        break;
+                    }
                 }
             });
         }
@@ -54,7 +62,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public KeyValuePair<bool, string> Authenticate(string userName, string password)
         {
             return RPCServerTaskExecute<KeyValuePair<bool, string>>(_connection, SecurityFacadeQueueName, "Authenticate",
-                null, new object[] {userName, password});
+                null, new object[] { userName, password });
         }
 
         public List<User> GetUsers(string userToken)
@@ -65,7 +73,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public User GetUser(string userName)
         {
             return RPCServerTaskExecute<User>(_connection, SecurityFacadeQueueName, "GetUser", null,
-                new object[] {userName});
+                new object[] { userName });
         }
 
         public string SaveNewUser(User user, UserRole userRole, string userToken)
@@ -87,8 +95,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-            //_commandChannel.Dispose();
-            //_connection.Dispose();
+            _commandChannel.Dispose();
+            _connection.Dispose();
         }
 
         public Action<string, string> ErrorMessageHandledAction { get; set; }

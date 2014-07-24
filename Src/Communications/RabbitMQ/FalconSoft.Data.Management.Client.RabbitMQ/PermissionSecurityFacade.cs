@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -84,7 +85,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public AccessLevel CheckAccess(string userToken, string urn)
         {
             return RPCServerTaskExecute<AccessLevel>(_connection, PermissionSecurityFacadeQueueName, "CheckAccess",
-                userToken, new object[] {urn});
+                userToken, new object[] { urn });
         }
 
         public IObservable<Dictionary<string, AccessLevel>> GetPermissionChanged(string userToken)
@@ -96,7 +97,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             var queueName = _commandChannel.QueueDeclare().QueueName;
             _commandChannel.QueueBind(queueName, PermissionSecurityFacadeExchangeName, userToken);
 
-            
+
             var message = new MethodArgs
             {
                 MethodName = "GetPermissionChanged",
@@ -111,17 +112,24 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             _commandChannel.BasicConsume(queueName, true, con);
 
             var taskComplete = true;
-            
+
             Task.Factory.StartNew(obj =>
             {
-                var consumer = (QueueingBasicConsumer) obj;
+                var consumer = (QueueingBasicConsumer)obj;
                 while (taskComplete)
                 {
-                    var ea = consumer.Queue.Dequeue();
-                    
-                    var data = BinaryConverter.CastTo<Dictionary<string, AccessLevel>>(ea.Body);
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
 
-                    subjects.OnNext(data);
+                        var data = BinaryConverter.CastTo<Dictionary<string, AccessLevel>>(ea.Body);
+
+                        subjects.OnNext(data);
+                    }
+                    catch (EndOfStreamException)
+                    {
+                        break;
+                    }
                 }
             }, con);
 
@@ -142,8 +150,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-            //_commandChannel.Dispose();
-            //_connection.Dispose();
+            _commandChannel.Dispose();
+            _connection.Dispose();
         }
 
         private T RPCServerTaskExecute<T>(IConnection connection, string commandQueueName, string methodName, string userToken,

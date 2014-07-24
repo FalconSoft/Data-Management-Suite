@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
@@ -15,7 +17,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
 
-        public SecurityBroker(string hostName, string userName, string password, ISecurityFacade securityFacade, ILogger logger)
+        public SecurityBroker(string hostName, string userName, string password, ISecurityFacade securityFacade, ILogger logger, ManualResetEvent manualResetEvent)
         {
             _securityFacade = securityFacade;
             _logger = logger;
@@ -29,7 +31,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort
             };
+
             _connection = factory.CreateConnection();
+
             _commandChannel = _connection.CreateModel();
 
             _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
@@ -37,6 +41,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _securityFacade.ErrorMessageHandledAction = OnErrorMessageHandledAction;
 
             _commandChannel.QueueDeclare(SecurityFacadeQueueName, false, false, false, null);
+
+            manualResetEvent.Set();
+            Console.WriteLine("SecurityBroker starts");
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(SecurityFacadeQueueName, false, consumer);
@@ -55,78 +62,192 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             switch (message.MethodName)
             {
                 case "Authenticate":
-                {
-                    Authenticate(basicProperties, (string) message.MethodsArgs[0], (string) message.MethodsArgs[1]);
-                    break;
-                }
+                    {
+                        Authenticate(basicProperties, (string)message.MethodsArgs[0], (string)message.MethodsArgs[1]);
+                        break;
+                    }
                 case "GetUsers":
-                {
-                    GetUsers(basicProperties, message.UserToken);
-                    break;
-                }
+                    {
+                        GetUsers(basicProperties, message.UserToken);
+                        break;
+                    }
                 case "GetUser":
-                {
-                    GetUser(basicProperties, (string)message.MethodsArgs[0]);
-                    break;
-                }
+                    {
+                        GetUser(basicProperties, (string)message.MethodsArgs[0]);
+                        break;
+                    }
                 case "SaveNewUser":
-                {
-                    SaveNewUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0], (UserRole)message.MethodsArgs[1]);
-                    break;
-                }
+                    {
+                        SaveNewUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0], (UserRole)message.MethodsArgs[1]);
+                        break;
+                    }
                 case "UpdateUser":
-                {
-                    UpdateUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0], (UserRole)message.MethodsArgs[1]);
-                    break;
-                }
+                    {
+                        UpdateUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0], (UserRole)message.MethodsArgs[1]);
+                        break;
+                    }
                 case "RemoveUser":
-                {
-                    RemoveUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0]);
-                    break;
-                }
+                    {
+                        RemoveUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0]);
+                        break;
+                    }
             }
         }
 
         private void Authenticate(IBasicProperties basicProperties, string userName, string password)
         {
-            var data = _securityFacade.Authenticate(userName, password);
+            Task.Factory.StartNew(() =>
+          {
+              try
+              {
+                  var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionResults(basicProperties, data);
+                  var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                  var props = _commandChannel.CreateBasicProperties();
+                  props.CorrelationId = correlationId;
+                  props.ReplyTo = replyTo;
+
+                  var data = _securityFacade.Authenticate(userName, password);
+
+                  RPCSendTaskExecutionResults(props, data);
+              }
+              catch (Exception ex)
+              {
+                  _logger.Debug("Authenticate failed", ex);
+                  throw;
+              }
+          });
         }
 
         private void GetUsers(IBasicProperties basicProperties, string userToken)
         {
-            var data = _securityFacade.GetUsers(userToken);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionResults(basicProperties, data);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    var data = _securityFacade.GetUsers(userToken);
+
+                    RPCSendTaskExecutionResults(props, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetUsers failed", ex);
+                    throw;
+                }
+            });
         }
 
         private void GetUser(IBasicProperties basicProperties, string userName)
         {
-            var data = _securityFacade.GetUser(userName);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionResults(basicProperties, data);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    var data = _securityFacade.GetUser(userName);
+
+                    RPCSendTaskExecutionResults(props, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetUser failed", ex);
+                    throw;
+                }
+            });
         }
 
         private void SaveNewUser(IBasicProperties basicProperties, string userToken, User user, UserRole userRole)
         {
-            var data = _securityFacade.SaveNewUser(user, userRole, userToken);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionResults(basicProperties, data);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    var data = _securityFacade.SaveNewUser(user, userRole, userToken);
+
+                    RPCSendTaskExecutionResults(props, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("SaveNewUser failed", ex);
+                    throw;
+                }
+            });
         }
 
         private void UpdateUser(IBasicProperties basicProperties, string userToken, User user, UserRole userRole)
         {
-            _securityFacade.UpdateUser(user, userRole, userToken);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionFinishNotification(basicProperties);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    _securityFacade.UpdateUser(user, userRole, userToken);
+
+                    RPCSendTaskExecutionFinishNotification(props);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("SaveNewUser failed", ex);
+                    throw;
+                }
+            });
         }
 
         private void RemoveUser(IBasicProperties basicProperties, string userToken, User user)
         {
-            _securityFacade.RemoveUser(user, userToken);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-           RPCSendTaskExecutionFinishNotification(basicProperties);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    _securityFacade.RemoveUser(user, userToken);
+
+                    RPCSendTaskExecutionFinishNotification(props);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("SaveNewUser failed", ex);
+                    throw;
+                }
+            });
         }
 
         private void OnErrorMessageHandledAction(string arg1, string arg2)

@@ -69,22 +69,25 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             Task.Factory.StartNew(() =>
             {
-                var queueName = string.Copy(replyTo);
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
 
-                    var responce = CastTo<RabbitMQResponce>(ea.Body);
+                        var responce = CastTo<RabbitMQResponce>(ea.Body);
 
-                    if (responce.LastMessage) break;
+                        if (responce.LastMessage) break;
 
-                    var rcpArray = (RecordChangedParam[])responce.Data;
+                        var rcpArray = (RecordChangedParam[])responce.Data;
 
-                    subject.OnNext(rcpArray);
-
+                        subject.OnNext(rcpArray);
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        break;
+                    }
                 }
-                _commandChannel.QueueDelete(queueName);
-
                 subject.OnCompleted();
             });
             return subject.AsObservable();
@@ -166,8 +169,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-            //_commandChannel.Close();
-            //_connection.Close();
+            _commandChannel.Close();
+            _connection.Close();
         }
 
         private IEnumerable<T> RPCServerTaskExecute<T>(IConnection connection,
