@@ -18,7 +18,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string RPCQueryName = "ReactiveDataQueryFacadeRPC";
         private const int Limit = 100;
 
-        public ReactiveDataQueryBroker(string hostName, IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger)
+        public ReactiveDataQueryBroker(string hostName, string userName, string password, IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger)
         {
             _reactiveDataQueryFacade = reactiveDataQueryFacade;
             _logger = logger;
@@ -26,8 +26,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var factory = new ConnectionFactory
             {
                 HostName = hostName ,
-                UserName = "RWClient",
-                Password = "RWClient",
+                UserName = userName,
+                Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort

@@ -14,10 +14,9 @@ namespace FalconSoft.Data.Server
         {
             switch (ConfigurationManager.AppSettings["serverMessagingType"])
             {
-                case "SignalR": RunSignalRServer();break;
-                case "RabbitMQ":RunRabbitMQServer();break;
+                case "SignalR": RunSignalRServer(); break;
+                case "RabbitMQ": RunRabbitMQServer(); break;
             }
-            
         }
 
         private static void RunRabbitMQServer()
@@ -25,11 +24,11 @@ namespace FalconSoft.Data.Server
             try
             {
                 var bootstrapper = new Bootstrapper();
-                bootstrapper.Configure(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MongoDataConnectionString"]);
+                bootstrapper.Configure(ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"],
+                    ConfigurationManager.AppSettings["MongoDataConnectionString"], ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["CatalogDlls"]);
                 ServerApp.Logger.Info("Bootstrapper configured...");
                 bootstrapper.Run();
                 ServerApp.Logger.Info("Bootstrapper started running...");
-                
             }
             catch (Exception ex)
             {
@@ -39,14 +38,12 @@ namespace FalconSoft.Data.Server
 
             AppDomain.CurrentDomain.UnhandledException += (sender, args) => ServerApp.Logger.Error("UnhandledException -> ", (Exception)args.ExceptionObject);
             ServerApp.Logger.Info("Server...");
-            const string hostName = "192.168.0.15";
-            const string userName = "RWClient";
-            const string password = "RWClient";
+            var hostName = ConfigurationManager.AppSettings["ConnectionString"];
+            var userName = ConfigurationManager.AppSettings["RadditMqAdminLogin"];
+            var password = ConfigurationManager.AppSettings["RadditMqAdminPass"];
             Task.Factory.StartNew(() =>
             {
-                var reactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName,
-                    ServerApp.ReactiveDataQueryFacade,
-                    ServerApp.Logger);
+                var reactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName, userName, password, ServerApp.ReactiveDataQueryFacade, ServerApp.Logger);
             });
             Task.Factory.StartNew(() =>
             {
@@ -65,8 +62,7 @@ namespace FalconSoft.Data.Server
 
             Task.Factory.StartNew(() =>
             {
-                var permissionSecurityBroker = new PermissionSecurityBroker(hostName, userName, password, ServerApp.PermissionSecurityFacade,
-                    ServerApp.Logger);
+                var permissionSecurityBroker = new PermissionSecurityBroker(hostName, userName, password, ServerApp.PermissionSecurityFacade, ServerApp.Logger);
             });
 
             Task.Factory.StartNew(() =>
@@ -76,19 +72,16 @@ namespace FalconSoft.Data.Server
 
             Task.Factory.StartNew(() =>
             {
-                var temporalDataQueryBroker = new TemporalDataQueryBroker(hostName, userName, password, ServerApp.TemporalQueryFacade,
-                    ServerApp.Logger);
+                var temporalDataQueryBroker = new TemporalDataQueryBroker(hostName, userName, password, ServerApp.TemporalQueryFacade, ServerApp.Logger);
             });
 
-            Console.WriteLine("Server runs. Press 'Enter' to stop server work.");
+            Console.WriteLine("Server is running. Press 'Enter' to stop server.");
             Console.ReadLine();
-        
         }
 
         private static void RunSignalRServer()
         {
-            AppDomain.CurrentDomain.UnhandledException +=
-                (sender, args) => ServerApp.Logger.Error("UnhandledException -> ", (Exception) args.ExceptionObject);
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) => ServerApp.Logger.Error("UnhandledException -> ", (Exception)args.ExceptionObject);
             ServerApp.Logger.Info("Server...");
 
             var serverService = new ServerService();

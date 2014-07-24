@@ -27,7 +27,7 @@ namespace FalconSoft.Data.Console
         {
             if (facadeType.Equals("RabbitMQ", StringComparison.OrdinalIgnoreCase))
             {
-                return new RabbitMqFacadesFactory("localhost", "RWClient", "RWClient");
+                return new RabbitMqFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RadditMqAdminLogin"], ConfigurationManager.AppSettings["RadditMqAdminPass"]);
             }
             if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
             {
@@ -63,7 +63,7 @@ namespace FalconSoft.Data.Console
         {
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
 
-            ConsoleClientToken = FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console").Value; // "53babf2d75e0090dc894959c";
+            ConsoleClientToken = FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console").Value;
             
             var commandLineParser = new CommandLineParser();
             var withArgs = false;
