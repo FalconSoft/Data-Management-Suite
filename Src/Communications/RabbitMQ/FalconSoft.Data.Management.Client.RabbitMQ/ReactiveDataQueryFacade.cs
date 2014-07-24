@@ -69,7 +69,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             Task.Factory.StartNew(() =>
             {
-                var queueName = string.Copy(replyTo);
                 while (true)
                 {
                     try
@@ -89,8 +88,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         break;
                     }
                 }
-                _commandChannel.QueueDelete(queueName);
-
                 subject.OnCompleted();
             });
             return subject.AsObservable();
