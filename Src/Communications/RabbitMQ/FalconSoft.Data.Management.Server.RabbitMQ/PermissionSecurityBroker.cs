@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
@@ -16,7 +18,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string PermissionSecurityFacadeQueueName = "PermissionSecurityFacadeRPC";
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
 
-        public PermissionSecurityBroker(string hostName, string userName, string password, IPermissionSecurityFacade permissionSecurityFacade, ILogger logger)
+        public PermissionSecurityBroker(string hostName, string userName, string password, IPermissionSecurityFacade permissionSecurityFacade, ILogger logger, ManualResetEvent manualResetEvent)
         {
             _permissionSecurityFacade = permissionSecurityFacade;
             _logger = logger;
@@ -37,6 +39,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _commandChannel.QueueDeclare(PermissionSecurityFacadeQueueName, false, false, false, null);
 
             _commandChannel.ExchangeDeclare(PermissionSecurityFacadeExchangeName, "direct");
+
+            manualResetEvent.Set();
+            Console.WriteLine("PermissionSecurityBroker starts");
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(PermissionSecurityFacadeQueueName, false, consumer);
@@ -80,9 +85,27 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void GetUserPermissions(IBasicProperties basicProperties, string userToken)
         {
-            var data = _permissionSecurityFacade.GetUserPermissions(userToken);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionResults(basicProperties, data);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    var data = _permissionSecurityFacade.GetUserPermissions(userToken);
+
+                    RPCSendTaskExecutionResults(props, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetUserPermissions failed", ex);
+                }
+            });
         }
 
         private void SaveUserPermissions(IBasicProperties basicProperties, string userToken, Dictionary<string, AccessLevel> permissions, string targetUserToken)
@@ -94,9 +117,27 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void CheckAccess(IBasicProperties basicProperties, string userToken, string dataSourcePath)
         {
-            var data = _permissionSecurityFacade.CheckAccess(userToken, dataSourcePath);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionResults(basicProperties, data);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    var data = _permissionSecurityFacade.CheckAccess(userToken, dataSourcePath);
+
+                    RPCSendTaskExecutionResults(props, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("CheckAccess failed", ex);
+                }
+            });
         }
 
         private void GetPermissionChanged(string userToken)

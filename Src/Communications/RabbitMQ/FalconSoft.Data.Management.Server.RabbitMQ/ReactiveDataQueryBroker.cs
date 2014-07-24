@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -18,14 +19,14 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string RPCQueryName = "ReactiveDataQueryFacadeRPC";
         private const int Limit = 100;
 
-        public ReactiveDataQueryBroker(string hostName, IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger)
+        public ReactiveDataQueryBroker(string hostName, IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger, ManualResetEvent manualResetEvent)
         {
             _reactiveDataQueryFacade = reactiveDataQueryFacade;
             _logger = logger;
 
             var factory = new ConnectionFactory
             {
-                HostName = hostName ,
+                HostName = hostName,
                 UserName = "RWClient",
                 Password = "RWClient",
                 VirtualHost = "/",
@@ -33,9 +34,16 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Port = AmqpTcpEndpoint.UseDefaultPort
             };
 
-            IConnection connection = factory.CreateConnection();
+            var connection = factory.CreateConnection();
+
             _commandChannel = connection.CreateModel();
+
             _commandChannel.QueueDeclare(RPCQueryName, false, false, false, null);
+
+            manualResetEvent.Set();
+
+            Console.WriteLine("ReactiveDataQueryBroker starts");
+
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(RPCQueryName, true, consumer);
 
@@ -136,7 +144,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-
+                    _logger.Debug("GetAggregatedData failed", ex);
                 }
             });
         }
@@ -198,7 +206,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-
+                    _logger.Debug("GetData failed", ex);
                 }
             });
         }
@@ -239,7 +247,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             }
             catch (Exception ex)
             {
-                throw;
+                _logger.Debug("GetData failed", ex);
             }
         }
 
@@ -250,26 +258,33 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             string onSuccessQueueName,
             string onFailQueueName)
         {
-            var correlationId = string.Copy(basicProperties.CorrelationId);
-            var onSuccessQueueNameLocal = string.Copy(onSuccessQueueName);
-            var onFailQueueNameLocal = string.Copy(onFailQueueName);
-
-            var onSuccess = new Action<string, RecordChangedParam[]>((str, rcpArray) =>
+            try
             {
-                var message = new object[] { str, rcpArray };
+                var correlationId = string.Copy(basicProperties.CorrelationId);
+                var onSuccessQueueNameLocal = string.Copy(onSuccessQueueName);
+                var onFailQueueNameLocal = string.Copy(onFailQueueName);
 
-                RPCSendTaskExecutionResults(onSuccessQueueNameLocal, correlationId, message);
-            });
+                var onSuccess = new Action<string, RecordChangedParam[]>((str, rcpArray) =>
+                {
+                    var message = new object[] { str, rcpArray };
 
-            var onFail = new Action<string, Exception>((str, exception) =>
+                    RPCSendTaskExecutionResults(onSuccessQueueNameLocal, correlationId, message);
+                });
+
+                var onFail = new Action<string, Exception>((str, exception) =>
+                {
+                    var message = new object[] { str, exception };
+
+                    RPCSendTaskExecutionResults(onFailQueueNameLocal, correlationId, message);
+                });
+
+                _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecords, dataSourcePath, userToken, onSuccess,
+                    onFail);
+            }
+            catch (Exception ex)
             {
-                var message = new object[] { str, exception };
-
-                RPCSendTaskExecutionResults(onFailQueueNameLocal, correlationId, message);
-            });
-
-            _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecords, dataSourcePath, userToken, onSuccess,
-                onFail);
+                _logger.Debug("ResolveRecordbyForeignKey failed", ex);
+            }
         }
 
         private void RPCSendTaskExecutionResults<T>(string replyTo, string correlationId, T data)
