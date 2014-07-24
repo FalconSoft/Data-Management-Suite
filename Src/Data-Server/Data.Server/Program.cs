@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Configuration;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Server.RabbitMQ;
 using FalconSoft.Data.Server.Installers;
@@ -41,41 +42,63 @@ namespace FalconSoft.Data.Server
             var hostName = ConfigurationManager.AppSettings["ConnectionString"];
             var userName = ConfigurationManager.AppSettings["RadditMqAdminLogin"];
             var password = ConfigurationManager.AppSettings["RadditMqAdminPass"];
+            var handlers = new ManualResetEvent[7];
+            handlers[0] = new ManualResetEvent(false);
             Task.Factory.StartNew(() =>
             {
-                var reactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName, userName, password, ServerApp.ReactiveDataQueryFacade, ServerApp.Logger);
+                var reactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName, userName, password,
+                    ServerApp.ReactiveDataQueryFacade, ServerApp.Logger, handlers[0]);
             });
+
+            handlers[1] = new ManualResetEvent(false);
             Task.Factory.StartNew(() =>
             {
-                var metaDataAdminBroker = new MetaDataBroker(hostName, userName, password, ServerApp.MetaDataFacade, ServerApp.Logger);
+               var metaDataAdminBroker = new MetaDataBroker(hostName, userName, password, ServerApp.MetaDataFacade, ServerApp.Logger, handlers[1]);
+            });
+
+            handlers[2] = new ManualResetEvent(false);
+            Task.Factory.StartNew(() =>
+            {
+                var commandBroker = new CommandBroker(hostName, userName, password, ServerApp.CommandFacade, ServerApp.Logger, handlers[2]);
+            });
+
+            handlers[3] = new ManualResetEvent(false);
+            Task.Factory.StartNew(() =>
+            {
+                var sucurityBroker = new SecurityBroker(hostName, userName, password, ServerApp.SecurityFacade, ServerApp.Logger, handlers[3]);
+            });
+
+            handlers[4] = new ManualResetEvent(false);
+            Task.Factory.StartNew(() =>
+            {
+                var permissionSecurityBroker = new PermissionSecurityBroker(hostName, userName, password, ServerApp.PermissionSecurityFacade, ServerApp.Logger, handlers[4]);
+
+            });
+            handlers[5] = new ManualResetEvent(false);
+            Task.Factory.StartNew(() =>
+            {
+                var serchBroker = new SearchBroker(hostName, userName, password, ServerApp.SearchFacade, ServerApp.Logger, handlers[5]);
+            });
+
+            handlers[6] = new ManualResetEvent(false);
+            Task.Factory.StartNew(() =>
+            {
+                var temporalDataQueryBroker = new TemporalDataQueryBroker(hostName, userName, password, ServerApp.TemporalQueryFacade, ServerApp.Logger, handlers[6]);
             });
 
             Task.Factory.StartNew(() =>
             {
-                var commandBroker = new CommandBroker(hostName, userName, password, ServerApp.CommandFacade, ServerApp.Logger);
+                var temporalDataQueryBroker = new TemporalDataQueryBroker(hostName, userName, password, ServerApp.TemporalQueryFacade,
+                    ServerApp.Logger, handlers[6]);
             });
 
-            Task.Factory.StartNew(() =>
+            foreach (var manualResetEvent in handlers)
             {
-                var sucurityBroker = new SecurityBroker(hostName, userName, password, ServerApp.SecurityFacade, ServerApp.Logger);
-            });
+                manualResetEvent.WaitOne();
+            }
 
-            Task.Factory.StartNew(() =>
-            {
-                var permissionSecurityBroker = new PermissionSecurityBroker(hostName, userName, password, ServerApp.PermissionSecurityFacade, ServerApp.Logger);
-            });
+            Console.WriteLine("Server runs. Press 'Enter' to stop server work.");
 
-            Task.Factory.StartNew(() =>
-            {
-                var serchBroker = new SearchBroker(hostName, userName, password, ServerApp.SearchFacade, ServerApp.Logger);
-            });
-
-            Task.Factory.StartNew(() =>
-            {
-                var temporalDataQueryBroker = new TemporalDataQueryBroker(hostName, userName, password, ServerApp.TemporalQueryFacade, ServerApp.Logger);
-            });
-
-            Console.WriteLine("Server is running. Press 'Enter' to stop server.");
             Console.ReadLine();
         }
 

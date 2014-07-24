@@ -1,4 +1,7 @@
-﻿using FalconSoft.Data.Management.Common;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using RabbitMQ.Client;
@@ -13,7 +16,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly IModel _commandChannel;
         private const string SearchFacadeQueueName = "SearchFacadeRPC";
 
-        public SearchBroker(string hostName, string userName, string password, ISearchFacade searchFacade, ILogger logger)
+        public SearchBroker(string hostName, string userName, string password, ISearchFacade searchFacade, ILogger logger, ManualResetEvent manualResetEvent)
         {
             _searchFacade = searchFacade;
             _logger = logger;
@@ -31,6 +34,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _commandChannel = _connection.CreateModel();
 
             _commandChannel.QueueDeclare(SearchFacadeQueueName, false, false, false, null);
+
+            manualResetEvent.Set();
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(SearchFacadeQueueName, true, consumer);
@@ -63,16 +68,54 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void Search(IBasicProperties basicProperties, string userToken, string searchString)
         {
-            var data = _searchFacade.Search(searchString);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionResults(basicProperties, data);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    var data = _searchFacade.Search(searchString);
+
+                    RPCSendTaskExecutionResults(basicProperties, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("Search failed", ex);
+                    throw;
+                }
+            });
         }
 
         private void GetSearchableWorksheets(IBasicProperties basicProperties, string userToken, SearchData searchData)
         {
-            var data = _searchFacade.GetSearchableWorksheets(searchData);
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
 
-            RPCSendTaskExecutionResults(basicProperties, data);
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+
+                    var data = _searchFacade.GetSearchableWorksheets(searchData);
+
+                    RPCSendTaskExecutionResults(basicProperties, data);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetSearchableWorksheets failed", ex);
+                    throw;
+                }
+            });
         }
 
         private void RPCSendTaskExecutionResults<T>(IBasicProperties basicProperties, T data)

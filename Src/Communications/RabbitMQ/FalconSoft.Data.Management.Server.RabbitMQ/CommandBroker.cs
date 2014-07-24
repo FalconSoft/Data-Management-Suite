@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -18,7 +20,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly ILogger _logger;
         private readonly IModel _commandChannel;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
-        public CommandBroker(string hostName, string userName, string password, ICommandFacade commandFacade, ILogger logger)
+        public CommandBroker(string hostName, string userName, string password, ICommandFacade commandFacade, ILogger logger, ManualResetEvent manualResetEvent)
         {
             _commandFacade = commandFacade;
             _logger = logger;
@@ -34,6 +36,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var connection = factory.CreateConnection();
             _commandChannel = connection.CreateModel();
             _commandChannel.QueueDeclare(CommandFacadeQueueName, false, false, false, null);
+
+            manualResetEvent.Set();
+            Console.WriteLine("CommandBroker starts");
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(CommandFacadeQueueName, false, consumer);
