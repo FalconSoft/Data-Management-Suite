@@ -43,9 +43,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _commandChannel.QueueDeclare(TemporalDataQueryFacadeQueryName, false, false, false, null);
 
             Console.WriteLine("TemporalDataQueryBroker starts");
-            manualResetEvent.Set();
-
+            
             var consumer = new QueueingBasicConsumer(_commandChannel);
+            manualResetEvent.Set();
 
             _commandChannel.BasicConsume(TemporalDataQueryFacadeQueryName, true, consumer);
 

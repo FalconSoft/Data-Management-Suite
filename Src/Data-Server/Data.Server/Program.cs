@@ -86,12 +86,6 @@ namespace FalconSoft.Data.Server
                 var temporalDataQueryBroker = new TemporalDataQueryBroker(hostName, userName, password, ServerApp.TemporalQueryFacade, ServerApp.Logger, handlers[6]);
             });
 
-            Task.Factory.StartNew(() =>
-            {
-                var temporalDataQueryBroker = new TemporalDataQueryBroker(hostName, userName, password, ServerApp.TemporalQueryFacade,
-                    ServerApp.Logger, handlers[6]);
-            });
-
             foreach (var manualResetEvent in handlers)
             {
                 manualResetEvent.WaitOne();

@@ -120,7 +120,6 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             catch (Exception ex)
             {
                 _logger.Debug("SaveUserPermissions failed", ex);
-                throw;
             }
         }
 

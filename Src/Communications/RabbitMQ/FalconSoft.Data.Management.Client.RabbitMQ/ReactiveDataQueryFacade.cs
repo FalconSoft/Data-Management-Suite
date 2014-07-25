@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -83,7 +82,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                         subject.OnNext(rcpArray);
                     }
-                    catch (EndOfStreamException ex)
+                    catch (EndOfStreamException)
                     {
                         break;
                     }
@@ -196,27 +195,27 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             Task.Factory.StartNew(() =>
             {
-                var queueName = string.Copy(replyTo);
                 while (true)
                 {
                     var ea = consumer.Queue.Dequeue();
 
-                    var responce = CastTo<RabbitMQResponce>(ea.Body);
-
-                    if (responce.LastMessage)
+                    if (correlationId == ea.BasicProperties.CorrelationId)
                     {
-                        channel.Dispose();
-                        break;
-                    }
+                        var responce = CastTo<RabbitMQResponce>(ea.Body);
 
-                    var list = (List<T>)responce.Data;
-                    foreach (var dictionary in list)
-                    {
-                        subject.OnNext(dictionary);
+                        if (responce.LastMessage)
+                        {
+                            channel.Dispose();
+                            break;
+                        }
+
+                        var list = (List<T>) responce.Data;
+                        foreach (var dictionary in list)
+                        {
+                            subject.OnNext(dictionary);
+                        }
                     }
                 }
-                _commandChannel.QueueDelete(queueName);
-
                 subject.OnCompleted();
             });
             return subject.ToEnumerable();
