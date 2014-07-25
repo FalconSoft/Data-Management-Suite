@@ -40,8 +40,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.ExchangeDeclare(PermissionSecurityFacadeExchangeName, "direct");
 
-            manualResetEvent.Set();
             Console.WriteLine("PermissionSecurityBroker starts");
+            manualResetEvent.Set();
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(PermissionSecurityFacadeQueueName, false, consumer);
@@ -67,12 +67,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 case "SaveUserPermissions":
                     {
                         SaveUserPermissions(basicProperties, message.UserToken,
-                            (Dictionary<string, AccessLevel>)message.MethodsArgs[0], (string)message.MethodsArgs[1]);
+                            message.MethodsArgs[0] as Dictionary<string, AccessLevel>, message.MethodsArgs[1] as string);
                         break;
                     }
                 case "CheckAccess":
                     {
-                        CheckAccess(basicProperties, message.UserToken, (string)message.MethodsArgs[0]);
+                        CheckAccess(basicProperties, message.UserToken, message.MethodsArgs[0] as string);
                         break;
                     }
                 case "GetPermissionChanged":
@@ -104,15 +104,24 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 catch (Exception ex)
                 {
                     _logger.Debug("GetUserPermissions failed", ex);
+                    throw;
                 }
             });
         }
 
         private void SaveUserPermissions(IBasicProperties basicProperties, string userToken, Dictionary<string, AccessLevel> permissions, string targetUserToken)
         {
-            var action = new Action<string>(message => RPCSendTaskExecutionResults(basicProperties, message));
+            try
+            {
+                var action = new Action<string>(message => RPCSendTaskExecutionResults(basicProperties, message));
 
-            _permissionSecurityFacade.SaveUserPermissions(permissions, targetUserToken, userToken, action);
+                _permissionSecurityFacade.SaveUserPermissions(permissions, targetUserToken, userToken, action);
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug("SaveUserPermissions failed", ex);
+                throw;
+            }
         }
 
         private void CheckAccess(IBasicProperties basicProperties, string userToken, string dataSourcePath)
@@ -136,6 +145,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 catch (Exception ex)
                 {
                     _logger.Debug("CheckAccess failed", ex);
+                    throw;
                 }
             });
         }

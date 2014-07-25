@@ -47,8 +47,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _metaDataAdminFacade.ErrorMessageHandledAction = OnErrorMessageHandledAction;
 
-            manualResetEvent.Set();
             Console.WriteLine("MetaDataBroker starts");
+            manualResetEvent.Set();
+            
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(MetadataQueueName, false, consumer);
@@ -68,12 +69,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 case "CreateDataSourceInfo":
                     {
-                        CreateDataSourceInfo(basicProperties, message.UserToken, (DataSourceInfo)message.MethodsArgs[0]);
+                        CreateDataSourceInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as DataSourceInfo);
                         break;
                     }
                 case "GetDataSourceInfo":
                     {
-                        GetDataSourceInfo(basicProperties, message.UserToken, (string)message.MethodsArgs[0]);
+                        GetDataSourceInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as string);
                         break;
                     }
                 case "GetAvailableDataSources":
@@ -83,18 +84,18 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                 case "UpdateDataSourceInfo":
                     {
-                        UpdateDataSourceInfo(basicProperties, message.UserToken, (DataSourceInfo)message.MethodsArgs[0],
-                            (string)message.MethodsArgs[1]);
+                        UpdateDataSourceInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as DataSourceInfo,
+                            message.MethodsArgs[1] as string);
                         break;
                     }
                 case "DeleteDataSourceInfo":
                     {
-                        DeleteDataSourceInfo(basicProperties, message.UserToken, (string)message.MethodsArgs[0]);
+                        DeleteDataSourceInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as string);
                         break;
                     }
                 case "GetWorksheetInfo":
                     {
-                        GetWorksheetInfo(basicProperties, message.UserToken, (string)message.MethodsArgs[0]);
+                        GetWorksheetInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as string);
                         break;
                     }
                 case "GetAvailableWorksheets":
@@ -104,18 +105,18 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                 case "UpdateWorksheetInfo":
                     {
-                        UpdateWorksheetInfo(basicProperties, message.UserToken, (WorksheetInfo)message.MethodsArgs[0],
-                            (string)message.MethodsArgs[1]);
+                        UpdateWorksheetInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as WorksheetInfo,
+                            message.MethodsArgs[1] as string);
                         break;
                     }
                 case "CreateWorksheetInfo":
                     {
-                        CreateWorksheetInfo(basicProperties, message.UserToken, (WorksheetInfo)message.MethodsArgs[0]);
+                        CreateWorksheetInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as WorksheetInfo);
                         break;
                     }
                 case "DeleteWorksheetInfo":
                     {
-                        DeleteWorksheetInfo(basicProperties, message.UserToken, (string)message.MethodsArgs[0]);
+                        DeleteWorksheetInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as string);
                         break;
                     }
                 case "GetAvailableAggregatedWorksheets":
@@ -126,24 +127,23 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                 case "UpdateAggregatedWorksheetInfo":
                     {
-                        UpdateAggregatedWorksheetInfo(basicProperties, (AggregatedWorksheetInfo)message.MethodsArgs[0],
-                            (string)message.MethodsArgs[1],
-                            message.UserToken);
+                        UpdateAggregatedWorksheetInfo(basicProperties, message.MethodsArgs[0] as AggregatedWorksheetInfo,
+                            message.MethodsArgs[1] as string, message.UserToken);
                         break;
                     }
                 case "CreateAggregatedWorksheetInfo":
                     {
-                        CreateAggregatedWorksheetInfo(basicProperties, (AggregatedWorksheetInfo)message.MethodsArgs[0], message.UserToken);
+                        CreateAggregatedWorksheetInfo(basicProperties, message.MethodsArgs[0] as AggregatedWorksheetInfo, message.UserToken);
                         break;
                     }
                 case "DeleteAggregatedWorksheetInfo":
                     {
-                        DeleteAggregatedWorksheetInfo(basicProperties, (string)message.MethodsArgs[0], message.UserToken);
+                        DeleteAggregatedWorksheetInfo(basicProperties, message.MethodsArgs[0] as string, message.UserToken);
                         break;
                     }
                 case "GetAggregatedWorksheetInfo":
                     {
-                        GetAggregatedWorksheetInfo(basicProperties, (string)message.MethodsArgs[0], message.UserToken);
+                        GetAggregatedWorksheetInfo(basicProperties, message.MethodsArgs[0] as string, message.UserToken);
                         break;
                     }
             }

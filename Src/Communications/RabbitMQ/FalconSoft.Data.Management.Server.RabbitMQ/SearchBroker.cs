@@ -35,6 +35,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.QueueDeclare(SearchFacadeQueueName, false, false, false, null);
 
+            Console.WriteLine("SearchBroker started.");
             manualResetEvent.Set();
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
@@ -55,12 +56,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 case "Search":
                     {
-                        Search(basicProperties, message.UserToken, (string)message.MethodsArgs[0]);
+                        Search(basicProperties, message.UserToken, message.MethodsArgs[0] as string);
                         break;
                     }
                 case "GetSearchableWorksheets":
                     {
-                        GetSearchableWorksheets(basicProperties, message.UserToken, (SearchData)message.MethodsArgs[0]);
+                        GetSearchableWorksheets(basicProperties, message.UserToken, message.MethodsArgs[0] as SearchData);
                         break;
                     }
             }

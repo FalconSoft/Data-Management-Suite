@@ -42,9 +42,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.QueueDeclare(TemporalDataQueryFacadeQueryName, false, false, false, null);
 
-            manualResetEvent.Set();
-
             Console.WriteLine("TemporalDataQueryBroker starts");
+            manualResetEvent.Set();
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
 
@@ -65,31 +64,31 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 case "GetRecordsHistory":
                     {
-                        GetRecordsHistory(basicProperties, message.UserToken, (DataSourceInfo)message.MethodsArgs[0],
+                        GetRecordsHistory(basicProperties, message.UserToken, message.MethodsArgs[0] as DataSourceInfo,
                             (string)message.MethodsArgs[1]);
                         break;
                     }
                 case "GetDataHistoryByTag":
                     {
-                        GetDataHistoryByTag(basicProperties, message.UserToken, (DataSourceInfo)message.MethodsArgs[0],
+                        GetDataHistoryByTag(basicProperties, message.UserToken, message.MethodsArgs[0] as DataSourceInfo,
                             (TagInfo)message.MethodsArgs[1]);
                         break;
                     }
                 case "GetRecordsAsOf":
                     {
-                        GetRecordsAsOf(basicProperties, message.UserToken, (DataSourceInfo)message.MethodsArgs[0],
+                        GetRecordsAsOf(basicProperties, message.UserToken, message.MethodsArgs[0] as DataSourceInfo,
                             (DateTime)message.MethodsArgs[1]);
                         break;
                     }
                 case "GetTemporalDataByRevisionId":
                     {
                         GetTemporalDataByRevisionId(basicProperties, message.UserToken,
-                            (DataSourceInfo)message.MethodsArgs[0], message.MethodsArgs[1]);
+                            message.MethodsArgs[0] as DataSourceInfo, message.MethodsArgs[1]);
                         break;
                     }
                 case "GetRevisions":
                     {
-                        GetRevisions(basicProperties, message.UserToken, (DataSourceInfo)message.MethodsArgs[0]);
+                        GetRevisions(basicProperties, message.UserToken, message.MethodsArgs[0] as DataSourceInfo);
                         break;
                     }
                 case "GeTagInfos":
@@ -99,12 +98,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                 case "SaveTagInfo":
                     {
-                        SaveTagInfo(basicProperties, message.UserToken, (TagInfo)message.MethodsArgs[0]);
+                        SaveTagInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as TagInfo);
                         break;
                     }
                 case "RemoveTagInfo":
                     {
-                        RemoveTagInfo(basicProperties, message.UserToken, (TagInfo)message.MethodsArgs[0]);
+                        RemoveTagInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as TagInfo);
                         break;
                     }
             }

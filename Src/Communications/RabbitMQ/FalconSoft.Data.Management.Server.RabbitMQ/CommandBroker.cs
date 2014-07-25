@@ -37,8 +37,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _commandChannel = connection.CreateModel();
             _commandChannel.QueueDeclare(CommandFacadeQueueName, false, false, false, null);
 
-            manualResetEvent.Set();
             Console.WriteLine("CommandBroker starts");
+            manualResetEvent.Set();
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(CommandFacadeQueueName, false, consumer);
@@ -58,7 +58,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 case "SubmitChanges":
                     {
-                        SubmitChanges(basicProperties, message.UserToken, (string)message.MethodsArgs[0], (string)message.MethodsArgs[1], (string)message.MethodsArgs[2]);
+                        SubmitChanges(basicProperties, message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string, message.MethodsArgs[2] as string);
                         break;
                     }
             }
@@ -67,108 +67,118 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private void SubmitChanges(IBasicProperties basicProperties, string userToken, string dataSourcePath,
             string toUpdateQueueName, string toDeleteQueuName)
         {
-            var toUpdateDataSubject = new Subject<Dictionary<string, object>>();
-            var toDeleteDataSubject = new Subject<string>();
-            var toUpdateQueueNameLocal = toUpdateQueueName != null ? string.Copy(toUpdateQueueName) : null;
-            var toDeleteQueueNameLocal = toDeleteQueuName != null ? string.Copy(toDeleteQueuName) : null;
-
-            //initialise submit changes method work.
-            Task.Factory.StartNew(() =>
+            try
             {
-                var replyTo = string.Copy(basicProperties.ReplyTo);
-                var corelationId = string.Copy(basicProperties.CorrelationId);
-                var userTokenLocal = string.Copy(userToken);
-                var dataSourcePathLocal = string.Copy(dataSourcePath);
 
-                var changeRecordsEnumerator = toUpdateDataSubject.ToEnumerable();
-                var deletedEnumerator = toDeleteDataSubject.ToEnumerable();
 
-                var task1 = Task.Factory.StartNew(
-                        () => toUpdateQueueNameLocal != null ? changeRecordsEnumerator.ToArray() : null);
-                
-                var task2 =
-                    Task.Factory.StartNew(() => toDeleteQueueNameLocal != null ? deletedEnumerator.ToArray() : null);
-                
-                var changedRecords = task1.Result;
-                var deleted = task2.Result;
-                
-                _commandFacade.SubmitChanges(dataSourcePathLocal, userTokenLocal, changedRecords, deleted, ri =>
+                var toUpdateDataSubject = new Subject<Dictionary<string, object>>();
+                var toDeleteDataSubject = new Subject<string>();
+                var toUpdateQueueNameLocal = toUpdateQueueName != null ? string.Copy(toUpdateQueueName) : null;
+                var toDeleteQueueNameLocal = toDeleteQueuName != null ? string.Copy(toDeleteQueuName) : null;
+
+                //initialise submit changes method work.
+                Task.Factory.StartNew(() =>
                 {
-                    var props = _commandChannel.CreateBasicProperties();
-                    props.CorrelationId = corelationId;
-                    _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(ri));
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+                    var corelationId = string.Copy(basicProperties.CorrelationId);
+                    var userTokenLocal = string.Copy(userToken);
+                    var dataSourcePathLocal = string.Copy(dataSourcePath);
+
+                    var changeRecordsEnumerator = toUpdateDataSubject.ToEnumerable();
+                    var deletedEnumerator = toDeleteDataSubject.ToEnumerable();
+
+                    var task1 = Task.Factory.StartNew(
+                            () => toUpdateQueueNameLocal != null ? changeRecordsEnumerator.ToArray() : null);
+
+                    var task2 =
+                        Task.Factory.StartNew(() => toDeleteQueueNameLocal != null ? deletedEnumerator.ToArray() : null);
+
+                    var changedRecords = task1.Result;
+                    var deleted = task2.Result;
+
+                    _commandFacade.SubmitChanges(dataSourcePathLocal, userTokenLocal, changedRecords, deleted, ri =>
+                    {
+                        var props = _commandChannel.CreateBasicProperties();
+                        props.CorrelationId = corelationId;
+                        _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(ri));
+                    });
                 });
-            });
 
-            
-            //collect changed records
-            if (toUpdateQueueNameLocal != null)
-            {
-                var con = new QueueingBasicConsumer(_commandChannel);
-                _commandChannel.BasicConsume(toUpdateQueueNameLocal, false, con);
 
-                Task.Factory.StartNew(obj =>
+                //collect changed records
+                if (toUpdateQueueNameLocal != null)
                 {
-                    var consumer = (QueueingBasicConsumer) obj;
-                    
-                    while (true)
+                    var con = new QueueingBasicConsumer(_commandChannel);
+                    _commandChannel.BasicConsume(toUpdateQueueNameLocal, false, con);
+
+                    Task.Factory.StartNew(obj =>
                     {
-                        var ea = consumer.Queue.Dequeue();
+                        var consumer = (QueueingBasicConsumer)obj;
 
-                        var memStream = new MemoryStream();
-                        var binForm = new BinaryFormatter();
-                        memStream.Write(ea.Body, 0, ea.Body.Length);
-                        memStream.Seek(0, SeekOrigin.Begin);
-
-                        var responce = (RabbitMQResponce) binForm.Deserialize(memStream);
-
-                        if (responce.LastMessage)
+                        while (true)
                         {
-                            toUpdateDataSubject.OnCompleted();
-                            break;
-                        }
+                            var ea = consumer.Queue.Dequeue();
 
-                        foreach (var dictionary in (IEnumerable<Dictionary<string, object>>) responce.Data)
-                        {
-                            toUpdateDataSubject.OnNext(dictionary);
+                            var memStream = new MemoryStream();
+                            var binForm = new BinaryFormatter();
+                            memStream.Write(ea.Body, 0, ea.Body.Length);
+                            memStream.Seek(0, SeekOrigin.Begin);
+
+                            var responce = (RabbitMQResponce)binForm.Deserialize(memStream);
+
+                            if (responce.LastMessage)
+                            {
+                                toUpdateDataSubject.OnCompleted();
+                                break;
+                            }
+
+                            foreach (var dictionary in (IEnumerable<Dictionary<string, object>>)responce.Data)
+                            {
+                                toUpdateDataSubject.OnNext(dictionary);
+                            }
                         }
-                    }
-                },con);
+                    }, con);
+                }
+
+                //collect record keys to delete
+                if (toDeleteQueueNameLocal != null)
+                {
+                    var con = new QueueingBasicConsumer(_commandChannel);
+                    _commandChannel.BasicConsume(toDeleteQueueNameLocal, false, con);
+
+                    Task.Factory.StartNew(obj =>
+                    {
+                        var consumer = (QueueingBasicConsumer)obj;
+
+                        while (true)
+                        {
+                            var ea = consumer.Queue.Dequeue();
+
+                            var memStream = new MemoryStream();
+                            var binForm = new BinaryFormatter();
+                            memStream.Write(ea.Body, 0, ea.Body.Length);
+                            memStream.Seek(0, SeekOrigin.Begin);
+
+                            var responce = (RabbitMQResponce)binForm.Deserialize(memStream);
+
+                            if (responce.LastMessage)
+                            {
+                                toDeleteDataSubject.OnCompleted();
+                                break;
+                            }
+
+                            foreach (var dictionary in (IEnumerable<string>)responce.Data)
+                            {
+                                toDeleteDataSubject.OnNext(dictionary);
+                            }
+                        }
+                    }, con);
+                }
             }
-
-            //collect record keys to delete
-            if (toDeleteQueueNameLocal != null)
+            catch (Exception ex)
             {
-                var con = new QueueingBasicConsumer(_commandChannel);
-                _commandChannel.BasicConsume(toDeleteQueueNameLocal, false, con);
-
-                Task.Factory.StartNew(obj =>
-                {
-                    var consumer = (QueueingBasicConsumer) obj;
-
-                    while (true)
-                    {
-                        var ea = consumer.Queue.Dequeue();
-
-                        var memStream = new MemoryStream();
-                        var binForm = new BinaryFormatter();
-                        memStream.Write(ea.Body, 0, ea.Body.Length);
-                        memStream.Seek(0, SeekOrigin.Begin);
-
-                        var responce = (RabbitMQResponce) binForm.Deserialize(memStream);
-
-                        if (responce.LastMessage)
-                        {
-                            toDeleteDataSubject.OnCompleted();
-                            break;
-                        }
-
-                        foreach (var dictionary in (IEnumerable<string>) responce.Data)
-                        {
-                            toDeleteDataSubject.OnNext(dictionary);
-                        }
-                    }
-                }, con);
+                _logger.Debug("SubmitChanges failed", ex);
+                throw;
             }
         }
     }

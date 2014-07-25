@@ -40,9 +40,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.QueueDeclare(RPCQueryName, false, false, false, null);
 
-            manualResetEvent.Set();
-
             Console.WriteLine("ReactiveDataQueryBroker starts");
+            manualResetEvent.Set();
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(RPCQueryName, true, consumer);
@@ -62,25 +61,25 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 case "GetAggregatedData":
                     {
-                        GetAggregatedData(basicProperties, message.UserToken, (string)message.MethodsArgs[0],
-                            (AggregatedWorksheetInfo)message.MethodsArgs[1], (FilterRule[])message.MethodsArgs[2]);
+                        GetAggregatedData(basicProperties, message.UserToken, message.MethodsArgs[0] as string,
+                            message.MethodsArgs[1] as AggregatedWorksheetInfo, message.MethodsArgs[2] as FilterRule[]);
                         break;
                     }
                 case "GetData":
                     {
-                        GetData(basicProperties, message.UserToken, (string)message.MethodsArgs[0], message.MethodsArgs[1] as FilterRule[]);
+                        GetData(basicProperties, message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as FilterRule[]);
                         break;
                     }
                 case "GetDataChanges":
                     {
-                        GetDataChanges(message.UserToken, (string)message.MethodsArgs[0], message.MethodsArgs[1] as FilterRule[]);
+                        GetDataChanges(message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as FilterRule[]);
                         break;
                     }
                 case "ResolveRecordbyForeignKey":
                     {
                         ResolveRecordbyForeignKey(basicProperties, message.UserToken,
-                            (RecordChangedParam[])message.MethodsArgs[0], (string)message.MethodsArgs[1],
-                            (string)message.MethodsArgs[2], (string)message.MethodsArgs[3]);
+                            message.MethodsArgs[0] as RecordChangedParam[], message.MethodsArgs[1] as string,
+                            message.MethodsArgs[2] as string, message.MethodsArgs[3] as string);
                         break;
                     }
             }

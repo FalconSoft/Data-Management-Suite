@@ -42,8 +42,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.QueueDeclare(SecurityFacadeQueueName, false, false, false, null);
 
-            manualResetEvent.Set();
             Console.WriteLine("SecurityBroker starts");
+            manualResetEvent.Set();
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(SecurityFacadeQueueName, false, consumer);
@@ -63,7 +63,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 case "Authenticate":
                     {
-                        Authenticate(basicProperties, (string)message.MethodsArgs[0], (string)message.MethodsArgs[1]);
+                        Authenticate(basicProperties, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string);
                         break;
                     }
                 case "GetUsers":
@@ -73,22 +73,22 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                 case "GetUser":
                     {
-                        GetUser(basicProperties, (string)message.MethodsArgs[0]);
+                        GetUser(basicProperties, message.MethodsArgs[0] as string);
                         break;
                     }
                 case "SaveNewUser":
                     {
-                        SaveNewUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0], (UserRole)message.MethodsArgs[1]);
+                        SaveNewUser(basicProperties, message.UserToken, message.MethodsArgs[0] as User, (UserRole)message.MethodsArgs[1]);
                         break;
                     }
                 case "UpdateUser":
                     {
-                        UpdateUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0], (UserRole)message.MethodsArgs[1]);
+                        UpdateUser(basicProperties, message.UserToken, message.MethodsArgs[0] as User, (UserRole)message.MethodsArgs[1]);
                         break;
                     }
                 case "RemoveUser":
                     {
-                        RemoveUser(basicProperties, message.UserToken, (User)message.MethodsArgs[0]);
+                        RemoveUser(basicProperties, message.UserToken, message.MethodsArgs[0] as User);
                         break;
                     }
             }

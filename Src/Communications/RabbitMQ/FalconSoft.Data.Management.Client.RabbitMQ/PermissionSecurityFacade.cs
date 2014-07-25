@@ -150,8 +150,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-            _commandChannel.Dispose();
-            _connection.Dispose();
+           
         }
 
         private T RPCServerTaskExecute<T>(IConnection connection, string commandQueueName, string methodName, string userToken,

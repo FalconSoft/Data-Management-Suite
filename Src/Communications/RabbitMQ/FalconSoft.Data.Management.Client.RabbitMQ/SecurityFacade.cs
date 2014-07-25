@@ -95,8 +95,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-            _commandChannel.Dispose();
-            _connection.Dispose();
+           
         }
 
         public Action<string, string> ErrorMessageHandledAction { get; set; }
