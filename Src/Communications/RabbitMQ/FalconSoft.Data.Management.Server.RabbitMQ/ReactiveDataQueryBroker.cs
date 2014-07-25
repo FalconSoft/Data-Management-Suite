@@ -144,6 +144,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 catch (Exception ex)
                 {
                     _logger.Debug("GetAggregatedData failed", ex);
+                    throw;
                 }
             });
         }
@@ -205,6 +206,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 catch (Exception ex)
                 {
                     _logger.Debug("GetData failed", ex);
+                    throw;
                 }
             });
         }
