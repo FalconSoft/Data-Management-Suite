@@ -191,16 +191,15 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                         list.Clear();
 
-                        responce.LastMessage = true;
-
-                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
+                        
+                        RPCSendTaskExecutionResults(replyTo, correlationId, new RabbitMQResponce{ Id = responce.Id++, LastMessage = true});
                     }
                     else
                     {
                         responce.Id++;
                         responce.LastMessage = true;
 
-                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
+                        RPCSendTaskExecutionResults(replyTo, correlationId, new RabbitMQResponce { Id = responce.Id++, LastMessage = true });
                     }
                 }
                 catch (Exception ex)
