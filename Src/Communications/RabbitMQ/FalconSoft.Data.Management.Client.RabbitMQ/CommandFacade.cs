@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
@@ -29,7 +30,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
+
+            InitializeConnection(CommandFacadeQueueName);
         }
+
         public void SubmitChanges<T>(string dataSourcePath, string userToken, IEnumerable<T> changedRecords = null,
             IEnumerable<string> deleted = null, Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null, Action<string, string> onNotifcation = null)
         {
@@ -230,6 +234,47 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public void Dispose()
         {
             
+        }
+
+        private void InitializeConnection(string commandQueueName)
+        {
+            using (var channel = _connection.CreateModel())
+            {
+                var message = new MethodArgs
+                {
+                    MethodName = "InitializeConnection",
+                    UserToken = null,
+                    MethodsArgs = null
+                };
+
+                var messageBytes = BinaryConverter.CastToBytes(message);
+
+                var replyTo = channel.QueueDeclare().QueueName;
+
+                var correlationId = Guid.NewGuid().ToString();
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = replyTo;
+
+                var consumer = new QueueingBasicConsumer(channel);
+                channel.BasicConsume(replyTo, true, consumer);
+
+                channel.BasicPublish("",commandQueueName,props, messageBytes);
+
+                while (true)
+                {
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
+                    {
+                        if (correlationId == ea.BasicProperties.CorrelationId)
+                        {
+                            return;
+                        }
+                    }
+                    throw new Exception("Connection to server failed");
+                }
+            }
         }
     }
 }

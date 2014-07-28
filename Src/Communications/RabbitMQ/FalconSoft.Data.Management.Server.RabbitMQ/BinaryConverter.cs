@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace FalconSoft.Data.Management.Server.RabbitMQ
@@ -11,6 +12,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             lock (Lock)
             {
+                if (obj == null)
+                    return null;
+
                 var bf = new BinaryFormatter();
                 var ms = new MemoryStream();
                 bf.Serialize(ms, obj);
@@ -23,6 +27,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             lock (Lock)
             {
+                if (!byteArray.Any())
+                    return default(T);
+
                 var memStream = new MemoryStream();
                 var binForm = new BinaryFormatter();
                 memStream.Write(byteArray, 0, byteArray.Length);

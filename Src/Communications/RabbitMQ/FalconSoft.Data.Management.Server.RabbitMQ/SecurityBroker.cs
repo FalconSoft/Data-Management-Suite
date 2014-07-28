@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -14,10 +13,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly ILogger _logger;
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
+        private Task _task;
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
 
-        public SecurityBroker(string hostName, string userName, string password, ISecurityFacade securityFacade, ILogger logger, ManualResetEvent manualResetEvent)
+        public SecurityBroker(string hostName, string userName, string password, ISecurityFacade securityFacade, ILogger logger)
         {
             _securityFacade = securityFacade;
             _logger = logger;
@@ -36,31 +36,39 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel = _connection.CreateModel();
 
+            _commandChannel.QueueDelete(SecurityFacadeQueueName);
+            _commandChannel.ExchangeDelete(ExceptionsExchangeName);
+
             _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
 
             _securityFacade.ErrorMessageHandledAction = OnErrorMessageHandledAction;
 
             _commandChannel.QueueDeclare(SecurityFacadeQueueName, false, false, false, null);
 
-            Console.WriteLine("SecurityBroker starts");
-            manualResetEvent.Set();
-
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(SecurityFacadeQueueName, false, consumer);
 
-            while (true)
+            _task = Task.Factory.StartNew(() =>
             {
-                var ea = consumer.Queue.Dequeue();
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
 
-                var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
-                ExecuteMethodSwitch(message, ea.BasicProperties);
-            }
+                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                }
+            });
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
             switch (message.MethodName)
             {
+                case "InitializeConnection":
+                    {
+                        InitializeConnection(basicProperties);
+                        break;
+                    }
                 case "Authenticate":
                     {
                         Authenticate(basicProperties, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string);
@@ -92,6 +100,29 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         break;
                     }
             }
+        }
+
+        private void InitializeConnection(IBasicProperties basicProperties)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var corelationId = string.Copy(basicProperties.CorrelationId);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = corelationId;
+
+                    _commandChannel.BasicPublish("", replyTo, props, null);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("Failed to responce to client connection confirming.", ex);
+                    throw;
+                }
+            });
         }
 
         private void Authenticate(IBasicProperties basicProperties, string userName, string password)
@@ -259,8 +290,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         public void Dispose()
         {
-            _commandChannel.Close();
-            _connection.Close();
+            _task.Dispose();
         }
 
         private void RPCSendTaskExecutionResults<T>(IBasicProperties basicProperties, T data)

@@ -2,6 +2,7 @@
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
@@ -24,6 +25,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             };
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
+
+            InitializeConnection(SearchFacadeQueueName);
         }
 
         public SearchData[] Search(string searchString)
@@ -79,6 +82,47 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         channel.QueueDelete(queueName);
                         return BinaryConverter.CastTo<T>(ea.Body);
                     }
+                }
+            }
+        }
+
+        private void InitializeConnection(string commandQueueName)
+        {
+            using (var channel = _connection.CreateModel())
+            {
+                var message = new MethodArgs
+                {
+                    MethodName = "InitializeConnection",
+                    UserToken = null,
+                    MethodsArgs = null
+                };
+
+                var messageBytes = BinaryConverter.CastToBytes(message);
+
+                var replyTo = channel.QueueDeclare().QueueName;
+
+                var correlationId = Guid.NewGuid().ToString();
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = replyTo;
+
+                var consumer = new QueueingBasicConsumer(channel);
+                channel.BasicConsume(replyTo, true, consumer);
+
+                channel.BasicPublish("", commandQueueName, props, messageBytes);
+
+                while (true)
+                {
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
+                    {
+                        if (correlationId == ea.BasicProperties.CorrelationId)
+                        {
+                            return;
+                        }
+                    }
+                    throw new Exception("Connection to server failed");
                 }
             }
         }
