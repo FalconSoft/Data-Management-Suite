@@ -545,6 +545,31 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
            });
         }
 
+        private void GetServerInfo(IBasicProperties basicProperties)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+                    var corelationId = string.Copy(basicProperties.CorrelationId);
+
+                    var props = _commandChannel.CreateBasicProperties();
+
+                    props.CorrelationId = corelationId;
+
+                    var data = _metaDataAdminFacade.GetServerInfo();
+
+                    _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetServerInfo failed", ex);
+                    throw;
+                }
+            });
+        }
+
         // Pub/Sub notification to all users. Type : fanout
         private void OnObjectInfoChanged(object sender, SourceObjectChangedEventArgs e)
         {
@@ -583,23 +608,5 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.BasicPublish("", replyTo, props, null);
         }
-
-        private void GetServerInfo(IBasicProperties basicProperties)
-        {
-            Task.Factory.StartNew(() =>
-            {
-                var replyTo = string.Copy(basicProperties.ReplyTo);
-                var corelationId = string.Copy(basicProperties.CorrelationId);
-
-                var props = _commandChannel.CreateBasicProperties();
-
-                props.CorrelationId = corelationId;
-
-                var data = _metaDataAdminFacade.GetServerInfo();
-
-                _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
-            });
-        }
     }
-
 }
