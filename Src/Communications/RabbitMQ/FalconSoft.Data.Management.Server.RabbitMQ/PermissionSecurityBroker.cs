@@ -37,6 +37,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel = _connection.CreateModel();
 
+            _commandChannel.QueueDelete(PermissionSecurityFacadeQueueName);
+            _commandChannel.ExchangeDelete(PermissionSecurityFacadeExchangeName);
+
             _commandChannel.QueueDeclare(PermissionSecurityFacadeQueueName, false, false, false, null);
 
             _commandChannel.ExchangeDeclare(PermissionSecurityFacadeExchangeName, "direct");

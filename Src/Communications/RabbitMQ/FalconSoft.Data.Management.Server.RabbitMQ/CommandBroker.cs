@@ -36,6 +36,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             };
             var connection = factory.CreateConnection();
             _commandChannel = connection.CreateModel();
+            
+            _commandChannel.QueueDelete(CommandFacadeQueueName);
+
             _commandChannel.QueueDeclare(CommandFacadeQueueName, false, false, false, null);
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
@@ -98,8 +101,6 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             try
             {
-
-
                 var toUpdateDataSubject = new Subject<Dictionary<string, object>>();
                 var toDeleteDataSubject = new Subject<string>();
                 var toUpdateQueueNameLocal = toUpdateQueueName != null ? string.Copy(toUpdateQueueName) : null;

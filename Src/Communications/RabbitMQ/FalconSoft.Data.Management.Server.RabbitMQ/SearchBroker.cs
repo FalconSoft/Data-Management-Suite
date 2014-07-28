@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -33,6 +32,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             };
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
+
+            _commandChannel.ExchangeDelete(SearchFacadeQueueName);
 
             _commandChannel.QueueDeclare(SearchFacadeQueueName, false, false, false, null);
 

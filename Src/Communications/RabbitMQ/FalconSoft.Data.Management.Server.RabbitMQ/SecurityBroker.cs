@@ -36,6 +36,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel = _connection.CreateModel();
 
+            _commandChannel.QueueDelete(SecurityFacadeQueueName);
+            _commandChannel.ExchangeDelete(ExceptionsExchangeName);
+
             _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
 
             _securityFacade.ErrorMessageHandledAction = OnErrorMessageHandledAction;

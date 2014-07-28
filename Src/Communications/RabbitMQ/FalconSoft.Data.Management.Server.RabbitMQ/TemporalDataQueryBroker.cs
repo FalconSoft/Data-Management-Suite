@@ -40,6 +40,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel = connection.CreateModel();
 
+            _commandChannel.QueueDelete(TemporalDataQueryFacadeQueryName);
+
             _commandChannel.QueueDeclare(TemporalDataQueryFacadeQueryName, false, false, false, null);
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
