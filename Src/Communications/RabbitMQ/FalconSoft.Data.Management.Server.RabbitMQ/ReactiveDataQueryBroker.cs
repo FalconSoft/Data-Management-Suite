@@ -11,15 +11,16 @@ using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Server.RabbitMQ
 {
-    public class ReactiveDataQueryBroker
+    public class ReactiveDataQueryBroker:IDisposable
     {
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ILogger _logger;
         private readonly IModel _commandChannel;
+        private Task _task;
         private const string RPCQueryName = "ReactiveDataQueryFacadeRPC";
         private const int Limit = 100;
 
-        public ReactiveDataQueryBroker(string hostName, string username, string pass, IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger, ManualResetEvent manualResetEvent)
+        public ReactiveDataQueryBroker(string hostName, string username, string pass, IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger)
         {
             _reactiveDataQueryFacade = reactiveDataQueryFacade;
             _logger = logger;
@@ -40,25 +41,30 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.QueueDeclare(RPCQueryName, false, false, false, null);
 
-            Console.WriteLine("ReactiveDataQueryBroker starts");
-            manualResetEvent.Set();
-
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(RPCQueryName, true, consumer);
 
-            while (true)
+            _task = Task.Factory.StartNew(() =>
             {
-                var ea = consumer.Queue.Dequeue();
-                var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
 
-                ExecuteMethodSwitch(message, ea.BasicProperties);
-            }
+                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                }
+            });
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
             switch (message.MethodName)
             {
+                case "InitializeConnection":
+                    {
+                        InitializeConnection(basicProperties);
+                        break;
+                    }
                 case "GetAggregatedData":
                     {
                         GetAggregatedData(basicProperties, message.UserToken, message.MethodsArgs[0] as string,
@@ -83,6 +89,29 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         break;
                     }
             }
+        }
+
+        private void InitializeConnection(IBasicProperties basicProperties)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var corelationId = string.Copy(basicProperties.CorrelationId);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = corelationId;
+
+                    _commandChannel.BasicPublish("", replyTo, props, null);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("Failed to responce to client connection confirming.", ex);
+                    throw;
+                }
+            });
         }
 
         // TODO: filter rules do not catche by thread and coud be changed while thread is running
@@ -299,6 +328,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var messageBytes = ms.ToArray();
 
             _commandChannel.BasicPublish("", replyTo, props, messageBytes);
+        }
+
+        public void Dispose()
+        {
+            _task.Dispose();
         }
     }
 }

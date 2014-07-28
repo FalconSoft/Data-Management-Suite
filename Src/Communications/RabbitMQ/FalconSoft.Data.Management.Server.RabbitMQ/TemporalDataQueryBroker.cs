@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -12,16 +11,17 @@ using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Server.RabbitMQ
 {
-    public class TemporalDataQueryBroker
+    public class TemporalDataQueryBroker : IDisposable
     {
         private readonly ITemporalDataQueryFacade _temporalDataQueryFacade;
         private readonly ILogger _logger;
 
         private readonly IModel _commandChannel;
+        private Task _task;
         private const string TemporalDataQueryFacadeQueryName = "TemporalDataQueryFacadeRPC";
         private const int Limit = 100;
 
-        public TemporalDataQueryBroker(string hostName, string userName, string password, ITemporalDataQueryFacade temporalDataQueryFacade, ILogger logger, ManualResetEvent manualResetEvent)
+        public TemporalDataQueryBroker(string hostName, string userName, string password, ITemporalDataQueryFacade temporalDataQueryFacade, ILogger logger)
         {
             _temporalDataQueryFacade = temporalDataQueryFacade;
             _logger = logger;
@@ -42,26 +42,31 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.QueueDeclare(TemporalDataQueryFacadeQueryName, false, false, false, null);
 
-            Console.WriteLine("TemporalDataQueryBroker starts");
-            
             var consumer = new QueueingBasicConsumer(_commandChannel);
-            manualResetEvent.Set();
-
+           
             _commandChannel.BasicConsume(TemporalDataQueryFacadeQueryName, true, consumer);
 
-            while (true)
+            _task = Task.Factory.StartNew(() =>
             {
-                var ea = consumer.Queue.Dequeue();
-                var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
 
-                ExecuteMethodSwitch(message, ea.BasicProperties);
-            }
+                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                }
+            });
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
             switch (message.MethodName)
             {
+                case "InitializeConnection":
+                    {
+                        InitializeConnection(basicProperties);
+                        break;
+                    }
                 case "GetRecordsHistory":
                     {
                         GetRecordsHistory(basicProperties, message.UserToken, message.MethodsArgs[0] as DataSourceInfo,
@@ -107,6 +112,29 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         break;
                     }
             }
+        }
+
+        private void InitializeConnection(IBasicProperties basicProperties)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+                    
+                    var corelationId = string.Copy(basicProperties.CorrelationId);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = corelationId;
+
+                    _commandChannel.BasicPublish("", replyTo, props, null);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("Failed to responce to client connection confirming.", ex);
+                    throw;
+                }
+            });
         }
 
         private void GetRecordsHistory(IBasicProperties basicProperties, string userToken, DataSourceInfo dataSourceInfo, string recordKey)
@@ -380,6 +408,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             bf.Serialize(ms, responce);
 
             return ms.ToArray();
+        }
+
+        public void Dispose()
+        {
+            _task.Dispose();
         }
     }
 }

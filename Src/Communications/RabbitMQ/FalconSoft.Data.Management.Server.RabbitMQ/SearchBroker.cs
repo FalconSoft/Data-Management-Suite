@@ -8,15 +8,16 @@ using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Server.RabbitMQ
 {
-    public class SearchBroker
+    public class SearchBroker : IDisposable
     {
         private readonly ISearchFacade _searchFacade;
         private readonly ILogger _logger;
         private IConnection _connection;
         private readonly IModel _commandChannel;
+        private Task _task;
         private const string SearchFacadeQueueName = "SearchFacadeRPC";
 
-        public SearchBroker(string hostName, string userName, string password, ISearchFacade searchFacade, ILogger logger, ManualResetEvent manualResetEvent)
+        public SearchBroker(string hostName, string userName, string password, ISearchFacade searchFacade, ILogger logger)
         {
             _searchFacade = searchFacade;
             _logger = logger;
@@ -35,25 +36,30 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.QueueDeclare(SearchFacadeQueueName, false, false, false, null);
 
-            Console.WriteLine("SearchBroker started.");
-            manualResetEvent.Set();
-
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(SearchFacadeQueueName, true, consumer);
 
-            while (true)
+            _task = Task.Factory.StartNew(() =>
             {
-                var ea = consumer.Queue.Dequeue();
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
 
-                var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
-                ExecuteMethodSwitch(message, ea.BasicProperties);
-            }
+                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                }
+            });
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
             switch (message.MethodName)
             {
+                case "InitializeConnection":
+                    {
+                        InitializeConnection(basicProperties);
+                        break;
+                    }
                 case "Search":
                     {
                         Search(basicProperties, message.UserToken, message.MethodsArgs[0] as string);
@@ -65,6 +71,29 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         break;
                     }
             }
+        }
+
+        private void InitializeConnection(IBasicProperties basicProperties)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var corelationId = string.Copy(basicProperties.CorrelationId);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = corelationId;
+
+                    _commandChannel.BasicPublish("", replyTo, props, null);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("Failed to responce to client connection confirming.", ex);
+                    throw;
+                }
+            });
         }
 
         private void Search(IBasicProperties basicProperties, string userToken, string searchString)
@@ -129,6 +158,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             props.CorrelationId = correlationId;
 
             _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+        }
+
+        public void Dispose()
+        {
+            _task.Dispose();
         }
     }
 }

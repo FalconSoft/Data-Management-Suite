@@ -14,13 +14,14 @@ using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Server.RabbitMQ
 {
-    public class CommandBroker
+    public class CommandBroker : IDisposable
     {
         private readonly ICommandFacade _commandFacade;
         private readonly ILogger _logger;
         private readonly IModel _commandChannel;
+        private Task _task;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
-        public CommandBroker(string hostName, string userName, string password, ICommandFacade commandFacade, ILogger logger, ManualResetEvent manualResetEvent)
+        public CommandBroker(string hostName, string userName, string password, ICommandFacade commandFacade, ILogger logger)
         {
             _commandFacade = commandFacade;
             _logger = logger;
@@ -37,31 +38,59 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _commandChannel = connection.CreateModel();
             _commandChannel.QueueDeclare(CommandFacadeQueueName, false, false, false, null);
 
-            Console.WriteLine("CommandBroker starts");
-            manualResetEvent.Set();
-
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(CommandFacadeQueueName, false, consumer);
 
-            while (true)
+            _task = Task.Factory.StartNew(() =>
             {
-                var ea = consumer.Queue.Dequeue();
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
 
-                var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
-                ExecuteMethodSwitch(message, ea.BasicProperties);
-            }
+                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                }
+            });
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
             switch (message.MethodName)
             {
+                case "InitializeConnection":
+                    {
+                        InitializeConnection(basicProperties);
+                        break;
+                    }
                 case "SubmitChanges":
                     {
                         SubmitChanges(basicProperties, message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string, message.MethodsArgs[2] as string);
                         break;
                     }
             }
+        }
+
+        private void InitializeConnection(IBasicProperties basicProperties)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+                    
+                    var corelationId = string.Copy(basicProperties.CorrelationId);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = corelationId;
+
+                    _commandChannel.BasicPublish("", replyTo, props, null);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("Failed to responce to client connection confirming.", ex);
+                    throw;
+                }
+            });
         }
 
         private void SubmitChanges(IBasicProperties basicProperties, string userToken, string dataSourcePath,
@@ -179,6 +208,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 _logger.Debug("SubmitChanges failed", ex);
             }
+        }
+
+        public void Dispose()
+        {
+            _task.Dispose();
         }
     }
 }

@@ -9,17 +9,18 @@ using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Server.RabbitMQ
 {
-    public class MetaDataBroker
+    public class MetaDataBroker : IDisposable
     {
         private readonly IMetaDataAdminFacade _metaDataAdminFacade;
         private readonly ILogger _logger;
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
+        private Task _task;
         private const string MetadataQueueName = "MetaDataFacadeRPC";
         private const string MetadataExchangeName = "MetaDataFacadeExchange";
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
 
-        public MetaDataBroker(string hostName, string userName, string password, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger, ManualResetEvent manualResetEvent)
+        public MetaDataBroker(string hostName, string userName, string password, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
         {
             _metaDataAdminFacade = metaDataAdminFacade;
             _logger = logger;
@@ -47,26 +48,30 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _metaDataAdminFacade.ErrorMessageHandledAction = OnErrorMessageHandledAction;
 
-            Console.WriteLine("MetaDataBroker starts");
-            manualResetEvent.Set();
-
-
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(MetadataQueueName, false, consumer);
 
-            while (true)
+            _task = Task.Factory.StartNew(() =>
             {
-                var ea = consumer.Queue.Dequeue();
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
 
-                var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
-                ExecuteMethodSwitch(message, ea.BasicProperties);
-            }
+                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                }
+            });
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
             switch (message.MethodName)
             {
+                case "InitializeConnection":
+                    {
+                        InitializeConnection(basicProperties);
+                        break;
+                    }
                 case "CreateDataSourceInfo":
                     {
                         CreateDataSourceInfo(basicProperties, message.UserToken, message.MethodsArgs[0] as DataSourceInfo);
@@ -152,6 +157,29 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         break;
                     }
             }
+        }
+
+        private void InitializeConnection(IBasicProperties basicProperties)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var corelationId = string.Copy(basicProperties.CorrelationId);
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.CorrelationId = corelationId;
+
+                    _commandChannel.BasicPublish("", replyTo, props, null);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("Failed to responce to client connection confirming.", ex);
+                    throw;
+                }
+            });
         }
 
         private void GetAvailableDataSources(IBasicProperties basicProperties, string userToken, AccessLevel accessLevel)
@@ -607,6 +635,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             props.CorrelationId = correlationId;
 
             _commandChannel.BasicPublish("", replyTo, props, null);
+        }
+
+        public void Dispose()
+        {
+            _task.Dispose();
         }
     }
 }
