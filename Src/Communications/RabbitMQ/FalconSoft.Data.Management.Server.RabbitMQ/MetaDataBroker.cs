@@ -49,7 +49,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             Console.WriteLine("MetaDataBroker starts");
             manualResetEvent.Set();
-            
+
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(MetadataQueueName, false, consumer);
@@ -144,6 +144,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 case "GetAggregatedWorksheetInfo":
                     {
                         GetAggregatedWorksheetInfo(basicProperties, message.MethodsArgs[0] as string, message.UserToken);
+                        break;
+                    }
+                case "GetServerInfo":
+                    {
+                        GetServerInfo(basicProperties);
                         break;
                     }
             }
@@ -577,6 +582,23 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             props.CorrelationId = correlationId;
 
             _commandChannel.BasicPublish("", replyTo, props, null);
+        }
+
+        private void GetServerInfo(IBasicProperties basicProperties)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                var replyTo = string.Copy(basicProperties.ReplyTo);
+                var corelationId = string.Copy(basicProperties.CorrelationId);
+
+                var props = _commandChannel.CreateBasicProperties();
+
+                props.CorrelationId = corelationId;
+
+                var data = _metaDataAdminFacade.GetServerInfo();
+
+                _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(data));
+            });
         }
     }
 
