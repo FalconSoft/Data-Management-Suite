@@ -1,17 +1,54 @@
 ﻿using System;
-using FalconSoft.Data.Management.Common;
+using System.IO;
+using log4net;
+using log4net.Appender;
+using log4net.Core;
+using log4net.Layout;
+using log4net.Repository.Hierarchy;
+using ILogger = FalconSoft.Data.Management.Common.ILogger;
 
 namespace FalconSoft.Data.Server
 {
     public class Logger : ILogger
     {
-        private readonly log4net.ILog _log;
+        private readonly ILog _log;
 
         public Logger()
         {
-            log4net.Config.XmlConfigurator.Configure();
+            Setup();
+            _log = LogManager.GetLogger("Main Log");
+        }
 
-            _log = log4net.LogManager.GetLogger("Main Log");
+        public static void Setup()
+        {
+            var hierarchy = (Hierarchy)LogManager.GetRepository();
+
+            var patternLayout = new PatternLayout
+            {
+                ConversionPattern = "%date [%thread] %-5level %logger - %message%newline"
+            };
+            patternLayout.ActivateOptions();
+
+            var roller = new RollingFileAppender
+            {
+                AppendToFile = true,
+                //C:\Users\%UserName%\AppData\Local\Temp\FalconSoft\ReactiveWorksheets\server-log-file.txt
+                File = Path.Combine(Path.GetTempPath(), "FalconSoft", "ReactiveWorksheets" + @"\server-log-file.txt"),
+                Layout = patternLayout,
+                MaxSizeRollBackups = 10,
+                MaximumFileSize = "10MB",
+                RollingStyle = RollingFileAppender.RollingMode.Size,
+                StaticLogFileName = true
+            };
+            roller.ActivateOptions();
+            hierarchy.Root.AddAppender(roller);
+
+            var memory = new MemoryAppender();
+            memory.ActivateOptions();
+            hierarchy.Root.AddAppender(memory);
+
+            hierarchy.Root.Level = Level.Info;
+            hierarchy.Configured = true;
         }
 
         public void Debug(string message)
