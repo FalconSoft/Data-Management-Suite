@@ -61,5 +61,10 @@ namespace FalconSoft.Data.Management.InProcessServer.Client
         {
             return ServerApp.PermissionSecurityFacade;
         }
+
+        public void Dispose()
+        {
+            
+        }
     }
 }

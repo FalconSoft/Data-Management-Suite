@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reactive.Disposables;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
@@ -10,12 +10,13 @@ using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
-    public class SecurityFacade : ISecurityFacade
+    internal class SecurityFacade : ISecurityFacade
     {
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
         public SecurityFacade(string hostName, string userName, string password)
         {
@@ -54,10 +55,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                     catch (EndOfStreamException ex)
                     {
-                        break;
+                        return;
                     }
                 }
-            });
+            }, _cts.Token);
 
             InitializeConnection(SecurityFacadeQueueName);
         }
@@ -222,5 +223,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 }
             }
         }
+
+        public void Close()
+        {
+            _cts.Cancel();
+            _commandChannel.Close();
+            _connection.Close();
+        }
+
     }
 }

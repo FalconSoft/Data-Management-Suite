@@ -4,6 +4,7 @@ using System.IO;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -18,6 +19,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
         private const string RPCQueryName = "ReactiveDataQueryFacadeRPC";
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         public ReactiveDataQueryFacade(string hostName, string userName, string password)
         {
             var factory = new ConnectionFactory
@@ -91,7 +93,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                 }
                 subject.OnCompleted();
-            });
+            },_cts.Token);
             return subject.AsObservable();
         }
 
@@ -131,47 +133,61 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 while (breakFlag)
                 {
-                    var ea = onSuccessConsumer.Queue.Dequeue();
-
-                    if (correlationId == ea.BasicProperties.CorrelationId)
+                    try
                     {
-                        var array = BinaryConverter.CastTo<object[]>(ea.Body);
+                        var ea = onSuccessConsumer.Queue.Dequeue();
 
-                        if (onSuccess != null)
+                        if (correlationId == ea.BasicProperties.CorrelationId)
                         {
-                            onSuccess((string)array[0], (RecordChangedParam[])array[1]);
-                        }
+                            var array = BinaryConverter.CastTo<object[]>(ea.Body);
 
-                        breakFlag = false;
+                            if (onSuccess != null)
+                            {
+                                onSuccess((string)array[0], (RecordChangedParam[])array[1]);
+                            }
+
+                            breakFlag = false;
+                        }
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        return;
                     }
                 }
-            });
+            }, _cts.Token);
 
             // Wait for notification on fail
             Task.Factory.StartNew(() =>
             {
                 while (breakFlag)
                 {
-                    var ea = onFailConsumer.Queue.Dequeue();
-
-                    if (correlationId == ea.BasicProperties.CorrelationId)
+                    try
                     {
-                        var array = BinaryConverter.CastTo<object[]>(ea.Body);
+                        var ea = onFailConsumer.Queue.Dequeue();
 
-                        if (onSuccess != null)
+                        if (correlationId == ea.BasicProperties.CorrelationId)
                         {
-                            onSuccess((string)array[0], (RecordChangedParam[])array[1]);
-                        }
+                            var array = BinaryConverter.CastTo<object[]>(ea.Body);
 
-                        breakFlag = false;
+                            if (onSuccess != null)
+                            {
+                                onSuccess((string)array[0], (RecordChangedParam[])array[1]);
+                            }
+
+                            breakFlag = false;
+                        }
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        return;
                     }
                 }
-            });
+            }, _cts.Token);
         }
 
         public void Dispose()
         {
-            
+
         }
 
         private IEnumerable<T> RPCServerTaskExecute<T>(IConnection connection,
@@ -212,7 +228,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                             break;
                         }
 
-                        var list = (List<T>) responce.Data;
+                        var list = (List<T>)responce.Data;
                         foreach (var dictionary in list)
                         {
                             subject.OnNext(dictionary);
@@ -220,7 +236,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                 }
                 subject.OnCompleted();
-            });
+            },_cts.Token);
             return subject.ToEnumerable();
         }
 
@@ -286,6 +302,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     throw new Exception("Connection to server failed");
                 }
             }
+        }
+
+        public void Close()
+        {
+            _cts.Cancel();
+            _commandChannel.Close();
+            _connection.Close();
         }
     }
 }

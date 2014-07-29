@@ -10,7 +10,7 @@ using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
-    public class CommandFacade : ICommandFacade
+    internal class CommandFacade : ICommandFacade
     {
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
@@ -276,5 +276,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 }
             }
         }
+
+        public void Close()
+        {
+            _commandChannel.Close();
+            _connection.Close();
+        }
+
     }
 }

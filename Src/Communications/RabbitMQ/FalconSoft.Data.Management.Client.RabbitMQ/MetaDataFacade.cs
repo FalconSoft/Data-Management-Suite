@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -17,7 +18,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const string MetadataQueueName = "MetaDataFacadeRPC";
         private const string MetadataExchangeName = "MetaDataFacadeExchange";
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
- 
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+
         public MetaDataFacade(string hostName, string userName, string password)
         {
             var factory = new ConnectionFactory
@@ -59,7 +61,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         break;
                     }
                 }
-            });
+            }, _cts.Token);
 
             _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
 
@@ -87,7 +89,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         break;
                     }
                 }
-            });
+            },_cts.Token);
 
             InitializeConnection(MetadataQueueName);
         }
@@ -194,6 +196,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public event EventHandler<SourceObjectChangedEventArgs> ObjectInfoChanged;
 
         public Action<string, string> ErrorMessageHandledAction { get; set; }
+
+        public void Close()
+        {
+            _cts.Cancel();
+            _commandChannel.Close();
+            _connection.Close();
+        }
 
         private T RPCServerTaskExecute<T>(IConnection connection, string commandQueueName, string methodName, string userToken,
             object[] methodArgs)

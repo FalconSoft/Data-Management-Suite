@@ -6,7 +6,7 @@ using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
-    public class SearchFacade : ISearchFacade
+    internal class SearchFacade : ISearchFacade
     {
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
@@ -126,5 +126,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 }
             }
         }
+
+        public void Close()
+        {
+            _commandChannel.Close();
+            _connection.Close();
+        }
+
     }
 }

@@ -4,6 +4,7 @@ using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
@@ -12,12 +13,13 @@ using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
-    public class PermissionSecurityFacade : IPermissionSecurityFacade
+    internal class PermissionSecurityFacade : IPermissionSecurityFacade
     {
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
         private const string PermissionSecurityFacadeQueueName = "PermissionSecurityFacadeRPC";
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
         public PermissionSecurityFacade(string serverUrl, string userName, string password)
         {
@@ -82,7 +84,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         break;
                     }
                 }
-            });
+            }, _cts.Token);
         }
 
         public AccessLevel CheckAccess(string userToken, string urn)
@@ -134,7 +136,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         break;
                     }
                 }
-            }, con);
+            }, con, _cts.Token);
 
             var func = new Func<IObserver<Dictionary<string, AccessLevel>>, IDisposable>(subj =>
             {
@@ -236,5 +238,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 }
             }
         }
+
+        public void Close()
+        {
+            _cts.Cancel();
+            _commandChannel.Close();
+            _connection.Close();
+        }
+
     }
 }

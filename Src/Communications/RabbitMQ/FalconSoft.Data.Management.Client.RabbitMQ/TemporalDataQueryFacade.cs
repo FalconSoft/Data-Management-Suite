@@ -7,13 +7,12 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
-using FalconSoft.Data.Management.Common.Security;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
-    public class TemporalDataQueryFacade : ITemporalDataQueryFacade
+    internal class TemporalDataQueryFacade : ITemporalDataQueryFacade
     {
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
@@ -265,5 +264,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 }
             }
         }
+
+        public void Close()
+        {
+            _commandChannel.Close();
+            _connection.Close();
+        }
+
     }
 }
