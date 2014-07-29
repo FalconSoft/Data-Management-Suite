@@ -24,6 +24,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
 
             CreatePowerAdmin("Admin", "Admin");
             CreatePowerAdmin("consoleClient", "console");
+            CreatePowerAdmin("ExcelClient", "ExcelClient");
         }
 
         private void CreatePowerAdmin(string userName, string password)

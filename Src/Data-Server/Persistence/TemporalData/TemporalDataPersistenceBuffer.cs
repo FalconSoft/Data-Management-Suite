@@ -306,7 +306,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                     return bsonValue.ToBoolean();
                 case DataTypes.Date:
                 case DataTypes.DateTime:
-                    return bsonValue.ToNullableUniversalTime();
+                    return Convert.ToDateTime(bsonValue.ToString());
                 default:
                     throw new NotSupportedException("DataType is not supported");
             }

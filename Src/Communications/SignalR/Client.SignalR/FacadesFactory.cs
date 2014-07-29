@@ -75,5 +75,10 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
             return new SecurityFacade(_serverUrl);
         }
+
+        public void Dispose()
+        {
+            
+        }
     }
 }

@@ -39,12 +39,6 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FalconSoft.Data.Management.Common">
-      <HintPath>..\..\packages\FalconSoft.Data.Management.Common.1.0.3\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="FalconSoft.Data.Management.Components">
-      <HintPath>..\..\packages\FalconSoft.Data.Management.Components.1.0.3\lib\net40\FalconSoft.Data.Management.Components.dll</HintPath>
-    </Reference>
     <Reference Include="log4net">
       <HintPath>..\..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
@@ -78,14 +72,8 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Reactive.Core">
-      <HintPath>..\..\packages\Rx-Core.2.2.4\lib\net40\System.Reactive.Core.dll</HintPath>
-    </Reference>
     <Reference Include="System.Reactive.Interfaces">
       <HintPath>..\..\packages\Rx-Interfaces.2.2.4\lib\net40\System.Reactive.Interfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Reactive.PlatformServices">
-      <HintPath>..\..\packages\Rx-PlatformServices.2.2.4\lib\net40\System.Reactive.PlatformServices.dll</HintPath>
     </Reference>
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml.Linq" />
@@ -111,6 +99,18 @@
     <Compile Include="ServerApp.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
+      <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
+      <Name>FalconSoft.Data.Management.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Components\FalconSoft.Data.Management.Components.csproj">
+      <Project>{ca16ffe9-bc48-4dc6-bbce-9a7a3eeca424}</Project>
+      <Name>FalconSoft.Data.Management.Components</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Communications\RabbitMQ\FalconSoft.Data.Management.Server.RabbitMQ\FalconSoft.Data.Management.Server.RabbitMQ.csproj">
+      <Project>{47235916-5BF9-405B-9E21-C494CC5F6F93}</Project>
+      <Name>FalconSoft.Data.Management.Server.RabbitMQ</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Communications\SignalR\Server.SignalR\FalconSoft.Data.Management.Server.SignalR.csproj">
       <Project>{2af64830-c45d-4fd2-ba4b-1e34a960d4dd}</Project>
       <Name>FalconSoft.Data.Management.Server.SignalR</Name>

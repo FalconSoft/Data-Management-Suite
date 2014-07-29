@@ -153,7 +153,7 @@ namespace FalconSoft.Data.Server.EDI.Feeds
         },
         ""secid"" : {
             ""Name"" : ""secid"",
-            ""DataType"" : 2,
+            ""DataType"" : 1,
             ""Size"" : null,
             ""DefaultValue"" : null,
             ""IsNullable"" : false,
@@ -558,7 +558,7 @@ namespace FalconSoft.Data.Server.EDI.Feeds
     ""Fields"" : {
         ""secid"" : {
             ""Name"" : ""secid"",
-            ""DataType"" : 2,
+            ""DataType"" : 1,
             ""Size"" : null,
             ""DefaultValue"" : null,
             ""IsNullable"" : false,
@@ -1294,7 +1294,7 @@ namespace FalconSoft.Data.Server.EDI.Feeds
         },
         ""secid"" : {
             ""Name"" : ""secid"",
-            ""DataType"" : 2,
+            ""DataType"" : 1,
             ""Size"" : null,
             ""DefaultValue"" : null,
             ""IsNullable"" : false,
@@ -2195,7 +2195,7 @@ namespace FalconSoft.Data.Server.EDI.Feeds
         },
         ""secid"" : {
             ""Name"" : ""secid"",
-            ""DataType"" : 2,
+            ""DataType"" : 1,
             ""Size"" : null,
             ""DefaultValue"" : null,
             ""IsNullable"" : false,

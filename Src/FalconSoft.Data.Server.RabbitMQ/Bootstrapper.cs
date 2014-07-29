@@ -1,18 +1,21 @@
 ﻿using System;
+using System.Configuration;
 using System.Linq;
 using System.Reflection;
 using FalconSoft.Data.Management.Components;
 
-namespace FalconSoft.Data.Server
+namespace FalconSoft.Data.Server.RabbitMQ
 {
     public class Bootstrapper
     {
         private static ICommandsAggregator _commandAggregator;
 
-        public void Configure(string metaDataPersistenceConnectionString, string persistenceDataConnectionString, string mongoDataConnectionString, string connectionString, string dataSourcePaths)
+        public void Configure(string metaDataPersistenceConnectionString,
+            string persistenceDataConnectionString, string mongoDataConnectionString)
         {
+
             ServerApp.SetConfiguration(metaDataPersistenceConnectionString,
-                persistenceDataConnectionString, mongoDataConnectionString, dataSourcePaths, Assembly.GetExecutingAssembly().GetName().Version.ToString(), connectionString, DateTime.Now);
+                persistenceDataConnectionString, mongoDataConnectionString, Assembly.GetExecutingAssembly().GetName().Version.ToString(), ConfigurationManager.AppSettings["ConnectionString"], DateTime.Now);
 
             _commandAggregator = ServerApp.CommandAggregator;
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().OrderBy(x => x.FullName))

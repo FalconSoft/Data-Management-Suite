@@ -6,13 +6,13 @@ namespace FalconSoft.Data.Management.InProcessServer.Client
 {
     public class InProcessServerFacadesFactory : IFacadesFactory
     {
-        public InProcessServerFacadesFactory(string metaDataPersistenceConnectionString, string persistenceDataConnectionString, string mongoDataConnectionString)
+        public InProcessServerFacadesFactory(string metaDataPersistenceConnectionString, string persistenceDataConnectionString, string mongoDataConnectionString, string connectionString, string dataSourcesPath)
         {
             ServerApp.Logger.InfoFormat("Server...");
             try
             {
                 var bootstrapper = new Bootstrapper();
-                bootstrapper.Configure(metaDataPersistenceConnectionString, persistenceDataConnectionString, mongoDataConnectionString);
+                bootstrapper.Configure(metaDataPersistenceConnectionString, persistenceDataConnectionString, mongoDataConnectionString, connectionString, dataSourcesPath);
                 bootstrapper.Run();
             }
             catch (Exception ex)
@@ -60,6 +60,11 @@ namespace FalconSoft.Data.Management.InProcessServer.Client
         public IPermissionSecurityFacade CreatePermissionSecurityFacade()
         {
             return ServerApp.PermissionSecurityFacade;
+        }
+
+        public void Dispose()
+        {
+            
         }
     }
 }

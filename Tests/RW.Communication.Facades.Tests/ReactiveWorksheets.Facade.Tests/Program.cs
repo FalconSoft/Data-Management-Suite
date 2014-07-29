@@ -182,8 +182,9 @@ namespace ReactiveWorksheets.Facade.Tests
                 const string metaDataPersistenceConnectionString = "mongodb://localhost/rw_metadata";
                 const string persistenceDataConnectionString = "mongodb://localhost/rw_data";
                 const string mongoDataConnectionString = "mongodb://localhost/MongoData";
-
-                return new InProcessServerFacadesFactory(metaDataPersistenceConnectionString, persistenceDataConnectionString, mongoDataConnectionString);
+                const string connectionString = @"http://localhost:8081/";
+                const string dataSources = @"..\..\..\DataSources\SampleDataSources\bin\Debug\;..\..\..\DataSources\DefaultMongoDbSource\bin\Debug\;..\..\..\DataSources\EDI\bin\Debug\;";
+                return new InProcessServerFacadesFactory(metaDataPersistenceConnectionString, persistenceDataConnectionString, mongoDataConnectionString, connectionString, dataSources);
             }
             throw new ConfigurationException("Unsupported facade type - >" + facadeType);
         }

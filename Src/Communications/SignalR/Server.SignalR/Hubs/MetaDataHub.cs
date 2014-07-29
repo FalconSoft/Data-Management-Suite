@@ -44,42 +44,47 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
         }
 
-        public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userId)
+        public object UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userId)
         {
             try
             {
                 _metaDataFacade.UpdateDataSourceInfo(dataSource, oldDataSourceUrn, userId);
-                Clients.Caller.OnComplete();
+                return new object();
+                //Clients.Caller.OnComplete();
             }
             catch (Exception ex)
             {
                 Clients.Caller.ErrorMessageHandledAction("UpdateDataSourceInfo", ex.Message);
+                return new object();
             }
         }
 
-        public void CreateDataSourceInfo(DataSourceInfo dataSource, string userId)
+        public object CreateDataSourceInfo(string connectionId, DataSourceInfo dataSource, string userId)
         {
             try
             {
                 _metaDataFacade.CreateDataSourceInfo(dataSource, userId);
-                Clients.Caller.OnComplete();
+                return new object();
             }
             catch (Exception ex)
             {
                 Clients.Caller.ErrorMessageHandledAction("UpdateDataSourceInfo", ex.Message);
+                return new object();
             }
         }
 
-        public void DeleteDataSourceInfo(string dataSourceUrn, string userId)
+        public object DeleteDataSourceInfo(string dataSourceUrn, string userId)
         {
             try
             {
                 _metaDataFacade.DeleteDataSourceInfo(dataSourceUrn, userId);
-                Clients.Caller.OnComplete();
+                return new object();
+                //Clients.Caller.OnComplete();
             }
             catch (Exception ex)
             {
                 Clients.Caller.ErrorMessageHandledAction("DeleteDataSourceInfo", ex.Message);
+                return new object();
             }
         }
 
@@ -109,43 +114,51 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
         }
 
-        public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
+        public object UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
         {
             try
             {
                 _metaDataFacade.UpdateWorksheetInfo(wsInfo, oldWorksheetUrn, userId);
-                Clients.Caller.OnComplete();
+                return new object();
+                //Clients.Caller.OnComplete();
             }
             catch (Exception ex)
             {
-                Clients.Caller.ErrorMessageHandledAction("UpdateWorksheetInfo", ex.Message);
+                Clients.Caller.ErrorMessageHandledAction("UpdateWorksheetInfo", ex.Message); 
+                return new object();
+                //
             }
         }
 
-        public void CreateWorksheetInfo(WorksheetInfo wsInfo, string userId)
+        public object CreateWorksheetInfo(WorksheetInfo wsInfo, string userId)
         {
             try
             {
                 _metaDataFacade.CreateWorksheetInfo(wsInfo, userId);
-                Clients.Caller.OnComplete();
+               return new object();
+                // Clients.Caller.OnComplete();
             }
             catch (Exception ex)
             {
                 Clients.Caller.ErrorMessageHandledAction("CreateWorksheetInfo", ex.Message);
+                return new object();
             }
         }
 
 
-        public void DeleteWorksheetInfo(string worksheetUrn, string userId)
+        public object DeleteWorksheetInfo(string worksheetUrn, string userId)
         {
             try
             {
                 _metaDataFacade.DeleteWorksheetInfo(worksheetUrn, userId);
-                Clients.Caller.OnComplete();
+                return new object();
+                //Clients.Caller.OnComplete();
             }
             catch (Exception ex)
             {
                 Clients.Caller.ErrorMessageHandledAction("DeleteWorksheetInfo", ex.Message);
+                return new object();
+                //
             }
         }
 
@@ -162,7 +175,7 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
         }
 
-        public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
+        public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel)
         {
             try
             {
@@ -170,47 +183,56 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
             }
             catch (Exception ex)
             {
-                Clients.Caller.ErrorMessageHandledAction("GetAggregatedWorksheetInfo", ex.Message);
+                Clients.Caller.ErrorMessageHandledAction("GetAvailableAggregatedWorksheets", ex.Message);
                 return new AggregatedWorksheetInfo[0];
             }
         }
 
-        public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
+        public object UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userId)
         {
             try
             {
                 _metaDataFacade.UpdateAggregatedWorksheetInfo(wsInfo, oldWorksheetUrn, userId);
-                Clients.Caller.OnComplete();
+                return new object();
+                //Clients.Caller.OnComplete();
             }
             catch (Exception ex)
             {
                 Clients.Caller.ErrorMessageHandledAction("UpdateAggregatedWorksheetInfo", ex.Message);
+                return new object();
+                //
             }
         }
 
-        public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userId)
+        public object CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userId)
         {
             try
             {
                 _metaDataFacade.CreateAggregatedWorksheetInfo(wsInfo, userId);
-                Clients.Caller.OnComplete();
+                return new object();
+                //Clients.Caller.OnComplete();
             }
             catch (Exception ex)
             {
                 Clients.Caller.ErrorMessageHandledAction("CreateAggregatedWorksheetInfo", ex.Message);
+                return new object();
+                //
             }
         }
 
-        public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userId)
+        public object DeleteAggregatedWorksheetInfo(string worksheetUrn, string userId)
         {
             try
             {
                 _metaDataFacade.DeleteAggregatedWorksheetInfo(worksheetUrn, userId);
-                Clients.Caller.OnComplete();
+                return new object();
+                // Clients.Caller.OnComplete();
             }
             catch (Exception ex)
             {
                 Clients.Caller.ErrorMessageHandledAction("DeleteAggregatedWorksheetInfo", ex.Message);
+                return new object();
+                //
             }
         }
 

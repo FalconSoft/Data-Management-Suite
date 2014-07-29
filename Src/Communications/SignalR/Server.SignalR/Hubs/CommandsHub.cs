@@ -228,45 +228,45 @@ namespace FalconSoft.Data.Management.Server.SignalR.Hubs
 
         private void SubmitChangesChangeRecordFinilize(string connectionId)
         {
-
-            if (_toUpdateSubjects.ContainsKey(connectionId) &&
-                _onUpdateNextCall[connectionId] &&
-                _onUpdateCompleteCall[connectionId] &&
-                (_toUpdateCounter[connectionId] == _toUpdateCount[connectionId]) &&
-                (_toUpdateCounter[connectionId] != 0))
+            var connectionIdLocal = string.Copy(connectionId);
+            if (_toUpdateSubjects.ContainsKey(connectionIdLocal) &&
+                _onUpdateNextCall[connectionIdLocal] &&
+                _onUpdateCompleteCall[connectionIdLocal] &&
+                (_toUpdateCounter[connectionIdLocal] == _toUpdateCount[connectionIdLocal]) &&
+                (_toUpdateCounter[connectionIdLocal] != 0))
             {
-                _toUpdateSubjects[connectionId].OnCompleted();
-                _logger.Debug("To update data transfer complete : " + connectionId);
+                _toUpdateSubjects[connectionIdLocal].OnCompleted();
+                _logger.Debug("To update data transfer complete : " + connectionIdLocal);
                 
-                if (_workingTasks.ContainsKey(connectionId))
-                    _workingTasks.Remove(connectionId);
-                _toUpdateSubjects.Remove(connectionId);
-                _onUpdateCompleteCall.Remove(connectionId);
-                _toUpdateCounter.Remove(connectionId);
-                _toUpdateCount.Remove(connectionId);
-                _onUpdateNextCall.Remove(connectionId);
+                if (_workingTasks.ContainsKey(connectionIdLocal))
+                    _workingTasks.Remove(connectionIdLocal);
+                _toUpdateSubjects.Remove(connectionIdLocal);
+                _onUpdateCompleteCall.Remove(connectionIdLocal);
+                _toUpdateCounter.Remove(connectionIdLocal);
+                _toUpdateCount.Remove(connectionIdLocal);
+                _onUpdateNextCall.Remove(connectionIdLocal);
             }
         }
 
         private void SubmitChangesDeleteFinilize(string connectionId)
         {
-
-            if (_toDelteSubjects.ContainsKey(connectionId) &&
-                _onDeleteNextCall[connectionId] &&
-                _onDeleteCompleteCall[connectionId] &&
-                (_toDeleteCounter[connectionId] == _toDeleteCount[connectionId]) &&
-                (_toDeleteCounter[connectionId] != 0))
+            var connectionIdLocal = string.Copy(connectionId);
+            if (_toDelteSubjects.ContainsKey(connectionIdLocal) &&
+                _onDeleteNextCall[connectionIdLocal] &&
+                _onDeleteCompleteCall[connectionIdLocal] &&
+                (_toDeleteCounter[connectionIdLocal] == _toDeleteCount[connectionIdLocal]) &&
+                (_toDeleteCounter[connectionIdLocal] != 0))
             {
-                _toDelteSubjects[connectionId].OnCompleted();
-                _logger.Debug("To delete data transfer complete : " + connectionId);
+                _toDelteSubjects[connectionIdLocal].OnCompleted();
+                _logger.Debug("To delete data transfer complete : " + connectionIdLocal);
                
-                if (_workingTasks.ContainsKey(connectionId))
-                    _workingTasks.Remove(connectionId);
-                _toDelteSubjects.Remove(connectionId);
-                _onDeleteCompleteCall.Remove(connectionId);
-                _toDeleteCounter.Remove(connectionId);
-                _toDeleteCount.Remove(connectionId);
-                _onDeleteNextCall.Remove(connectionId);
+                if (_workingTasks.ContainsKey(connectionIdLocal))
+                    _workingTasks.Remove(connectionIdLocal);
+                _toDelteSubjects.Remove(connectionIdLocal);
+                _onDeleteCompleteCall.Remove(connectionIdLocal);
+                _toDeleteCounter.Remove(connectionIdLocal);
+                _toDeleteCount.Remove(connectionIdLocal);
+                _onDeleteNextCall.Remove(connectionIdLocal);
             }
         }
     }

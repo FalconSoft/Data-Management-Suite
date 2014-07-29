@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -17,25 +18,21 @@ using FalconSoft.Data.Server.Persistence.SearchIndexes;
 using FalconSoft.Data.Server.Persistence.Security;
 using FalconSoft.Data.Server.Persistence.TemporalData;
 
-namespace FalconSoft.Data.Server
+namespace FalconSoft.Data.Server.RabbitMQ
 {
     public static class ServerApp
     {
         private static string _metaDataPersistenceConnectionString;
         private static string _persistenceDataConnectionString;
         private static string _mongoDataConnectionString;
-        private static string _connectionString;
-        private static string _dataSourcesPath;
 
-        internal static void SetConfiguration(string metaDataPersistenceConnectionString, string persistenceDataConnectionString,
-                        string mongoDataConnectionString, string dataSourcesPath, string version, string url, DateTime dateTime)
+        internal static void SetConfiguration(string metaDataPersistenceConnectionString,
+            string persistenceDataConnectionString, string mongoDataConnectionString,
+            string version, string url, DateTime dateTime)
         {
             _metaDataPersistenceConnectionString = metaDataPersistenceConnectionString;
             _persistenceDataConnectionString = persistenceDataConnectionString;
             _mongoDataConnectionString = mongoDataConnectionString;
-            _dataSourcesPath = dataSourcesPath;
-            _connectionString = url;
-
             _serverInfo = new ServerInfo
             {
                 StartTime = dateTime,
@@ -169,19 +166,11 @@ namespace FalconSoft.Data.Server
             {
                 if (_dataProvidersCatalogs != null) return _dataProvidersCatalogs;
                 AppDomainAssemblyTypeScanner.SetLogger(Logger);
-                _dataProvidersCatalogs = AppDomainAssemblyTypeScanner.TypesOfWithAssembly(typeof(IDataProvidersCatalog), _dataSourcesPath).Select(
+                _dataProvidersCatalogs = AppDomainAssemblyTypeScanner.TypesOfWithAssembly(typeof(IDataProvidersCatalog), ConfigurationManager.AppSettings["CatalogDlls"]).Select(
                             x =>
                             {
                                 Logger.InfoFormat("-> Load {0} dll with provider Catalogs", x.Value.FullName);
-                                try
-                                {
-                                    return (IDataProvidersCatalog)Activator.CreateInstance(x.Key);
-                                }
-                                catch (MissingMethodException)
-                                {
-                                    return (IDataProvidersCatalog)Activator.CreateInstance(x.Key, new[] { _mongoDataConnectionString });
-                                }
-
+                                return (IDataProvidersCatalog)Activator.CreateInstance(x.Key);
                             }).ToArray();
                 Logger.Info("");
                 return _dataProvidersCatalogs;

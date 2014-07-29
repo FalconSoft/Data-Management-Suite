@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using FalconSoft.Data.Management.Client.RabbitMQ;
 using FalconSoft.Data.Management.Client.SignalR;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -24,6 +25,10 @@ namespace FalconSoft.Data.Console
 
         private static IFacadesFactory GetFacadesFactory(string facadeType)
         {
+            if (facadeType.Equals("RabbitMQ", StringComparison.OrdinalIgnoreCase))
+            {
+                return new RabbitMqFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RadditMqAdminLogin"], ConfigurationManager.AppSettings["RadditMqAdminPass"]);
+            }
             if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
             {
                 return new SignalRFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"]);
@@ -36,7 +41,9 @@ namespace FalconSoft.Data.Console
                     IFacadesFactory factory;
                     try
                     {
-                        factory = (IFacadesFactory)Activator.CreateInstance(assembly, new object[] { ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MongoDataConnectionString"] });
+                        factory = (IFacadesFactory)Activator.CreateInstance(assembly, new object[] { ConfigurationManager.AppSettings["MetaDataPersistenceConnectionString"], 
+                            ConfigurationManager.AppSettings["PersistenceDataConnectionString"], ConfigurationManager.AppSettings["MongoDataConnectionString"],
+                            ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["CatalogDlls"]});
                     }
                     catch (MissingMethodException)
                     {
