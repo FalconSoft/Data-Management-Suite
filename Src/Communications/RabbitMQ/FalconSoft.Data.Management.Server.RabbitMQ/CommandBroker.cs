@@ -106,6 +106,15 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 var toUpdateQueueNameLocal = toUpdateQueueName != null ? string.Copy(toUpdateQueueName) : null;
                 var toDeleteQueueNameLocal = toDeleteQueuName != null ? string.Copy(toDeleteQueuName) : null;
 
+                var changeRecordsEnumerator = toUpdateDataSubject.ToEnumerable();
+                var deletedEnumerator = toDeleteDataSubject.ToEnumerable();
+
+                var task1 = Task.Factory.StartNew(
+                        () => toUpdateQueueNameLocal != null ? changeRecordsEnumerator.ToArray() : null);
+
+                var task2 =
+                    Task.Factory.StartNew(() => toDeleteQueueNameLocal != null ? deletedEnumerator.ToArray() : null);
+
                 //initialise submit changes method work.
                 Task.Factory.StartNew(() =>
                 {
@@ -113,16 +122,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     var corelationId = string.Copy(basicProperties.CorrelationId);
                     var userTokenLocal = string.Copy(userToken);
                     var dataSourcePathLocal = string.Copy(dataSourcePath);
-
-                    var changeRecordsEnumerator = toUpdateDataSubject.ToEnumerable();
-                    var deletedEnumerator = toDeleteDataSubject.ToEnumerable();
-
-                    var task1 = Task.Factory.StartNew(
-                            () => toUpdateQueueNameLocal != null ? changeRecordsEnumerator.ToArray() : null);
-
-                    var task2 =
-                        Task.Factory.StartNew(() => toDeleteQueueNameLocal != null ? deletedEnumerator.ToArray() : null);
-
+                    
                     var changedRecords = task1.Result;
                     var deleted = task2.Result;
 
