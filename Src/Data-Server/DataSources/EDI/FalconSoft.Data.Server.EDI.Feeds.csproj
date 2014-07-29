@@ -33,9 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FalconSoft.Data.Management.Common, Version=1.0.3.29796, Culture=neutral, PublicKeyToken=2f05f4cae3a73241, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\packages\FalconSoft.Data.Management.Common.1.0.3\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+    <Reference Include="FalconSoft.Data.Management.Common">
+      <HintPath>..\..\..\packages\FalconSoft.Data.Management.Common.1.0.4\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\packages\Newtonsoft.Json.6.0.3\lib\net40\Newtonsoft.Json.dll</HintPath>

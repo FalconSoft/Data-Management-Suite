@@ -39,11 +39,16 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FalconSoft.Data.Management.Common">
+      <HintPath>..\..\packages\FalconSoft.Data.Management.Common.1.0.4\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="FalconSoft.Data.Management.Components">
+      <HintPath>..\..\packages\FalconSoft.Data.Management.Components.1.0.4\lib\net40\FalconSoft.Data.Management.Components.dll</HintPath>
+    </Reference>
     <Reference Include="log4net">
       <HintPath>..\..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.AspNet.SignalR.Core, Version=1.2.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Microsoft.AspNet.SignalR.Core">
       <HintPath>..\..\packages\Microsoft.AspNet.SignalR.Core.1.2.1\lib\net40\Microsoft.AspNet.SignalR.Core.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNet.SignalR.Owin, Version=1.2.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -99,14 +104,6 @@
     <Compile Include="ServerApp.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
-      <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
-      <Name>FalconSoft.Data.Management.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Components\FalconSoft.Data.Management.Components.csproj">
-      <Project>{ca16ffe9-bc48-4dc6-bbce-9a7a3eeca424}</Project>
-      <Name>FalconSoft.Data.Management.Components</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Communications\RabbitMQ\FalconSoft.Data.Management.Server.RabbitMQ\FalconSoft.Data.Management.Server.RabbitMQ.csproj">
       <Project>{47235916-5BF9-405B-9E21-C494CC5F6F93}</Project>
       <Name>FalconSoft.Data.Management.Server.RabbitMQ</Name>
