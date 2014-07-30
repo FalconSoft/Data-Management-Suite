@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -27,7 +28,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
@@ -74,6 +76,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             var props = _commandChannel.CreateBasicProperties();
             props.ReplyTo = replyTo;
             props.CorrelationId = correlationId;
+            props.SetPersistent(true);
 
             var message = new MethodArgs
             {
@@ -134,6 +137,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             var props = channel.CreateBasicProperties();
             props.ReplyTo = replyTo;
             props.CorrelationId = correlationId;
+            props.SetPersistent(true);
 
             var message = new MethodArgs
             {
@@ -188,6 +192,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 var props = channel.CreateBasicProperties();
                 props.CorrelationId = correlationId;
                 props.ReplyTo = queueName;
+                props.SetPersistent(true);
 
                 var consumer = new QueueingBasicConsumer(channel);
 
@@ -217,6 +222,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         private T CastTo<T>(byte[] byteArray)
         {
+            if (!byteArray.Any())
+                return default(T);
+
             var memStream = new MemoryStream();
             var binForm = new BinaryFormatter();
             memStream.Write(byteArray, 0, byteArray.Length);
@@ -244,6 +252,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 var props = channel.CreateBasicProperties();
                 props.CorrelationId = correlationId;
                 props.ReplyTo = replyTo;
+                props.SetPersistent(true);
 
                 var consumer = new QueueingBasicConsumer(channel);
                 channel.BasicConsume(replyTo, true, consumer);

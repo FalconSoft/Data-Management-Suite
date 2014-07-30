@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -12,12 +13,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
     {
         private readonly IMetaDataAdminFacade _metaDataAdminFacade;
         private readonly ILogger _logger;
-        private readonly IConnection _connection;
-        private readonly IModel _commandChannel;
-        private Task _task;
+        private IModel _commandChannel;
+        private readonly Task _task;
         private const string MetadataQueueName = "MetaDataFacadeRPC";
         private const string MetadataExchangeName = "MetaDataFacadeExchange";
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
+        private readonly object _establishConnectionLock = new object();
 
         public MetaDataBroker(string hostName, string userName, string password, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
         {
@@ -31,17 +32,18 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
-            _connection = factory.CreateConnection();
+            var connection = factory.CreateConnection();
 
-            _commandChannel = _connection.CreateModel();
+            _commandChannel = connection.CreateModel();
 
             _commandChannel.QueueDelete(MetadataQueueName);
             _commandChannel.ExchangeDelete(MetadataExchangeName);
             _commandChannel.ExchangeDelete(ExceptionsExchangeName);
 
-            _commandChannel.QueueDeclare(MetadataQueueName, false, false, false, null);
+            _commandChannel.QueueDeclare(MetadataQueueName, true, false, false, null);
 
             _commandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
 
@@ -58,10 +60,35 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
 
-                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
-                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                        var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                        ExecuteMethodSwitch(message, ea.BasicProperties);
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        _logger.Debug("MetaDataBroker failed", ex);
+
+                        lock (_establishConnectionLock)
+                        {
+                            connection = factory.CreateConnection();
+
+                            _commandChannel = connection.CreateModel();
+
+                            _commandChannel.QueueDelete(MetadataQueueName);
+                            _commandChannel.ExchangeDelete(MetadataExchangeName);
+                            _commandChannel.ExchangeDelete(ExceptionsExchangeName);
+
+                            _commandChannel.QueueDeclare(MetadataQueueName, true, false, false, null);
+                            _commandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
+                            _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
+
+                            consumer = new QueueingBasicConsumer(_commandChannel);
+                            _commandChannel.BasicConsume(MetadataQueueName, false, consumer);
+                        }
+                    }
                 }
             });
         }
@@ -604,16 +631,22 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         // Pub/Sub notification to all users. Type : fanout
         private void OnObjectInfoChanged(object sender, SourceObjectChangedEventArgs e)
         {
-            var messageBytes = BinaryConverter.CastToBytes(e);
-            _commandChannel.BasicPublish(MetadataExchangeName, "", null, messageBytes);
+            lock (_establishConnectionLock)
+            {
+                var messageBytes = BinaryConverter.CastToBytes(e);
+                _commandChannel.BasicPublish(MetadataExchangeName, "", null, messageBytes);
+            }
         }
 
         // Pub/Sub notification to all users. Type : fanout
         private void OnErrorMessageHandledAction(string arg1, string arg2)
         {
-            var typle = string.Format("{0}#{1}", arg1, arg2);
-            var messageBytes = BinaryConverter.CastToBytes(typle);
-            _commandChannel.BasicPublish(ExceptionsExchangeName, "", null, messageBytes);
+            lock (_establishConnectionLock)
+            {
+                var typle = string.Format("{0}#{1}", arg1, arg2);
+                var messageBytes = BinaryConverter.CastToBytes(typle);
+                _commandChannel.BasicPublish(ExceptionsExchangeName, "", null, messageBytes);
+            }
         }
 
         private void RPCSendTaskExecutionResults<T>(IBasicProperties basicProperties, T data)

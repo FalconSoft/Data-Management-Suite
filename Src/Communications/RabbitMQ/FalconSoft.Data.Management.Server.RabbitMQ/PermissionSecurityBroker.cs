@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.IO;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -13,11 +13,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
     {
         private readonly IPermissionSecurityFacade _permissionSecurityFacade;
         private readonly ILogger _logger;
-        private readonly IConnection _connection;
-        private readonly IModel _commandChannel;
-        private Task _task;
+        private IModel _commandChannel;
+        private readonly Task _task;
         private const string PermissionSecurityFacadeQueueName = "PermissionSecurityFacadeRPC";
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
+        private readonly object _establishConnectionLock = new object();
 
         public PermissionSecurityBroker(string hostName, string userName, string password, IPermissionSecurityFacade permissionSecurityFacade, ILogger logger)
         {
@@ -31,19 +31,20 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
-            _connection = factory.CreateConnection();
+            IConnection connection = factory.CreateConnection();
 
-            _commandChannel = _connection.CreateModel();
+            _commandChannel = connection.CreateModel();
 
             _commandChannel.QueueDelete(PermissionSecurityFacadeQueueName);
             _commandChannel.ExchangeDelete(PermissionSecurityFacadeExchangeName);
 
-            _commandChannel.QueueDeclare(PermissionSecurityFacadeQueueName, false, false, false, null);
+            _commandChannel.QueueDeclare(PermissionSecurityFacadeQueueName, true, false, false, null);
 
             _commandChannel.ExchangeDeclare(PermissionSecurityFacadeExchangeName, "direct");
-            
+
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(PermissionSecurityFacadeQueueName, false, consumer);
 
@@ -51,10 +52,33 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
 
-                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
-                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                        var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                        ExecuteMethodSwitch(message, ea.BasicProperties);
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        _logger.Debug("PermissionSecurityBroker failed", ex);
+
+                        lock (_establishConnectionLock)
+                        {
+                            connection = factory.CreateConnection();
+
+                            _commandChannel = connection.CreateModel();
+
+                            _commandChannel.QueueDelete(PermissionSecurityFacadeQueueName);
+                            _commandChannel.ExchangeDelete(PermissionSecurityFacadeExchangeName);
+
+                            _commandChannel.QueueDeclare(PermissionSecurityFacadeQueueName, true, false, false, null);
+                            _commandChannel.ExchangeDeclare(PermissionSecurityFacadeExchangeName, "direct");
+
+                            consumer = new QueueingBasicConsumer(_commandChannel);
+                            _commandChannel.BasicConsume(PermissionSecurityFacadeQueueName, false, consumer);
+                        }
+                    }
                 }
             });
         }
@@ -183,13 +207,16 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void GetPermissionChanged(string userToken)
         {
+            var severity = string.Copy(userToken);
+
             _permissionSecurityFacade.GetPermissionChanged(userToken).Subscribe(data =>
             {
-                var severity = string.Copy(userToken);
+                lock (_establishConnectionLock)
+                {
+                    var dataBytes = BinaryConverter.CastToBytes(data);
 
-                var dataBytes = BinaryConverter.CastToBytes(data);
-
-                _commandChannel.BasicPublish(PermissionSecurityFacadeExchangeName, severity, null, dataBytes);
+                    _commandChannel.BasicPublish(PermissionSecurityFacadeExchangeName, severity, null, dataBytes);
+                }
             });
         }
 

@@ -16,8 +16,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly ITemporalDataQueryFacade _temporalDataQueryFacade;
         private readonly ILogger _logger;
 
-        private readonly IModel _commandChannel;
-        private Task _task;
+        private IModel _commandChannel;
+        private readonly Task _task;
         private const string TemporalDataQueryFacadeQueryName = "TemporalDataQueryFacadeRPC";
         private const int Limit = 100;
 
@@ -33,7 +33,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
 
             var connection = factory.CreateConnection();
@@ -42,20 +43,37 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _commandChannel.QueueDelete(TemporalDataQueryFacadeQueryName);
 
-            _commandChannel.QueueDeclare(TemporalDataQueryFacadeQueryName, false, false, false, null);
+            _commandChannel.QueueDeclare(TemporalDataQueryFacadeQueryName, true, false, false, null);
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
-           
-            _commandChannel.BasicConsume(TemporalDataQueryFacadeQueryName, true, consumer);
+            _commandChannel.BasicConsume(TemporalDataQueryFacadeQueryName, false, consumer);
 
             _task = Task.Factory.StartNew(() =>
             {
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
+                        var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
 
-                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                        ExecuteMethodSwitch(message, ea.BasicProperties);
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        _logger.Debug("TemporalDataQueryBroker failed", ex);
+
+                        connection = factory.CreateConnection();
+
+                        _commandChannel = connection.CreateModel();
+
+                        _commandChannel.QueueDelete(TemporalDataQueryFacadeQueryName);
+
+                        _commandChannel.QueueDeclare(TemporalDataQueryFacadeQueryName, true, false, false, null);
+
+                        consumer = new QueueingBasicConsumer(_commandChannel);
+                        _commandChannel.BasicConsume(TemporalDataQueryFacadeQueryName, false, consumer);
+                    }
                 }
             });
         }
@@ -123,7 +141,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 try
                 {
                     var replyTo = string.Copy(basicProperties.ReplyTo);
-                    
+
                     var corelationId = string.Copy(basicProperties.CorrelationId);
 
                     var props = _commandChannel.CreateBasicProperties();

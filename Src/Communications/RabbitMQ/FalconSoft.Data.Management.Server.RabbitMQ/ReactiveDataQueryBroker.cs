@@ -11,14 +11,15 @@ using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Server.RabbitMQ
 {
-    public class ReactiveDataQueryBroker:IDisposable
+    public class ReactiveDataQueryBroker : IDisposable
     {
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ILogger _logger;
-        private readonly IModel _commandChannel;
+        private IModel _commandChannel;
         private Task _task;
-        private const string RPCQueryName = "ReactiveDataQueryFacadeRPC";
+        private const string ReactiveDataQueryFacadeQueueName = "ReactiveDataQueryFacadeRPC";
         private const int Limit = 100;
+        private object _establishConnectionLock = new object();
 
         public ReactiveDataQueryBroker(string hostName, string username, string pass, IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger)
         {
@@ -32,28 +33,49 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Password = pass,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
 
             var connection = factory.CreateConnection();
 
             _commandChannel = connection.CreateModel();
 
-            _commandChannel.QueueDelete(RPCQueryName);
+            _commandChannel.QueueDelete(ReactiveDataQueryFacadeQueueName);
 
-            _commandChannel.QueueDeclare(RPCQueryName, false, false, false, null);
+            _commandChannel.QueueDeclare(ReactiveDataQueryFacadeQueueName, true, false, false, null);
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(RPCQueryName, true, consumer);
+            _commandChannel.BasicConsume(ReactiveDataQueryFacadeQueueName, false, consumer);
 
             _task = Task.Factory.StartNew(() =>
             {
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
+                        var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
 
-                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                        ExecuteMethodSwitch(message, ea.BasicProperties);
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        _logger.Debug("ReactiveDataQueryBroker failed", ex);
+
+                        lock (_establishConnectionLock)
+                        {
+                            connection = factory.CreateConnection();
+                            _commandChannel = connection.CreateModel();
+
+                            _commandChannel.QueueDelete(ReactiveDataQueryFacadeQueueName);
+
+                            _commandChannel.QueueDeclare(ReactiveDataQueryFacadeQueueName, true, false, false, null);
+
+                            consumer = new QueueingBasicConsumer(_commandChannel);
+                            _commandChannel.BasicConsume(ReactiveDataQueryFacadeQueueName, false, consumer);
+                        }
+                    }
                 }
             });
         }
@@ -223,8 +245,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                         list.Clear();
 
-                        
-                        RPCSendTaskExecutionResults(replyTo, correlationId, new RabbitMQResponce{ Id = responce.Id++, LastMessage = true});
+
+                        RPCSendTaskExecutionResults(replyTo, correlationId, new RabbitMQResponce { Id = responce.Id++, LastMessage = true });
                     }
                     else
                     {
@@ -247,33 +269,33 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             try
             {
+                var userTokenLocal = string.Copy(userToken);
+
+                var dataSourcePathLocal = string.Copy(dataSourcePath);
+
+                var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
+
                 _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
 
                 _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath, filterRules).Subscribe(
                     rcpArgs =>
                     {
-                        var userTokenLocal = string.Copy(userToken);
+                        lock (_establishConnectionLock)
+                        {
+                            var message = new RabbitMQResponce {Data = rcpArgs};
 
-                        var dataSourcePathLocal = string.Copy(dataSourcePath);
-
-                        var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
-
-                        var message = new RabbitMQResponce { Data = rcpArgs };
-
-                        _commandChannel.BasicPublish("GetDataChangesTopic",
-                            routingKey, null, BinaryConverter.CastToBytes(message));
+                            _commandChannel.BasicPublish("GetDataChangesTopic",
+                                routingKey, null, BinaryConverter.CastToBytes(message));
+                        }
                     }, () =>
                     {
-                        var userTokenLocal = string.Copy(userToken);
+                        lock (_establishConnectionLock)
+                        {
+                            var message = new RabbitMQResponce {LastMessage = true};
 
-                        var dataSourcePathLocal = string.Copy(dataSourcePath);
-
-                        var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
-
-                        var message = new RabbitMQResponce { LastMessage = true };
-
-                        _commandChannel.BasicPublish("GetDataChangesTopic",
-                            routingKey, null, BinaryConverter.CastToBytes(message));
+                            _commandChannel.BasicPublish("GetDataChangesTopic",
+                                routingKey, null, BinaryConverter.CastToBytes(message));
+                        }
                     });
             }
             catch (Exception ex)

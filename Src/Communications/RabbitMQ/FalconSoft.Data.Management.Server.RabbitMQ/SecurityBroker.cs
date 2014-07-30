@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -11,11 +12,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
     {
         private readonly ISecurityFacade _securityFacade;
         private readonly ILogger _logger;
-        private readonly IConnection _connection;
-        private readonly IModel _commandChannel;
-        private Task _task;
+        private IModel _commandChannel;
+        private readonly Task _task;
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
+        private readonly object _establishConnectionLock = new object();
 
         public SecurityBroker(string hostName, string userName, string password, ISecurityFacade securityFacade, ILogger logger)
         {
@@ -29,12 +30,13 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
 
-            _connection = factory.CreateConnection();
+            var connection = factory.CreateConnection();
 
-            _commandChannel = _connection.CreateModel();
+            _commandChannel = connection.CreateModel();
 
             _commandChannel.QueueDelete(SecurityFacadeQueueName);
             _commandChannel.ExchangeDelete(ExceptionsExchangeName);
@@ -43,7 +45,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _securityFacade.ErrorMessageHandledAction = OnErrorMessageHandledAction;
 
-            _commandChannel.QueueDeclare(SecurityFacadeQueueName, false, false, false, null);
+            _commandChannel.QueueDeclare(SecurityFacadeQueueName, true, false, false, null);
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(SecurityFacadeQueueName, false, consumer);
@@ -52,13 +54,39 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
 
-                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
-                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                        var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                        ExecuteMethodSwitch(message, ea.BasicProperties);
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        _logger.Debug("SecurityBroker failed", ex);
+
+                        lock (_establishConnectionLock)
+                        {
+                            connection = factory.CreateConnection();
+
+                            _commandChannel = connection.CreateModel();
+
+                            _commandChannel.QueueDelete(SecurityFacadeQueueName);
+                            _commandChannel.ExchangeDelete(ExceptionsExchangeName);
+
+                            _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
+                            _commandChannel.QueueDeclare(SecurityFacadeQueueName, true, false, false, null);
+
+                            consumer = new QueueingBasicConsumer(_commandChannel);
+                            _commandChannel.BasicConsume(SecurityFacadeQueueName, false, consumer);
+                        }
+
+                    }
                 }
             });
         }
+
+      
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
@@ -283,9 +311,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void OnErrorMessageHandledAction(string arg1, string arg2)
         {
-            var typle = string.Format("{0}#{1}", arg1, arg2);
-            var messageBytes = BinaryConverter.CastToBytes(typle);
-            _commandChannel.BasicPublish(ExceptionsExchangeName, "", null, messageBytes);
+            lock (_establishConnectionLock)
+            {
+                var typle = string.Format("{0}#{1}", arg1, arg2);
+                var messageBytes = BinaryConverter.CastToBytes(typle);
+                _commandChannel.BasicPublish(ExceptionsExchangeName, "", null, messageBytes);
+            }
         }
 
         public void Dispose()

@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -18,8 +16,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
     {
         private readonly ICommandFacade _commandFacade;
         private readonly ILogger _logger;
-        private readonly IModel _commandChannel;
-        private Task _task;
+        private IModel _commandChannel;
+        private readonly Task _task;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
         public CommandBroker(string hostName, string userName, string password, ICommandFacade commandFacade, ILogger logger)
         {
@@ -32,14 +30,15 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 UserName = userName,
                 Password = password,
                 Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
             var connection = factory.CreateConnection();
             _commandChannel = connection.CreateModel();
-            
+
             _commandChannel.QueueDelete(CommandFacadeQueueName);
 
-            _commandChannel.QueueDeclare(CommandFacadeQueueName, false, false, false, null);
+            _commandChannel.QueueDeclare(CommandFacadeQueueName, true, false, false, null);
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(CommandFacadeQueueName, false, consumer);
@@ -48,10 +47,28 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
 
-                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
-                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                        var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                        ExecuteMethodSwitch(message, ea.BasicProperties);
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        _logger.Debug("CommandBroker", ex);
+
+                        connection = factory.CreateConnection();
+                        
+                        _commandChannel = connection.CreateModel();
+
+                        _commandChannel.QueueDelete(CommandFacadeQueueName);
+
+                        _commandChannel.QueueDeclare(CommandFacadeQueueName, true, false, false, null);
+
+                        consumer = new QueueingBasicConsumer(_commandChannel);
+                        _commandChannel.BasicConsume(CommandFacadeQueueName, false, consumer);
+                    }
                 }
             });
         }
@@ -80,7 +97,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 try
                 {
                     var replyTo = string.Copy(basicProperties.ReplyTo);
-                    
+
                     var corelationId = string.Copy(basicProperties.CorrelationId);
 
                     var props = _commandChannel.CreateBasicProperties();
@@ -122,7 +139,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     var corelationId = string.Copy(basicProperties.CorrelationId);
                     var userTokenLocal = string.Copy(userToken);
                     var dataSourcePathLocal = string.Copy(dataSourcePath);
-                    
+
                     var changedRecords = task1.Result;
                     var deleted = task2.Result;
 
