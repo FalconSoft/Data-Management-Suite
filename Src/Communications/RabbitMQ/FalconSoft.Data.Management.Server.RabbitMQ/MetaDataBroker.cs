@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -19,6 +20,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string MetadataExchangeName = "MetaDataFacadeExchange";
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
         private readonly object _establishConnectionLock = new object();
+        private bool _keepAlive = true;
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private IConnection _connection;
 
         public MetaDataBroker(string hostName, string userName, string password, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
         {
@@ -35,9 +39,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Port = AmqpTcpEndpoint.UseDefaultPort,
                 RequestedHeartbeat = 30
             };
-            var connection = factory.CreateConnection();
+            _connection = factory.CreateConnection();
 
-            _commandChannel = connection.CreateModel();
+            _commandChannel = _connection.CreateModel();
 
             _commandChannel.QueueDelete(MetadataQueueName);
             _commandChannel.ExchangeDelete(MetadataExchangeName);
@@ -58,7 +62,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _task = Task.Factory.StartNew(() =>
             {
-                while (true)
+                while (_keepAlive)
                 {
                     try
                     {
@@ -73,24 +77,27 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                         lock (_establishConnectionLock)
                         {
-                            connection = factory.CreateConnection();
+                            if (_keepAlive)
+                            {
+                                _connection = factory.CreateConnection();
 
-                            _commandChannel = connection.CreateModel();
+                                _commandChannel = _connection.CreateModel();
 
-                            _commandChannel.QueueDelete(MetadataQueueName);
-                            _commandChannel.ExchangeDelete(MetadataExchangeName);
-                            _commandChannel.ExchangeDelete(ExceptionsExchangeName);
+                                _commandChannel.QueueDelete(MetadataQueueName);
+                                _commandChannel.ExchangeDelete(MetadataExchangeName);
+                                _commandChannel.ExchangeDelete(ExceptionsExchangeName);
 
-                            _commandChannel.QueueDeclare(MetadataQueueName, true, false, false, null);
-                            _commandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
-                            _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
+                                _commandChannel.QueueDeclare(MetadataQueueName, true, false, false, null);
+                                _commandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
+                                _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
 
-                            consumer = new QueueingBasicConsumer(_commandChannel);
-                            _commandChannel.BasicConsume(MetadataQueueName, false, consumer);
+                                consumer = new QueueingBasicConsumer(_commandChannel);
+                                _commandChannel.BasicConsume(MetadataQueueName, false, consumer);
+                            }
                         }
                     }
                 }
-            });
+            }, _cts.Token);
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
@@ -209,7 +216,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("Failed to responce to client connection confirming.", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GetAvailableDataSources(IBasicProperties basicProperties, string userToken, AccessLevel accessLevel)
@@ -235,7 +242,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetAvailableDataSources failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GetDataSourceInfo(IBasicProperties basicProperties, string userToken, string dataSourcePath)
@@ -261,7 +268,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetDataSourceInfo failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void UpdateDataSourceInfo(IBasicProperties basicProperties, string userToken, DataSourceInfo dataSourceInfo, string oldDataSourcePath)
@@ -287,7 +294,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                    _logger.Debug("UpdateDataSourceInfo failed", ex);
                    throw;
                }
-           });
+           }, _cts.Token);
         }
 
         private void CreateDataSourceInfo(IBasicProperties basicProperties, string userToken, DataSourceInfo dataSourceInfo)
@@ -313,7 +320,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                    _logger.Debug("CreateDataSourceInfo failed", ex);
                    throw;
                }
-           });
+           }, _cts.Token);
         }
 
         private void DeleteDataSourceInfo(IBasicProperties basicProperties, string userToken, string dataSourthPath)
@@ -339,7 +346,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                    _logger.Debug("DeleteDataSourceInfo failed", ex);
                    throw;
                }
-           });
+           }, _cts.Token);
         }
 
         private void GetWorksheetInfo(IBasicProperties basicProperties, string userToken, string worksheetUrn)
@@ -365,7 +372,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                    _logger.Debug("GetWorksheetInfo failed", ex);
                    throw;
                }
-           });
+           }, _cts.Token);
         }
 
         private void GetAvailableWorksheets(IBasicProperties basicProperties, string userToken, AccessLevel accessLevel)
@@ -391,7 +398,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                    _logger.Debug("GetAvailableWorksheets failed", ex);
                    throw;
                }
-           });
+           }, _cts.Token);
         }
 
         private void UpdateWorksheetInfo(IBasicProperties basicProperties, string userToken, WorksheetInfo worksheetInfo, string oldWorksheetUrn)
@@ -417,7 +424,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                    _logger.Debug("UpdateWorksheetInfo failed", ex);
                    throw;
                }
-           });
+           }, _cts.Token);
         }
 
         private void CreateWorksheetInfo(IBasicProperties basicProperties, string userToken, WorksheetInfo worksheetInfo)
@@ -443,7 +450,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("CreateWorksheetInfo failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void DeleteWorksheetInfo(IBasicProperties basicProperties, string userToken, string worksheetUrn)
@@ -469,7 +476,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("CreateWorksheetInfo failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GetAvailableAggregatedWorksheets(IBasicProperties basicProperties, string userToken,
@@ -496,7 +503,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetAvailableAggregatedWorksheets failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void UpdateAggregatedWorksheetInfo(IBasicProperties basicProperties, AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
@@ -522,7 +529,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                    _logger.Debug("UpdateAggregatedWorksheetInfo failed", ex);
                    throw;
                }
-           });
+           }, _cts.Token);
         }
 
         private void CreateAggregatedWorksheetInfo(IBasicProperties basicProperties, AggregatedWorksheetInfo wsInfo, string userToken)
@@ -548,7 +555,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                    _logger.Debug("CreateAggregatedWorksheetInfo failed", ex);
                    throw;
                }
-           });
+           }, _cts.Token);
         }
 
         private void DeleteAggregatedWorksheetInfo(IBasicProperties basicProperties, string worksheetUrn, string userToken)
@@ -574,7 +581,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                    _logger.Debug("DeleteAggregatedWorksheetInfo failed", ex);
                    throw;
                }
-           });
+           }, _cts.Token);
         }
 
         private void GetAggregatedWorksheetInfo(IBasicProperties basicProperties, string worksheetUrn, string userToken)
@@ -600,7 +607,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                    _logger.Debug("GetAggregatedWorksheetInfo failed", ex);
                    throw;
                }
-           });
+           }, _cts.Token);
         }
 
         private void GetServerInfo(IBasicProperties basicProperties)
@@ -625,7 +632,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetServerInfo failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         // Pub/Sub notification to all users. Type : fanout
@@ -675,7 +682,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         public void Dispose()
         {
-            _task.Dispose();
+           _keepAlive = false;
+           _cts.Cancel();
+           _cts.Dispose();
+           _commandChannel.Abort();
+            _connection.Close();
         }
     }
 }

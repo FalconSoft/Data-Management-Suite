@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -17,9 +18,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly ILogger _logger;
 
         private IModel _commandChannel;
-        private readonly Task _task;
         private const string TemporalDataQueryFacadeQueryName = "TemporalDataQueryFacadeRPC";
         private const int Limit = 100;
+        private bool _keepAlive = true;
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private IConnection _connection;
 
         public TemporalDataQueryBroker(string hostName, string userName, string password, ITemporalDataQueryFacade temporalDataQueryFacade, ILogger logger)
         {
@@ -37,9 +40,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 RequestedHeartbeat = 30
             };
 
-            var connection = factory.CreateConnection();
+            _connection = factory.CreateConnection();
 
-            _commandChannel = connection.CreateModel();
+            _commandChannel = _connection.CreateModel();
 
             _commandChannel.QueueDelete(TemporalDataQueryFacadeQueryName);
 
@@ -48,9 +51,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(TemporalDataQueryFacadeQueryName, false, consumer);
 
-            _task = Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(() =>
             {
-                while (true)
+                while (_keepAlive)
                 {
                     try
                     {
@@ -63,19 +66,22 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     {
                         _logger.Debug("TemporalDataQueryBroker failed", ex);
 
-                        connection = factory.CreateConnection();
+                        if (_keepAlive)
+                        {
+                            _connection = factory.CreateConnection();
 
-                        _commandChannel = connection.CreateModel();
+                            _commandChannel = _connection.CreateModel();
 
-                        _commandChannel.QueueDelete(TemporalDataQueryFacadeQueryName);
+                            _commandChannel.QueueDelete(TemporalDataQueryFacadeQueryName);
 
-                        _commandChannel.QueueDeclare(TemporalDataQueryFacadeQueryName, true, false, false, null);
+                            _commandChannel.QueueDeclare(TemporalDataQueryFacadeQueryName, true, false, false, null);
 
-                        consumer = new QueueingBasicConsumer(_commandChannel);
-                        _commandChannel.BasicConsume(TemporalDataQueryFacadeQueryName, false, consumer);
+                            consumer = new QueueingBasicConsumer(_commandChannel);
+                            _commandChannel.BasicConsume(TemporalDataQueryFacadeQueryName, false, consumer);
+                        }
                     }
                 }
-            });
+            }, _cts.Token);
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
@@ -154,7 +160,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("Failed to responce to client connection confirming.", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GetRecordsHistory(IBasicProperties basicProperties, string userToken, DataSourceInfo dataSourceInfo, string recordKey)
@@ -180,7 +186,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetRecordsHistory failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GetDataHistoryByTag(IBasicProperties basicProperties, string userToken, DataSourceInfo dataSourceInfo, TagInfo tagInfo)
@@ -204,7 +210,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetDataHistoryByTag failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GetRecordsAsOf(IBasicProperties basicProperties, string userToken, DataSourceInfo dataSourceInfo, DateTime timeStamp)
@@ -228,7 +234,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetRecordsAsOf failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GetTemporalDataByRevisionId(IBasicProperties basicProperties, string userToken, DataSourceInfo dataSourceInfo, object revisionId)
@@ -252,7 +258,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetTemporalDataByRevisionId failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GetRevisions(IBasicProperties basicProperties, string userToken, DataSourceInfo dataSourceInfo)
@@ -276,7 +282,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetRevisions failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GeTagInfos(IBasicProperties basicProperties, string userToken)
@@ -303,7 +309,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GeTagInfos failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void SaveTagInfo(IBasicProperties basicProperties, string userToken, TagInfo tagInfo)
@@ -329,7 +335,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("SaveTagInfo failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void RemoveTagInfo(IBasicProperties basicProperties, string userToken, TagInfo tagInfo)
@@ -355,7 +361,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("SaveTagInfo failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void RPCSendTaskExecutionFinishNotification(IBasicProperties basicProperties)
@@ -432,7 +438,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         public void Dispose()
         {
-            _task.Dispose();
+            _keepAlive = false;
+            _cts.Cancel();
+            _cts.Dispose();
+            _commandChannel.Abort();
+            _connection.Close();
         }
     }
 }

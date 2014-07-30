@@ -68,6 +68,14 @@ namespace FalconSoft.Data.Server
             Console.WriteLine("Server runs. Press 'Enter' to stop server work.");
 
             Console.ReadLine();
+
+            reactiveDataQueryBroker.Dispose();
+            metaDataAdminBroker.Dispose();
+            commandBroker.Dispose();
+            securityBroker.Dispose();
+            permissionSecurityBroker.Dispose();
+            serchBroker.Dispose();
+            temporalDataQueryBroker.Dispose();
         }
 
         private static void RunSignalRServer()

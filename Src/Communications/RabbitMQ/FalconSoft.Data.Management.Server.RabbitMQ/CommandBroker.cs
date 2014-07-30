@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -17,8 +18,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly ICommandFacade _commandFacade;
         private readonly ILogger _logger;
         private IModel _commandChannel;
-        private readonly Task _task;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
+        private bool _keepAlive = true;
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private IConnection _connection;
+
         public CommandBroker(string hostName, string userName, string password, ICommandFacade commandFacade, ILogger logger)
         {
             _commandFacade = commandFacade;
@@ -33,8 +37,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Port = AmqpTcpEndpoint.UseDefaultPort,
                 RequestedHeartbeat = 30
             };
-            var connection = factory.CreateConnection();
-            _commandChannel = connection.CreateModel();
+            _connection = factory.CreateConnection();
+            _commandChannel = _connection.CreateModel();
 
             _commandChannel.QueueDelete(CommandFacadeQueueName);
 
@@ -43,9 +47,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(CommandFacadeQueueName, false, consumer);
 
-            _task = Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(() =>
             {
-                while (true)
+                while (_keepAlive)
                 {
                     try
                     {
@@ -58,19 +62,22 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     {
                         _logger.Debug("CommandBroker", ex);
 
-                        connection = factory.CreateConnection();
-                        
-                        _commandChannel = connection.CreateModel();
+                        if (_keepAlive)
+                        {
+                            _connection = factory.CreateConnection();
 
-                        _commandChannel.QueueDelete(CommandFacadeQueueName);
+                            _commandChannel = _connection.CreateModel();
 
-                        _commandChannel.QueueDeclare(CommandFacadeQueueName, true, false, false, null);
+                            _commandChannel.QueueDelete(CommandFacadeQueueName);
 
-                        consumer = new QueueingBasicConsumer(_commandChannel);
-                        _commandChannel.BasicConsume(CommandFacadeQueueName, false, consumer);
+                            _commandChannel.QueueDeclare(CommandFacadeQueueName, true, false, false, null);
+
+                            consumer = new QueueingBasicConsumer(_commandChannel);
+                            _commandChannel.BasicConsume(CommandFacadeQueueName, false, consumer);
+                        }
                     }
                 }
-            });
+            }, _cts.Token);
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
@@ -110,7 +117,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("Failed to responce to client connection confirming.", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void SubmitChanges(IBasicProperties basicProperties, string userToken, string dataSourcePath,
@@ -149,7 +156,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         props.CorrelationId = corelationId;
                         _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(ri));
                     });
-                });
+                }, _cts.Token);
 
 
                 //collect changed records
@@ -184,7 +191,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                                 toUpdateDataSubject.OnNext(dictionary);
                             }
                         }
-                    }, con);
+                    }, con, _cts.Token);
                 }
 
                 //collect record keys to delete
@@ -219,7 +226,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                                 toDeleteDataSubject.OnNext(dictionary);
                             }
                         }
-                    }, con);
+                    }, con, _cts.Token);
                 }
             }
             catch (Exception ex)
@@ -230,7 +237,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         public void Dispose()
         {
-            _task.Dispose();
+            _keepAlive = false;
+            _cts.Cancel();
+            _cts.Dispose();
+            _commandChannel.Abort();
+            _connection.Close();
         }
     }
 }
