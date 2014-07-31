@@ -85,8 +85,8 @@ namespace FalconSoft.Data.Server.Installers
         {
             ServerApp.Logger.Info("Server...");
             var hostName = ConfigurationManager.AppSettings["ConnectionString"];
-            var userName = ConfigurationManager.AppSettings["RadditMqAdminLogin"];
-            var password = ConfigurationManager.AppSettings["RadditMqAdminPass"];
+            var userName = ConfigurationManager.AppSettings["RabbitMqAdminLogin"];
+            var password = ConfigurationManager.AppSettings["RabbitMqAdminPass"];
 
             ReactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName, userName, password, ServerApp.ReactiveDataQueryFacade, ServerApp.Logger);
             ServerApp.Logger.Info("ReactiveDataQueryBroker starts");

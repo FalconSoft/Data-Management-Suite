@@ -27,7 +27,7 @@ namespace FalconSoft.Data.Console
         {
             if (facadeType.Equals("RabbitMQ", StringComparison.OrdinalIgnoreCase))
             {
-                return new RabbitMqFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RadditMqAdminLogin"], ConfigurationManager.AppSettings["RadditMqAdminPass"]);
+                return new RabbitMqFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RabbitMqAdminLogin"], ConfigurationManager.AppSettings["RabbitMqAdminPass"]);
             }
             if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
             {
