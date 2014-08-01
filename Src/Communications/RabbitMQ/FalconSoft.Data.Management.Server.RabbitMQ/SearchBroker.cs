@@ -34,7 +34,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Port = AmqpTcpEndpoint.UseDefaultPort,
                 RequestedHeartbeat = 30
             };
-           _connection = factory.CreateConnection();
+            _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
 
             _commandChannel.QueueDelete(SearchFacadeQueueName);
@@ -191,7 +191,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _keepAlive = false;
             _cts.Cancel();
             _cts.Dispose();
-           _commandChannel.Abort();
+            _commandChannel.Close();
             _connection.Close();
         }
     }
