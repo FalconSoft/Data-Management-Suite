@@ -21,8 +21,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             _serverUrl = serverUrl;
             _userName = userName;
             _password = password;
-
-            _commandFacade = new CommandFacade(_serverUrl, _userName, _password);
         }
 
         public ICommandFacade CreateCommandFacade()
@@ -30,7 +28,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (string.IsNullOrWhiteSpace(_serverUrl))
                 throw new ApplicationException("Server Url is not initialized in bootstrapper");
 
-            return _commandFacade;
+            return _commandFacade ?? (_commandFacade = new CommandFacade(_serverUrl, _userName, _password));
         }
 
         public IReactiveDataQueryFacade CreateReactiveDataQueryFacade()
@@ -93,13 +91,19 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-            _commandFacade.Close();
-            _reactiveDataQueryFacade.Close();
-            _temporalDataQueryFacade.Close();
-            _metaDataFacade.Close();
-            _searchFacade.Close();
-            _permissionSecurityFacade.Close();
-            _securityFacade.Close();
+            if (_commandFacade != null) _commandFacade.Close();
+
+            if (_reactiveDataQueryFacade != null) _reactiveDataQueryFacade.Close();
+
+            if (_temporalDataQueryFacade != null) _temporalDataQueryFacade.Close();
+
+            if (_metaDataFacade != null) _metaDataFacade.Close();
+
+            if (_searchFacade != null) _searchFacade.Close();
+
+            if (_permissionSecurityFacade != null) _permissionSecurityFacade.Close();
+
+            if (_securityFacade != null) _securityFacade.Close();
         }
     }
 }
