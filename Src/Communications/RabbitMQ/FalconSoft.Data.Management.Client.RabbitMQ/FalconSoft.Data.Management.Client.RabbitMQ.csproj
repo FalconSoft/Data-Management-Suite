@@ -69,6 +69,7 @@
     <Compile Include="SearchFacade.cs" />
     <Compile Include="SecurityFacade.cs" />
     <Compile Include="TemporalDataQueryFacade.cs" />
+    <Compile Include="TestFacade.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
