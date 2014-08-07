@@ -33,7 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FalconSoft.Data.Management.Common, Version=1.0.1.31622, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="FalconSoft.Data.Management.Common, Version=1.0.5.18177, Culture=neutral, PublicKeyToken=2f05f4cae3a73241, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\FalconSoft.Data.Management.Common.1.0.5\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
     </Reference>
