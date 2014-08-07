@@ -62,6 +62,11 @@ namespace FalconSoft.Data.Management.InProcessServer.Client
             return ServerApp.PermissionSecurityFacade;
         }
 
+        public ITestFacade CreateTestFacade()
+        {
+            return null;
+        }
+
         public void Dispose()
         {
             

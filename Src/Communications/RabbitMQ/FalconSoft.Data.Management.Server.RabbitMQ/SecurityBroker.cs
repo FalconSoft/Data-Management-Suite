@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -11,11 +13,13 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
     {
         private readonly ISecurityFacade _securityFacade;
         private readonly ILogger _logger;
-        private readonly IConnection _connection;
-        private readonly IModel _commandChannel;
-        private Task _task;
+        private IModel _commandChannel;
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
+        private readonly object _establishConnectionLock = new object();
+        private bool _keepAlive = true;
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private IConnection _connection;
 
         public SecurityBroker(string hostName, string userName, string password, ISecurityFacade securityFacade, ILogger logger)
         {
@@ -29,7 +33,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
 
             _connection = factory.CreateConnection();
@@ -43,22 +48,51 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _securityFacade.ErrorMessageHandledAction = OnErrorMessageHandledAction;
 
-            _commandChannel.QueueDeclare(SecurityFacadeQueueName, false, false, false, null);
+            _commandChannel.QueueDeclare(SecurityFacadeQueueName, true, false, false, null);
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(SecurityFacadeQueueName, false, consumer);
 
-            _task = Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(() =>
             {
-                while (true)
+                while (_keepAlive)
                 {
-                    var ea = consumer.Queue.Dequeue();
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
 
-                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
-                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                        var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                        ExecuteMethodSwitch(message, ea.BasicProperties);
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        _logger.Debug("SecurityBroker failed", ex);
+
+                        lock (_establishConnectionLock)
+                        {
+                            if (_keepAlive)
+                            {
+                                _connection = factory.CreateConnection();
+
+                                _commandChannel = _connection.CreateModel();
+
+                                _commandChannel.QueueDelete(SecurityFacadeQueueName);
+                                _commandChannel.ExchangeDelete(ExceptionsExchangeName);
+
+                                _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
+                                _commandChannel.QueueDeclare(SecurityFacadeQueueName, true, false, false, null);
+
+                                consumer = new QueueingBasicConsumer(_commandChannel);
+                                _commandChannel.BasicConsume(SecurityFacadeQueueName, false, consumer);
+                            }
+                        }
+
+                    }
                 }
-            });
+            }, _cts.Token);
         }
+
+      
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
@@ -122,7 +156,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("Failed to responce to client connection confirming.", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void Authenticate(IBasicProperties basicProperties, string userName, string password)
@@ -148,7 +182,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                   _logger.Debug("Authenticate failed", ex);
                   throw;
               }
-          });
+          }, _cts.Token);
         }
 
         private void GetUsers(IBasicProperties basicProperties, string userToken)
@@ -174,7 +208,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetUsers failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GetUser(IBasicProperties basicProperties, string userName)
@@ -200,7 +234,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetUser failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void SaveNewUser(IBasicProperties basicProperties, string userToken, User user, UserRole userRole)
@@ -226,7 +260,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("SaveNewUser failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void UpdateUser(IBasicProperties basicProperties, string userToken, User user, UserRole userRole)
@@ -252,7 +286,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("SaveNewUser failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void RemoveUser(IBasicProperties basicProperties, string userToken, User user)
@@ -278,19 +312,26 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("SaveNewUser failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void OnErrorMessageHandledAction(string arg1, string arg2)
         {
-            var typle = string.Format("{0}#{1}", arg1, arg2);
-            var messageBytes = BinaryConverter.CastToBytes(typle);
-            _commandChannel.BasicPublish(ExceptionsExchangeName, "", null, messageBytes);
+            lock (_establishConnectionLock)
+            {
+                var typle = string.Format("{0}#{1}", arg1, arg2);
+                var messageBytes = BinaryConverter.CastToBytes(typle);
+                _commandChannel.BasicPublish(ExceptionsExchangeName, "", null, messageBytes);
+            }
         }
 
         public void Dispose()
         {
-            _task.Dispose();
+            _keepAlive = false;
+            _cts.Cancel();
+            _cts.Dispose();
+            _commandChannel.Close();
+            _connection.Close();
         }
 
         private void RPCSendTaskExecutionResults<T>(IBasicProperties basicProperties, T data)

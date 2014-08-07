@@ -67,7 +67,12 @@ namespace FalconSoft.Data.Management.Client.SignalR
 
             return new PermissionSecurityFacade(_serverUrl);
         }
-        
+
+        public ITestFacade CreateTestFacade()
+        {
+            return null;
+        }
+
         public ISecurityFacade CreateSecurityFacade()
         {
             if (string.IsNullOrWhiteSpace(_serverUrl))

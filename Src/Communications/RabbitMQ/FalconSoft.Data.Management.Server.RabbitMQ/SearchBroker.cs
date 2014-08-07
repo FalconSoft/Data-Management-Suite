@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -11,10 +13,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
     {
         private readonly ISearchFacade _searchFacade;
         private readonly ILogger _logger;
-        private IConnection _connection;
-        private readonly IModel _commandChannel;
-        private Task _task;
+        private IModel _commandChannel;
         private const string SearchFacadeQueueName = "SearchFacadeRPC";
+        private bool _keepAlive = true;
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private IConnection _connection;
 
         public SearchBroker(string hostName, string userName, string password, ISearchFacade searchFacade, ILogger logger)
         {
@@ -28,28 +31,50 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
 
-            _commandChannel.ExchangeDelete(SearchFacadeQueueName);
+            _commandChannel.QueueDelete(SearchFacadeQueueName);
 
-            _commandChannel.QueueDeclare(SearchFacadeQueueName, false, false, false, null);
+            _commandChannel.QueueDeclare(SearchFacadeQueueName, true, false, false, null);
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(SearchFacadeQueueName, true, consumer);
+            _commandChannel.BasicConsume(SearchFacadeQueueName, false, consumer);
 
-            _task = Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(() =>
             {
-                while (true)
+                while (_keepAlive)
                 {
-                    var ea = consumer.Queue.Dequeue();
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
 
-                    var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
-                    ExecuteMethodSwitch(message, ea.BasicProperties);
+                        var message = BinaryConverter.CastTo<MethodArgs>(ea.Body);
+                        ExecuteMethodSwitch(message, ea.BasicProperties);
+                    }
+                    catch (EndOfStreamException ex)
+                    {
+                        _logger.Debug("SearchBroker failed", ex);
+
+                        if (_keepAlive)
+                        {
+                            _connection = factory.CreateConnection();
+
+                            _commandChannel = _connection.CreateModel();
+
+                            _commandChannel.QueueDelete(SearchFacadeQueueName);
+
+                            _commandChannel.QueueDeclare(SearchFacadeQueueName, true, false, false, null);
+
+                            consumer = new QueueingBasicConsumer(_commandChannel);
+                            _commandChannel.BasicConsume(SearchFacadeQueueName, false, consumer);
+                        }
+                    }
                 }
-            });
+            }, _cts.Token);
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
@@ -94,7 +119,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("Failed to responce to client connection confirming.", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void Search(IBasicProperties basicProperties, string userToken, string searchString)
@@ -120,7 +145,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("Search failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void GetSearchableWorksheets(IBasicProperties basicProperties, string userToken, SearchData searchData)
@@ -146,7 +171,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     _logger.Debug("GetSearchableWorksheets failed", ex);
                     throw;
                 }
-            });
+            }, _cts.Token);
         }
 
         private void RPCSendTaskExecutionResults<T>(IBasicProperties basicProperties, T data)
@@ -163,7 +188,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         public void Dispose()
         {
-            _task.Dispose();
+            _keepAlive = false;
+            _cts.Cancel();
+            _cts.Dispose();
+            _commandChannel.Close();
+            _connection.Close();
         }
     }
 }

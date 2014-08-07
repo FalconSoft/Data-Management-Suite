@@ -30,7 +30,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 Password = password,
                 VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
@@ -53,6 +54,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             var props = _commandChannel.CreateBasicProperties();
             props.CorrelationId = correlationId;
             props.ReplyTo = replyTo;
+            props.SetPersistent(true);
 
             var message = new MethodArgs
             {
@@ -170,6 +172,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 var props = channel.CreateBasicProperties();
                 props.CorrelationId = correlationId;
                 props.ReplyTo = queueName;
+                props.SetPersistent(true);
 
                 var consumer = new QueueingBasicConsumer(channel);
 
@@ -218,6 +221,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 var props = channel.CreateBasicProperties();
                 props.CorrelationId = correlationId;
                 props.ReplyTo = replyTo;
+                props.SetPersistent(true);
 
                 var consumer = new QueueingBasicConsumer(channel);
                 channel.BasicConsume(replyTo, true, consumer);

@@ -32,8 +32,7 @@ namespace FalconSoft.Data.Server
             var roller = new RollingFileAppender
             {
                 AppendToFile = true,
-                //C:\Users\%UserName%\AppData\Local\Temp\FalconSoft\ReactiveWorksheets\server-log-file.txt
-                File = Path.Combine(Path.GetTempPath(), "FalconSoft", "ReactiveWorksheets" + @"\server-log-file.txt"),
+                File = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FalconSoft", "ReactiveWorksheets", "server-log-file.txt"),
                 Layout = patternLayout,
                 MaxSizeRollBackups = 10,
                 MaximumFileSize = "10MB",
