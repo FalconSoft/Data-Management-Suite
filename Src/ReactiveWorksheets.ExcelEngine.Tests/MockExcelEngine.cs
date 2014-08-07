@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.ExcelAddIn.ReactiveExcel;
@@ -120,7 +118,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         {
             var ds = MockRepository.GetDataSourceFromJSON(dsjson);
             DataSourceInfos.Add(ds);
-            var data = RecordHelpers.TsvToDictionary(ds, tsvdata);
+            var data = RecordHelpers.TsvToDictionary(ds, tsvdata).ToList();
             var dbData = new Dictionary<string, Dictionary<string, object>>();
             foreach (var record in data)
             {
