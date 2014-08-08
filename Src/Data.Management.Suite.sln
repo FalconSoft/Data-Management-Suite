@@ -91,6 +91,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Installers", "Installers", 
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Falconsoft.ReactiveWorksheet.WixInstaller", "..\..\Data-Management-Suite-Private\Src\Installers\Falconsoft.ReactiveWorksheet.WixInstaller\Falconsoft.ReactiveWorksheet.WixInstaller.wixproj", "{88237B4E-4031-4B94-95F6-10C8BC10E5FE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Falconsoft.ReactiveWorksheet.WixInstaller.CustomActions", "..\..\Data-Management-Suite-Private\Src\Installers\Falconsoft.ReactiveWorksheet.WixInstaller.CustomActions\Falconsoft.ReactiveWorksheet.WixInstaller.CustomActions.csproj", "{0E3A154B-48C7-4613-89D0-E1A8914EDE60}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -381,6 +383,16 @@ Global
 		{88237B4E-4031-4B94-95F6-10C8BC10E5FE}.Release|Mixed Platforms.Build.0 = Release|x86
 		{88237B4E-4031-4B94-95F6-10C8BC10E5FE}.Release|x86.ActiveCfg = Release|x86
 		{88237B4E-4031-4B94-95F6-10C8BC10E5FE}.Release|x86.Build.0 = Release|x86
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60}.Debug|x86.ActiveCfg = Debug|x86
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60}.Debug|x86.Build.0 = Debug|x86
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60}.Release|Any CPU.ActiveCfg = Release|x86
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60}.Release|Mixed Platforms.Build.0 = Release|x86
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60}.Release|x86.ActiveCfg = Release|x86
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -411,5 +423,6 @@ Global
 		{E5F3DEC3-B616-4A4E-BFE4-266EA569291C} = {CF6998DF-C9CE-43C3-9B13-AEC2C51FAE13}
 		{47235916-5BF9-405B-9E21-C494CC5F6F93} = {CF6998DF-C9CE-43C3-9B13-AEC2C51FAE13}
 		{88237B4E-4031-4B94-95F6-10C8BC10E5FE} = {724DEB6A-2C26-46D2-B488-3ED9554BF5BD}
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60} = {724DEB6A-2C26-46D2-B488-3ED9554BF5BD}
 	EndGlobalSection
 EndGlobal
