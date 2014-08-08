@@ -682,10 +682,10 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         public void Dispose()
         {
-           _keepAlive = false;
-           _cts.Cancel();
-           _cts.Dispose();
-           _commandChannel.Abort();
+            _keepAlive = false;
+            _cts.Cancel();
+            _cts.Dispose();
+            _commandChannel.Close();
             _connection.Close();
         }
     }

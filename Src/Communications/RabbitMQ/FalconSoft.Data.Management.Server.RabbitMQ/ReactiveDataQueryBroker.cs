@@ -364,7 +364,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             _keepAlive = false;
             _cts.Cancel();
             _cts.Dispose();
-            _commandChannel.Abort();
+            _commandChannel.Close();
             _connection.Close();
         }
     }
