@@ -188,6 +188,46 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             }, _cts.Token);
         }
 
+        public bool CheckExistence(string userToken, string dataSourceUrn, string fieldName, object value)
+        {
+            using (var channel = _connection.CreateModel())
+            {
+                var correlationId = Guid.NewGuid().ToString();
+
+                var replyTo = channel.QueueDeclare().QueueName;
+
+                var props = channel.CreateBasicProperties();
+                props.CorrelationId = correlationId;
+                props.ReplyTo = replyTo;
+
+                var consumer = new QueueingBasicConsumer(channel);
+                channel.BasicConsume(replyTo, true, consumer);
+
+                var message = new MethodArgs
+                {
+                    MethodName = "CheckExistence",
+                    UserToken = userToken,
+                    MethodsArgs = new[] {dataSourceUrn, fieldName, value}
+                };
+
+                var messageBytes = BinaryConverter.CastToBytes(message);
+
+                channel.BasicPublish("", RPCQueryName, props, messageBytes);
+
+                while (true)
+                {
+                    var ea = consumer.Queue.Dequeue();
+
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        var responce = BinaryConverter.CastTo<bool>(ea.Body);
+
+                        return responce;
+                    }
+                }
+            }
+        }
+
         public void Dispose()
         {
 

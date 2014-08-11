@@ -155,6 +155,17 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             }
         }
 
+        public bool CheckExistence(string fieldName, object value)
+        {
+            var count = _collection.FindAllAs<LiveDataObject>().SetFields(Fields.Exclude("_id")).AsQueryable().Count(x=>x.RecordValues[fieldName].Equals(value));
+
+            if (count > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// Insert, update or remove record data due to ChangedAction and OriginalRecordKey
         /// </summary>

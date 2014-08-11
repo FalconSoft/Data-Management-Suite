@@ -351,6 +351,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
             _proxy.Invoke("ResolveRecordbyForeignKey", changedRecord, dataSourceUrn, userToken);
         }
 
+        public bool CheckExistence(string userToken, string dataSourceUrn, string fieldName, object value)
+        {
+            return false;
+        }
+
         private void CheckConnectionToServer()
         {
             

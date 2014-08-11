@@ -20,7 +20,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const int Limit = 100;
         private readonly object _establishConnectionLock = new object();
         private bool _keepAlive = true;
-        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
 
         public ReactiveDataQueryBroker(string hostName, string username, string pass, IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger)
@@ -115,6 +115,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         ResolveRecordbyForeignKey(basicProperties, message.UserToken,
                             message.MethodsArgs[0] as RecordChangedParam[], message.MethodsArgs[1] as string,
                             message.MethodsArgs[2] as string, message.MethodsArgs[3] as string);
+                        break;
+                    }
+                case "CheckExistence":
+                    {
+                        CheckExistence(basicProperties, message.UserToken, message.MethodsArgs[0] as string,
+                            message.MethodsArgs[1] as string, message.MethodsArgs[2]);
                         break;
                     }
             }
@@ -287,7 +293,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     {
                         lock (_establishConnectionLock)
                         {
-                            var message = new RabbitMQResponce {Data = rcpArgs};
+                            var message = new RabbitMQResponce { Data = rcpArgs };
 
                             _commandChannel.BasicPublish("GetDataChangesTopic",
                                 routingKey, null, BinaryConverter.CastToBytes(message));
@@ -296,7 +302,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     {
                         lock (_establishConnectionLock)
                         {
-                            var message = new RabbitMQResponce {LastMessage = true};
+                            var message = new RabbitMQResponce { LastMessage = true };
 
                             _commandChannel.BasicPublish("GetDataChangesTopic",
                                 routingKey, null, BinaryConverter.CastToBytes(message));
@@ -343,6 +349,28 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 _logger.Debug("ResolveRecordbyForeignKey failed", ex);
             }
+        }
+
+        private void CheckExistence(IBasicProperties basicProperties, string userToken, string dataSourceUrn, string fieldName, object value)
+        {
+            Task.Factory.StartNew(obj =>
+            {
+                var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                var correlationId = string.Copy(basicProperties.CorrelationId);
+
+                var userTokenLocal = string.Copy(userToken);
+
+                var dataSourcePathLocal = string.Copy(dataSourceUrn);
+
+                var fieldNameLockal = string.Copy(fieldName);
+
+
+                var checkResult = _reactiveDataQueryFacade.CheckExistence(userTokenLocal, dataSourcePathLocal, fieldNameLockal, obj);
+
+                RPCSendTaskExecutionResults(replyTo, correlationId, checkResult);
+
+            }, value);
         }
 
         private void RPCSendTaskExecutionResults<T>(string replyTo, string correlationId, T data)
