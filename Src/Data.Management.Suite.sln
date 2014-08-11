@@ -90,6 +90,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Installers", "Installers", "{724DEB6A-2C26-46D2-B488-3ED9554BF5BD}"
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Falconsoft.ReactiveWorksheet.WixInstaller", "..\..\Data-Management-Suite-Private\Src\Installers\Falconsoft.ReactiveWorksheet.WixInstaller\Falconsoft.ReactiveWorksheet.WixInstaller.wixproj", "{88237B4E-4031-4B94-95F6-10C8BC10E5FE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0E3A154B-48C7-4613-89D0-E1A8914EDE60} = {0E3A154B-48C7-4613-89D0-E1A8914EDE60}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Falconsoft.ReactiveWorksheet.WixInstaller.CustomActions", "..\..\Data-Management-Suite-Private\Src\Installers\Falconsoft.ReactiveWorksheet.WixInstaller.CustomActions\Falconsoft.ReactiveWorksheet.WixInstaller.CustomActions.csproj", "{0E3A154B-48C7-4613-89D0-E1A8914EDE60}"
 EndProject
