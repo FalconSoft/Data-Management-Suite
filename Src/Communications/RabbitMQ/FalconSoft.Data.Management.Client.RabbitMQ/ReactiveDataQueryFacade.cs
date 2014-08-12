@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -73,30 +74,42 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             var subject = new Subject<RecordChangedParam[]>();
 
-            Task.Factory.StartNew(() =>
+            var observable = Observable.Create<RecordChangedParam[]>(subj =>
             {
-                while (true)
+                var keepAlive = true;
+                Task.Factory.StartNew(() =>
                 {
-                    try
+                    while (keepAlive)
                     {
-                        var ea = consumer.Queue.Dequeue();
+                        try
+                        {
+                            var ea = consumer.Queue.Dequeue();
 
-                        var responce = CastTo<RabbitMQResponce>(ea.Body);
+                            var responce = CastTo<RabbitMQResponce>(ea.Body);
 
-                        if (responce.LastMessage) break;
+                            if (responce.LastMessage) break;
 
-                        var rcpArray = (RecordChangedParam[])responce.Data;
+                            var rcpArray = (RecordChangedParam[]) responce.Data;
 
-                        subject.OnNext(rcpArray);
+                            subj.OnNext(rcpArray);
+                        }
+                        catch (EndOfStreamException)
+                        {
+                            break;
+                        }
                     }
-                    catch (EndOfStreamException)
-                    {
-                        break;
-                    }
-                }
-                subject.OnCompleted();
-            },_cts.Token);
-            return subject.AsObservable();
+                   
+                }, _cts.Token);
+                return Disposable.Create(() =>
+                {
+                    keepAlive = false;
+                    consumer.OnCancel();
+                    subj.OnCompleted();
+                });
+            });
+
+
+            return observable;
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken,
@@ -207,7 +220,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 {
                     MethodName = "CheckExistence",
                     UserToken = userToken,
-                    MethodsArgs = new[] {dataSourceUrn, fieldName, value}
+                    MethodsArgs = new[] { dataSourceUrn, fieldName, value }
                 };
 
                 var messageBytes = BinaryConverter.CastToBytes(message);
@@ -280,7 +293,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                 }
                 subject.OnCompleted();
-            },_cts.Token);
+            }, _cts.Token);
             return subject.ToEnumerable();
         }
 
