@@ -52,12 +52,12 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
 
         public IObservable<object> RegisterSubject(string dataSourceUrn, string primaryKey, string fieldName)
         {
-            if (!LocalDb.ContainsKey(dataSourceUrn)) return null;
             return ExcelMessanger.RegisterSubject(dataSourceUrn, "|" + primaryKey, fieldName, OnSubscribed);
         }
 
-        public void RegisterSource(string dataSourceUrn)
+        public void RegisterSource(ExcelPoint point)
         {
+            if (!LocalDb.ContainsKey(point.DataSourceUrn)) ExcelMessanger.SendData(point, "Invalid DataSourcePath"); 
             var sub = _serverObs.Subscribe(s =>
             {
                 UpdateDb(s);
@@ -66,7 +66,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
                         ExcelMessanger.SendData(recordChangedParam.ProviderString, recordChangedParam.RecordKey,
                             changedPropertyName, recordChangedParam.RecordValues[changedPropertyName]);
             });
-            Subcribers.Add(dataSourceUrn,sub);
+            Subcribers.Add(point.DataSourceUrn,sub);
         }
 
         private void UpdateDb(IEnumerable<RecordChangedParam> recordChangedParams)
@@ -105,6 +105,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         {
             if(IsRdpSubcribed) return;
             PullData(excelPoint);
+            RegisterSource(excelPoint);
             IsRdpSubcribed = true;
         }
 

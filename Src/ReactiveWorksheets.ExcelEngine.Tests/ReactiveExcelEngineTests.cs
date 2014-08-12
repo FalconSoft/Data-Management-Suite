@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.ExcelAddIn.ReactiveExcel;
@@ -34,11 +36,11 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
             var serverObs = new Subject<RecordChangedParam[]>();
             var engine = new MockExcelEngine(serverObs);
             var rFunctions = new MockReactiveFunctions(engine);
-            var result = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID");
-            Assert.AreEqual("Invalid DataSourcePath", result);
+            var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID") as IObservable<object>;
+            obs.Subscribe(s => Assert.AreEqual("Invalid DataSourcePath", s));
             engine.AddDsForRegister(OrdersDataSourceInfoJsonClean, @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
                                                             10788	TRAIH	1	22/12/1997	Trail's Head Gourmet Provisioners	Helvetius Nagy	Sales Associate");
-            Assert.AreEqual(engine.LocalDb.Count,1);;
+            Assert.AreEqual(engine.LocalDb.Count,1);
             Assert.AreEqual(engine.LocalDb.First().Key, @"Test\Orders");
             Assert.AreEqual(engine.LocalDb.First().Value.Count, 1);
             Assert.AreEqual(engine.LocalDb.First().Value.First().Key, "|10788");
@@ -84,9 +86,9 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
             var rFunctions = new MockReactiveFunctions(engine);
             engine.AddDsForRegister(OrdersDataSourceInfoJsonClean, @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
                                                             10788	TRAIH	1	22/12/1997	Trail's Head Gourmet Provisioners	Helvetius Nagy	Sales Associate");
-            engine.IsRdpSubcribed = true;
+            engine.IsRdpSubcribed = false;
             var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID") as IObservable<object>;
-            obs.Subscribe(s => Assert.AreEqual(s, "FalconSoft"));
+            obs.Skip(1).Subscribe(s => Assert.AreEqual(s, "FalconSoft"));
             var ds = MockRepository.GetDataSourceFromJSON(OrdersDataSourceInfoJsonClean);
             var data = RecordHelpers.TsvToDictionary(ds,
                 @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
