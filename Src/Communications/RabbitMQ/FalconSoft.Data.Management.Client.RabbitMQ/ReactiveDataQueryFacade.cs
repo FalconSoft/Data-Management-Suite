@@ -72,8 +72,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             _commandChannel.BasicPublish("", RPCQueryName, null, message);
 
-            var subject = new Subject<RecordChangedParam[]>();
-
             var observable = Observable.Create<RecordChangedParam[]>(subj =>
             {
                 var keepAlive = true;
