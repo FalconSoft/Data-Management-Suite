@@ -75,8 +75,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         /// <returns>All matched data</returns>
         public IEnumerable<LiveDataObject> GetDataByKey(string[] rekordKey)
         {
-            return _collection.AsQueryable().Cast<LiveDataObject>()
-                    .Where(e => rekordKey.Contains(e.RecordKey)).ToList();
+            return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
         }
 
         public IEnumerable<LiveDataObject> GetAggregatedData(AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)
