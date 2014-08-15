@@ -123,7 +123,76 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                             message.MethodsArgs[1] as string, message.MethodsArgs[2]);
                         break;
                     }
+                case "GetDataByKey":
+                {
+                    GetDataByKey(basicProperties, message.UserToken, message.MethodsArgs[0] as string,
+                        message.MethodsArgs[1] as string[]);
+                    break;
+                }
             }
+        }
+
+        private void GetDataByKey(IBasicProperties basicProperties, string userToken, string dataSourcePath, string[] recordKeys)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var replyTo = string.Copy(basicProperties.ReplyTo);
+
+                    var correlationId = string.Copy(basicProperties.CorrelationId);
+
+                    var userTokenLocal = string.Copy(userToken);
+
+                    var dataSourcePathLocal = string.Copy(dataSourcePath);
+
+                    var data = _reactiveDataQueryFacade.GetDataByKey(userTokenLocal, dataSourcePathLocal, recordKeys);
+
+                    var list = new List<Dictionary<string, object>>();
+
+                    var responce = new RabbitMQResponce();
+
+                    foreach (var d in data)
+                    {
+                        list.Add(d);
+                        if (list.Count == Limit)
+                        {
+                            responce.Id++;
+                            responce.Data = list;
+
+                            RPCSendTaskExecutionResults(replyTo, correlationId, responce);
+
+                            list.Clear();
+                        }
+                    }
+
+                    if (list.Count != 0)
+                    {
+                        responce.Id++;
+                        responce.Data = list;
+
+                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
+
+                        list.Clear();
+
+                        responce.LastMessage = true;
+
+                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
+                    }
+                    else
+                    {
+                        responce.Id++;
+                        responce.LastMessage = true;
+
+                        RPCSendTaskExecutionResults(replyTo, correlationId, responce);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("GetAggregatedData failed", ex);
+                    throw;
+                }
+            }, _cts.Token);
         }
 
         private void InitializeConnection(IBasicProperties basicProperties)

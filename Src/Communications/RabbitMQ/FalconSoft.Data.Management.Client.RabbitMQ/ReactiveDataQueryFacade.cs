@@ -58,6 +58,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 new object[] { dataSourcePath, filterRules });
         }
 
+        public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys)
+        {
+            return RPCServerTaskExecute<Dictionary<string, object>>(_connection, RPCQueryName, "GetDataByKey", userToken,
+               new object[] { dataSourcePath, recordKeys });
+        }
+
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
             _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
