@@ -49,7 +49,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             }
 
             cursor = _collection.FindAllAs<LiveDataObject>();
-            return cursor.SetFields(Fields.Exclude("_id")).ToList();
+            return cursor.SetFields(Fields.Exclude("_id"));
         }
 
         public IEnumerable<T> GetData<T>(string dataSourcePath, FilterRule[] filterRules = null)
@@ -75,7 +75,8 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         /// <returns>All matched data</returns>
         public IEnumerable<LiveDataObject> GetDataByKey(string[] rekordKey)
         {
-            return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
+            //return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
+            return _collection.FindAllAs<LiveDataObject>().SetFields(Fields.Exclude("_id")).AsQueryable().Where(w => rekordKey.Contains(w.RecordKey));
         }
 
         public IEnumerable<LiveDataObject> GetAggregatedData(AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)

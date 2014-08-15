@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ExcelDna.Integration;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.ExcelAddIn.ReactiveExcel;
@@ -50,7 +51,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
 
         }
 
-        public IObservable<object> RegisterSubject(string dataSourceUrn, string primaryKey, string fieldName)
+        public IExcelObservable RegisterSubject(string dataSourceUrn, string primaryKey, string fieldName)
         {
             return ExcelMessanger.RegisterSubject(dataSourceUrn, "|" + primaryKey, fieldName, OnSubscribed);
         }
