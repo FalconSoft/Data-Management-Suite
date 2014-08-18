@@ -45,11 +45,11 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             {
                 var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(query));
                 cursor = _collection.FindAs<LiveDataObject>(qwraper);
-                return cursor.SetFields(Fields.Exclude("_id")).ToList();
+                return cursor;
             }
 
             cursor = _collection.FindAllAs<LiveDataObject>();
-            return cursor.SetFields(Fields.Exclude("_id"));
+            return cursor;
         }
 
         public IEnumerable<T> GetData<T>(string dataSourcePath, FilterRule[] filterRules = null)
@@ -75,8 +75,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         /// <returns>All matched data</returns>
         public IEnumerable<LiveDataObject> GetDataByKey(string[] rekordKey)
         {
-            //return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
-            return _collection.FindAllAs<LiveDataObject>().SetFields(Fields.Exclude("_id")).AsQueryable().Where(w => rekordKey.Contains(w.RecordKey));
+            return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
         }
 
         public IEnumerable<LiveDataObject> GetAggregatedData(AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)
@@ -94,7 +93,8 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 }
                 result.Add(new LiveDataObject
                 {
-                    RecordKey = DataHelper.WorkOutRecordKey(dic, keyCols),
+                    _id = Guid.NewGuid(),
+                    RecordKey = dic.WorkOutRecordKey(keyCols),
                     RecordValues = dic
                 });
             }
@@ -108,7 +108,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
             var queryList = record.Select(rec => Query.EQ(string.Format("RecordValues.{0}", rec.Key), BsonValue.Create(rec.Value)));
             if (!queryList.Any()) return new LiveDataObject[0];
-            return _collection.FindAs<LiveDataObject>(Query.And(queryList)).SetFields(Fields.Exclude("_id"));
+            return _collection.FindAs<LiveDataObject>(Query.And(queryList));
         }
 
         public void UpdateForeignIndexes(string[] fields)
@@ -132,12 +132,13 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 
             //var query = Query<LiveDataObject>.In(e => e.RecordKey, groupedRecords.Keys);
 
-            var existedRecords =  _collection.FindAllAs<LiveDataObject>().SetFields(Fields.Exclude("_id")).AsQueryable().Select(r => r.RecordKey);
+            var existedRecords =  _collection.FindAllAs<LiveDataObject>().AsQueryable().Select(r => r.RecordKey);
 
             var recordsToUpdate = groupedRecords.Keys.Intersect(existedRecords);
             var recordsToInsert = groupedRecords.Keys.Except(existedRecords)
                 .ToDictionary(k => k, k => new LiveDataObject()
                 {
+                    _id = Guid.NewGuid(),
                     RecordKey = groupedRecords[k].RecordKey,
                     UserToken = groupedRecords[k].UserToken,
                     RecordValues = groupedRecords[k].RecordValues
@@ -157,7 +158,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
         public bool CheckExistence(string fieldName, object value)
         {
-            var count = _collection.FindAllAs<LiveDataObject>().SetFields(Fields.Exclude("_id")).AsQueryable().Count(x=>x.RecordValues[fieldName].Equals(value));
+            var count = _collection.FindAllAs<LiveDataObject>().AsQueryable().Count(x=>x.RecordValues[fieldName].Equals(value));
 
             if (count > 0)
             {
@@ -178,6 +179,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
             var entity = new LiveDataObject
             {
+                _id = Guid.NewGuid(),
                 RecordKey = record.RecordKey,
                 UserToken = record.UserToken,
                 RecordValues = record.RecordValues
@@ -185,7 +187,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
             if (record.ChangedAction == RecordChangedAction.AddedOrUpdated)
                 
-                if (_collection.FindAs<LiveDataObject>(query).SetFields(Fields.Exclude("_id")).FirstOrDefault() != null)
+                if (_collection.FindAs<LiveDataObject>(query).FirstOrDefault() != null)
                 {
                     UpdateRecord(record);
                     return record;
@@ -198,7 +200,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             if (record.ChangedAction == RecordChangedAction.Removed)
             {
                 record.RecordValues =
-                    _collection.FindAs<LiveDataObject>(Query.EQ("RecordKey", record.RecordKey)).SetFields(Fields.Exclude("_id")).First().RecordValues;
+                    _collection.FindAs<LiveDataObject>(Query.EQ("RecordKey", record.RecordKey)).First().RecordValues;
                 _collection.Remove(query);
                 return record;
             }
