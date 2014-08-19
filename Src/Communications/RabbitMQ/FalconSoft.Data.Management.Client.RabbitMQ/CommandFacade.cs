@@ -47,114 +47,136 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             string toUpdateQueueName = null;
             string toDeleteQueueName = null;
 
-            if (changedRecords != null)
+            try
             {
-                toUpdateQueueName = Guid.NewGuid().ToString();
-                _commandChannel.QueueDeclare(toUpdateQueueName, false, false, false, null);
-            }
+                InitializeConnection(CommandFacadeQueueName);
 
-            if (deleted != null)
-            {
-                toDeleteQueueName = Guid.NewGuid().ToString();
-                _commandChannel.QueueDeclare(toDeleteQueueName, false, false, false, null);
-            }
-
-            var message = new MethodArgs
-            {
-                MethodName = "SubmitChanges",
-                UserToken = userToken,
-                MethodsArgs = new object[] {dataSourcePath, toUpdateQueueName, toDeleteQueueName}
-            };
-
-            var replyTo = _commandChannel.QueueDeclare().QueueName;
-
-            var correlationId = Guid.NewGuid().ToString();
-
-            var props = _commandChannel.CreateBasicProperties();
-            props.ReplyTo = replyTo;
-            props.CorrelationId = correlationId;
-            props.SetPersistent(true);
-
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(replyTo, false, consumer);
-
-            _commandChannel.BasicPublish("", CommandFacadeQueueName, props, BinaryConverter.CastToBytes(message));
-
-            if (changedRecords != null)
-            {
-                var changeRecordsList = new List<Dictionary<string, object>>();
-                var data = new RabbitMQResponce();
-                foreach (var changedRecord in changedRecords)
+                if (changedRecords != null)
                 {
-                    changeRecordsList.Add(changedRecord);
-                    if (changeRecordsList.Count == 100)
+                    toUpdateQueueName = Guid.NewGuid().ToString();
+                    _commandChannel.QueueDeclare(toUpdateQueueName, false, false, false, null);
+                }
+
+                if (deleted != null)
+                {
+                    toDeleteQueueName = Guid.NewGuid().ToString();
+                    _commandChannel.QueueDeclare(toDeleteQueueName, false, false, false, null);
+                }
+
+                var message = new MethodArgs
+                {
+                    MethodName = "SubmitChanges",
+                    UserToken = userToken,
+                    MethodsArgs = new object[] {dataSourcePath, toUpdateQueueName, toDeleteQueueName}
+                };
+
+                var replyTo = _commandChannel.QueueDeclare().QueueName;
+
+                var correlationId = Guid.NewGuid().ToString();
+
+                var props = _commandChannel.CreateBasicProperties();
+                props.ReplyTo = replyTo;
+                props.CorrelationId = correlationId;
+                props.SetPersistent(true);
+
+                var consumer = new QueueingBasicConsumer(_commandChannel);
+                _commandChannel.BasicConsume(replyTo, false, consumer);
+
+                _commandChannel.BasicPublish("", CommandFacadeQueueName, props, BinaryConverter.CastToBytes(message));
+
+                if (changedRecords != null)
+                {
+                    var changeRecordsList = new List<Dictionary<string, object>>();
+                    var data = new RabbitMQResponce();
+                    foreach (var changedRecord in changedRecords)
+                    {
+                        changeRecordsList.Add(changedRecord);
+                        if (changeRecordsList.Count == 100)
+                        {
+                            data.Id++;
+                            data.Data = changeRecordsList;
+
+                            var bf = new BinaryFormatter();
+                            var ms = new MemoryStream();
+
+                            bf.Serialize(ms, data);
+
+                            var messageBytes = ms.ToArray();
+
+                            _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
+
+                            changeRecordsList.Clear();
+                        }
+                    }
+
+                    if (changeRecordsList.Count > 0)
                     {
                         data.Id++;
                         data.Data = changeRecordsList;
-                        
+
                         var bf = new BinaryFormatter();
                         var ms = new MemoryStream();
-                        
+
                         bf.Serialize(ms, data);
 
                         var messageBytes = ms.ToArray();
 
                         _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
-                        
+
                         changeRecordsList.Clear();
+
+                        data.LastMessage = true;
+
+                        bf = new BinaryFormatter();
+                        ms = new MemoryStream();
+
+                        bf.Serialize(ms, data);
+
+                        messageBytes = ms.ToArray();
+                        _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
+                    }
+                    else
+                    {
+                        data.LastMessage = true;
+                        var bf = new BinaryFormatter();
+                        var ms = new MemoryStream();
+
+                        bf.Serialize(ms, data);
+
+                        var messageBytes = ms.ToArray();
+
+                        _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
                     }
                 }
 
-                if (changeRecordsList.Count > 0)
+                if (deleted != null)
                 {
-                    data.Id++;
-                    data.Data = changeRecordsList;
+                    var deletedList = new List<string>();
 
-                    var bf = new BinaryFormatter();
-                    var ms = new MemoryStream();
+                    var data = new RabbitMQResponce();
 
-                    bf.Serialize(ms, data);
+                    foreach (var recordKey in deleted)
+                    {
+                        deletedList.Add(recordKey);
+                        if (deletedList.Count == 100)
+                        {
+                            data.Id++;
+                            data.Data = deletedList;
 
-                    var messageBytes = ms.ToArray();
+                            var bf = new BinaryFormatter();
+                            var ms = new MemoryStream();
 
-                    _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
+                            bf.Serialize(ms, data);
 
-                    changeRecordsList.Clear();
+                            var messageBytes = ms.ToArray();
 
-                    data.LastMessage = true;
+                            _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
 
-                    bf = new BinaryFormatter();
-                    ms = new MemoryStream();
+                            deletedList.Clear();
+                        }
+                    }
 
-                    bf.Serialize(ms, data);
-
-                    messageBytes = ms.ToArray();
-                    _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
-                }
-                else
-                {
-                    data.LastMessage = true;
-                    var bf = new BinaryFormatter();
-                    var ms = new MemoryStream();
-
-                    bf.Serialize(ms, data);
-
-                    var messageBytes = ms.ToArray();
-
-                    _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
-                }
-            }
-
-            if (deleted != null)
-            {
-                var deletedList = new List<string>();
-
-                var data = new RabbitMQResponce();
-
-                foreach (var recordKey in deleted)
-                {
-                    deletedList.Add(recordKey);
-                    if (deletedList.Count == 100)
+                    if (deletedList.Count > 0)
                     {
                         data.Id++;
                         data.Data = deletedList;
@@ -169,68 +191,56 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
 
                         deletedList.Clear();
+
+                        data.LastMessage = true;
+
+                        bf = new BinaryFormatter();
+                        ms = new MemoryStream();
+
+                        bf.Serialize(ms, data);
+
+                        messageBytes = ms.ToArray();
+                        _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
+                    }
+                    else
+                    {
+                        data.LastMessage = true;
+                        var bf = new BinaryFormatter();
+                        var ms = new MemoryStream();
+
+                        bf.Serialize(ms, data);
+
+                        var messageBytes = ms.ToArray();
+
+                        _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
                     }
                 }
 
-                if (deletedList.Count > 0)
+                if (onNotifcation != null)
                 {
-                    data.Id++;
-                    data.Data = deletedList;
-
-                    var bf = new BinaryFormatter();
-                    var ms = new MemoryStream();
-
-                    bf.Serialize(ms, data);
-
-                    var messageBytes = ms.ToArray();
-
-                    _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
-
-                    deletedList.Clear();
-
-                    data.LastMessage = true;
-
-                    bf = new BinaryFormatter();
-                    ms = new MemoryStream();
-
-                    bf.Serialize(ms, data);
-
-                    messageBytes = ms.ToArray();
-                    _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
+                    onNotifcation("Some text", "Transfer complete");
                 }
-                else
+
+                Task.Factory.StartNew(() =>
                 {
-                    data.LastMessage = true;
-                    var bf = new BinaryFormatter();
-                    var ms = new MemoryStream();
+                    while (true)
+                    {
+                        var ea = consumer.Queue.Dequeue();
 
-                    bf.Serialize(ms, data);
+                        var ri = BinaryConverter.CastTo<RevisionInfo>(ea.Body);
 
-                    var messageBytes = ms.ToArray();
+                        if (onSuccess != null)
+                            onSuccess(ri);
 
-                    _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
-                }
+                        break;
+                    }
+                });
             }
-
-            if (onNotifcation != null)
+            catch (Exception exception)
             {
-                onNotifcation("Some text", "Transfer complete");
+                if (onFail != null)
+                    onFail(exception);
             }
-
-            Task.Factory.StartNew(() =>
-            {
-                while (true)
-                {
-                    var ea = consumer.Queue.Dequeue();
-
-                    var ri = BinaryConverter.CastTo<RevisionInfo>(ea.Body);
-
-                    if (onSuccess != null)
-                        onSuccess(ri);
-
-                    break;
-                }
-            });
         }
 
         public void Dispose()
