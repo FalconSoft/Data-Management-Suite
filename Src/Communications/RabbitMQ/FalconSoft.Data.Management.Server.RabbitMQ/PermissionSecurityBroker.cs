@@ -19,8 +19,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
         private readonly object _establishConnectionLock = new object();
         private bool _keepAlive = true;
-        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
+        private readonly List<string> _getPermissionChangesDisposables = new List<string>();
 
         public PermissionSecurityBroker(string hostName, string userName, string password, IPermissionSecurityFacade permissionSecurityFacade, ILogger logger)
         {
@@ -213,7 +214,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void GetPermissionChanged(string userToken)
         {
-            var severity = string.Copy(userToken);
+            if (_getPermissionChangesDisposables.Contains(userToken)) return;
 
             _permissionSecurityFacade.GetPermissionChanged(userToken).Subscribe(data =>
             {
@@ -221,9 +222,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 {
                     var dataBytes = BinaryConverter.CastToBytes(data);
 
-                    _commandChannel.BasicPublish(PermissionSecurityFacadeExchangeName, severity, null, dataBytes);
+                    _commandChannel.BasicPublish(PermissionSecurityFacadeExchangeName, userToken, null, dataBytes);
                 }
             }, _cts.Token);
+
+            _getPermissionChangesDisposables.Add(userToken);
         }
 
         private void RPCSendTaskExecutionResults<T>(IBasicProperties basicProperties, T data)

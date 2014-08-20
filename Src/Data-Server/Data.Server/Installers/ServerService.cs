@@ -88,7 +88,7 @@ namespace FalconSoft.Data.Server.Installers
             var userName = ConfigurationManager.AppSettings["RabbitMqAdminLogin"];
             var password = ConfigurationManager.AppSettings["RabbitMqAdminPass"];
 
-            ReactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName, userName, password, ServerApp.ReactiveDataQueryFacade, ServerApp.Logger);
+            ReactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName, userName, password, ServerApp.ReactiveDataQueryFacade,ServerApp.MetaDataFacade, ServerApp.Logger);
             ServerApp.Logger.Info("ReactiveDataQueryBroker starts");
 
             MetaDataBroker = new MetaDataBroker(hostName, userName, password, ServerApp.MetaDataFacade, ServerApp.Logger);

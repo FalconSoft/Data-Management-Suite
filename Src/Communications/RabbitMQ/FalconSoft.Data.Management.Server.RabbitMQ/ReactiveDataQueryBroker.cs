@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
     public class ReactiveDataQueryBroker : IDisposable
     {
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
+        private readonly IMetaDataAdminFacade _metaDataAdminFacade;
         private readonly ILogger _logger;
         private IModel _commandChannel;
         private const string ReactiveDataQueryFacadeQueueName = "ReactiveDataQueryFacadeRPC";
@@ -22,10 +24,13 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private bool _keepAlive = true;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
+        private readonly Dictionary<string, IDisposable> _getDataChangesDispocebles = new Dictionary<string, IDisposable>(); 
 
-        public ReactiveDataQueryBroker(string hostName, string username, string pass, IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger)
+        public ReactiveDataQueryBroker(string hostName, string username, string pass, IReactiveDataQueryFacade reactiveDataQueryFacade, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
         {
             _reactiveDataQueryFacade = reactiveDataQueryFacade;
+            _metaDataAdminFacade = metaDataAdminFacade;
+
             _logger = logger;
 
             var factory = new ConnectionFactory
@@ -83,6 +88,29 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                 }
             }, _cts.Token);
+
+            Task.Factory.StartNew(() =>
+            {
+                _metaDataAdminFacade.ObjectInfoChanged += (obj, evArgs) =>
+                {
+                    if (evArgs.ChangedActionType == ChangedActionType.Delete &&
+                        evArgs.ChangedObjectType == ChangedObjectType.DataSourceInfo)
+                    {
+                        var dataSource = evArgs.SourceObjectInfo as DataSourceInfo;
+
+                        var keys = _getDataChangesDispocebles.Keys.Where(k => k.Contains(dataSource.DataSourcePath));
+                        var array = keys as string[] ?? keys.ToArray();
+                        if (array.Any())
+                        {
+                            foreach (string key in array)
+                            {
+                                _getDataChangesDispocebles[key].Dispose();
+                                _getDataChangesDispocebles.Remove(key);
+                            }
+                        }
+                    }
+                };
+            });
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
@@ -349,15 +377,14 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             try
             {
-                var userTokenLocal = string.Copy(userToken);
+                var routingKey = string.Format("{0}.{1}", dataSourcePath, userToken);
 
-                var dataSourcePathLocal = string.Copy(dataSourcePath);
-
-                var routingKey = string.Format("{0}.{1}", dataSourcePathLocal, userTokenLocal);
+                if (_getDataChangesDispocebles.ContainsKey(routingKey)) return;
 
                 _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
 
-                _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath, filterRules).Subscribe(
+                
+                var disposer = _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath, filterRules).Subscribe(
                     rcpArgs =>
                     {
                         lock (_establishConnectionLock)
@@ -377,6 +404,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                                 routingKey, null, BinaryConverter.CastToBytes(message));
                         }
                     });
+
+                _getDataChangesDispocebles.Add(routingKey, disposer);
             }
             catch (Exception ex)
             {
