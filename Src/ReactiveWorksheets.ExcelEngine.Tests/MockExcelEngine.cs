@@ -27,7 +27,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         public Dictionary<string, Dictionary<string, Dictionary<string, object>>> LocalDb { get; set; }
 
 
-        public void SubmitData(string urn, Dictionary<string, object>[] data)
+        public void SubmitData(string urn, Dictionary<string, object>[] data, string[] dataToRemove)
         {
             if (!LocalDb.Any()) return;
             var ds = DataSourceInfos.FirstOrDefault(f=>f.DataSourcePath == urn);
