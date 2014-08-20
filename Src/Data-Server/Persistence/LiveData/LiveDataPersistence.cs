@@ -130,20 +130,16 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 groupedRecords[recordChangedParam.RecordKey] = recordChangedParam;
             }
                 
-            //var query = Query<LiveDataObject>.In(e => e.RecordKey, groupedRecords.Keys);
-
-            var existedRecords =  _collection.FindAllAs<LiveDataObject>().AsQueryable().Select(r => r.RecordKey);
-
+            var existedRecords = _collection.AsQueryable<LiveDataObject>().Where(w => groupedRecords.ContainsKey(w.RecordKey)).Select(s=>s.RecordKey);
             var recordsToUpdate = groupedRecords.Keys.Intersect(existedRecords);
             var recordsToInsert = groupedRecords.Keys.Except(existedRecords)
-                .ToDictionary(k => k, k => new LiveDataObject()
+                .ToDictionary(k => k, k => new LiveDataObject
                 {
                     _id = Guid.NewGuid(),
                     RecordKey = groupedRecords[k].RecordKey,
                     UserToken = groupedRecords[k].UserToken,
                     RecordValues = groupedRecords[k].RecordValues
                 });
-
 
             foreach (var recordtoUpdate in recordsToUpdate)
             {
@@ -158,7 +154,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
         public bool CheckExistence(string fieldName, object value)
         {
-            var count = _collection.FindAllAs<LiveDataObject>().AsQueryable().Count(x=>x.RecordValues[fieldName].Equals(value));
+            var count = _collection.AsQueryable<LiveDataObject>().Count(x => x.RecordValues[fieldName].Equals(value));
 
             if (count > 0)
             {
