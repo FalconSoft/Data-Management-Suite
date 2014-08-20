@@ -36,6 +36,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
 
+            InitializeConnection(MetadataQueueName);
+
             _commandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
 
             var queueName = _commandChannel.QueueDeclare().QueueName;
@@ -91,8 +93,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                 }
             },_cts.Token);
-
-            InitializeConnection(MetadataQueueName);
         }
 
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)

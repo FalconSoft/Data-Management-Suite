@@ -6,6 +6,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
@@ -107,6 +108,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 return Disposable.Create(() =>
                 {
                     keepAlive = false;
+                    _commandChannel.QueueUnbind(replyTo, "GetDataChangesTopic", dataSourcePath + "." + userToken, null);
                     consumer.OnCancel();
                     subj.OnCompleted();
                 });

@@ -33,6 +33,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
 
+            InitializeConnection(SecurityFacadeQueueName);
+
             _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
 
             var queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
@@ -60,8 +62,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                 }
             }, _cts.Token);
-
-            InitializeConnection(SecurityFacadeQueueName);
         }
 
         public KeyValuePair<bool, string> Authenticate(string userName, string password)
