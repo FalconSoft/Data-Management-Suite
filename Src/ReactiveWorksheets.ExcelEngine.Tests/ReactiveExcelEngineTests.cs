@@ -72,7 +72,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
             var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID") as IObservable<object>;
             obs.Subscribe(s => Assert.AreEqual(s, "FalconSoft"));
             var data = new Dictionary<string, object> {{"OrderID",10788},{"CustomerID","FalconSoft"}};
-            engine.SubmitData(@"Test\Orders",new []{data});
+            engine.SubmitData(@"Test\Orders",new []{data},null);
             Assert.AreEqual(engine.SubmitedData.Count(),1);
             Assert.AreEqual(engine.SubmitedData.First().Count, 7);
             Assert.AreEqual(engine.SubmitedData.First()["CustomerID"], "FalconSoft");

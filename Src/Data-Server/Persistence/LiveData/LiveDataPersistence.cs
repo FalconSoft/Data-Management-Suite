@@ -129,8 +129,8 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             {
                 groupedRecords[recordChangedParam.RecordKey] = recordChangedParam;
             }
-                
-            var existedRecords = _collection.AsQueryable<LiveDataObject>().Where(w => groupedRecords.ContainsKey(w.RecordKey)).Select(s=>s.RecordKey);
+
+            var existedRecords = GetDataByKey(groupedRecords.Keys.ToArray()).Select(s=>s.RecordKey).ToArray();
             var recordsToUpdate = groupedRecords.Keys.Intersect(existedRecords);
             var recordsToInsert = groupedRecords.Keys.Except(existedRecords)
                 .ToDictionary(k => k, k => new LiveDataObject
