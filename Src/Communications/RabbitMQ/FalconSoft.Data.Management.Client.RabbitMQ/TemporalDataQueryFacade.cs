@@ -94,13 +94,20 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             while (true)
             {
-                var ea = consumer.Queue.Dequeue();
+                BasicDeliverEventArgs ea;
 
-                if (ea.BasicProperties.CorrelationId == correlationId)
+                if (consumer.Queue.Dequeue(30000, out ea))
                 {
-                    var responce = BinaryConverter.CastTo<TagInfo[]>(ea.Body);
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        var responce = BinaryConverter.CastTo<TagInfo[]>(ea.Body);
 
-                    return responce;
+                        return responce;
+                    }
+                }
+                else
+                {
+                    return new TagInfo[0];
                 }
             }
         }
@@ -157,20 +164,28 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 var queueName = string.Copy(replyTo);
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-
-                    var responce = CastTo<RabbitMQResponce>(ea.Body);
-
-                    if (responce.LastMessage)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
                     {
-                        channel.Dispose();
-                        break;
+
+                        var responce = CastTo<RabbitMQResponce>(ea.Body);
+
+                        if (responce.LastMessage)
+                        {
+                            channel.Dispose();
+                            break;
+                        }
+
+                        var list = (List<T>) responce.Data;
+                        foreach (var dictionary in list)
+                        {
+                            subject.OnNext(dictionary);
+                        }
                     }
-
-                    var list = (List<T>)responce.Data;
-                    foreach (var dictionary in list)
+                    else
                     {
-                        subject.OnNext(dictionary);
+                        subject.OnCompleted();
+                        break;
                     }
                 }
                 _commandChannel.QueueDelete(queueName);
@@ -211,8 +226,15 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
+                    {
+                        if (ea.BasicProperties.CorrelationId == correlationId)
+                        {
+                            break;
+                        }
+                    }
+                    else
                     {
                         break;
                     }

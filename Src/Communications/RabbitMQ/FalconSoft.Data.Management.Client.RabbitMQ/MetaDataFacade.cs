@@ -236,11 +236,18 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
                     {
-                        channel.QueueDelete(queueName);
-                        return BinaryConverter.CastTo<T>(ea.Body);
+                        if (ea.BasicProperties.CorrelationId == correlationId)
+                        {
+                            channel.QueueDelete(queueName);
+                            return BinaryConverter.CastTo<T>(ea.Body);
+                        }
+                    }
+                    else
+                    {
+                        return default(T);
                     }
                 }
             }
@@ -277,8 +284,15 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
+                    {
+                        if (ea.BasicProperties.CorrelationId == correlationId)
+                        {
+                            break;
+                        }
+                    }
+                    else
                     {
                         break;
                     }

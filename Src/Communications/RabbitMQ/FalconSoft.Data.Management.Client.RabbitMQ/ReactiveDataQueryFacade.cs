@@ -6,7 +6,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
@@ -157,15 +156,26 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 {
                     try
                     {
-                        var ea = onSuccessConsumer.Queue.Dequeue();
-
-                        if (correlationId == ea.BasicProperties.CorrelationId)
+                        BasicDeliverEventArgs ea;
+                        if (onSuccessConsumer.Queue.Dequeue(30000, out ea))
                         {
-                            var array = BinaryConverter.CastTo<object[]>(ea.Body);
-
-                            if (onSuccess != null)
+                            if (correlationId == ea.BasicProperties.CorrelationId)
                             {
-                                onSuccess((string)array[0], (RecordChangedParam[])array[1]);
+                                var array = BinaryConverter.CastTo<object[]>(ea.Body);
+
+                                if (onSuccess != null)
+                                {
+                                    onSuccess((string) array[0], (RecordChangedParam[]) array[1]);
+                                }
+
+                                breakFlag = false;
+                            }
+                        } 
+                        else
+                        {
+                            if (onFail != null)
+                            {
+                                onFail("Connection to server is broken", null);
                             }
 
                             breakFlag = false;
@@ -185,15 +195,26 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 {
                     try
                     {
-                        var ea = onFailConsumer.Queue.Dequeue();
-
-                        if (correlationId == ea.BasicProperties.CorrelationId)
+                        BasicDeliverEventArgs ea;
+                        if (onFailConsumer.Queue.Dequeue(30000, out ea))
                         {
-                            var array = BinaryConverter.CastTo<object[]>(ea.Body);
-
-                            if (onSuccess != null)
+                            if (correlationId == ea.BasicProperties.CorrelationId)
                             {
-                                onSuccess((string)array[0], (RecordChangedParam[])array[1]);
+                                var array = BinaryConverter.CastTo<object[]>(ea.Body);
+
+                                if (onFail != null)
+                                {
+                                    onFail((string) array[0], (Exception) array[1]);
+                                }
+
+                                breakFlag = false;
+                            }
+                        }
+                        else
+                        {
+                            if (onFail != null)
+                            {
+                                onFail("Connection to server is broken", null);
                             }
 
                             breakFlag = false;
@@ -235,13 +256,19 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-
-                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(3000, out ea))
                     {
-                        var responce = BinaryConverter.CastTo<bool>(ea.Body);
+                        if (ea.BasicProperties.CorrelationId == correlationId)
+                        {
+                            var responce = BinaryConverter.CastTo<bool>(ea.Body);
 
-                        return responce;
+                            return responce;
+                        }
+                    }
+                    else
+                    {
+                        return default(bool);
                     }
                 }
             }
@@ -279,23 +306,30 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-
-                    if (correlationId == ea.BasicProperties.CorrelationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
                     {
-                        var responce = CastTo<RabbitMQResponce>(ea.Body);
-
-                        if (responce.LastMessage)
+                        if (correlationId == ea.BasicProperties.CorrelationId)
                         {
-                            channel.Dispose();
-                            break;
-                        }
+                            var responce = CastTo<RabbitMQResponce>(ea.Body);
 
-                        var list = (List<T>)responce.Data;
-                        foreach (var dictionary in list)
-                        {
-                            subject.OnNext(dictionary);
+                            if (responce.LastMessage)
+                            {
+                                channel.Dispose();
+                                break;
+                            }
+
+                            var list = (List<T>) responce.Data;
+                            foreach (var dictionary in list)
+                            {
+                                subject.OnNext(dictionary);
+                            }
                         }
+                    }
+                    else
+                    {
+                        subject.OnCompleted();
+                        break;
                     }
                 }
                 subject.OnCompleted();

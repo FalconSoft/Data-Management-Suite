@@ -74,14 +74,24 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-
-                    if (correlationId == ea.BasicProperties.CorrelationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
                     {
-                        var responceMessage = BinaryConverter.CastTo<string>(ea.Body);
 
+                        if (correlationId == ea.BasicProperties.CorrelationId)
+                        {
+                            var responceMessage = BinaryConverter.CastTo<string>(ea.Body);
+
+                            if (messageAction != null)
+                                messageAction(responceMessage);
+
+                            break;
+                        }
+                    }
+                    else
+                    {
                         if (messageAction != null)
-                            messageAction(responceMessage);
+                            messageAction("Aborted connection to server!");
 
                         break;
                     }
@@ -191,11 +201,18 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
                     {
-                        channel.QueueDelete(queueName);
-                        return BinaryConverter.CastTo<T>(ea.Body);
+                        if (ea.BasicProperties.CorrelationId == correlationId)
+                        {
+                            channel.QueueDelete(queueName);
+                            return BinaryConverter.CastTo<T>(ea.Body);
+                        }
+                    }
+                    else
+                    {
+                        return default(T);
                     }
                 }
             }

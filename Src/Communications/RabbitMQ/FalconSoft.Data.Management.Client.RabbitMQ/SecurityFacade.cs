@@ -136,11 +136,21 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
                     {
-                        channel.QueueDelete(queueName);
-                        return BinaryConverter.CastTo<T>(ea.Body);
+                        if (ea.BasicProperties.CorrelationId == correlationId)
+                        {
+                            channel.QueueDelete(queueName);
+                            return BinaryConverter.CastTo<T>(ea.Body);
+                        }
+                    }
+                    else
+                    {
+                        if (ErrorMessageHandledAction != null)
+                            ErrorMessageHandledAction("Connection to server is broken", "Connection to server is broken");
+
+                        return default(T);
                     }
                 }
             }
@@ -177,11 +187,22 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 while (true)
                 {
-                    var ea = consumer.Queue.Dequeue();
-                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(30000, out ea))
                     {
-                        break;
+                        if (ea.BasicProperties.CorrelationId == correlationId)
+                        {
+                            break;
+                        }
                     }
+                    else
+                    {
+                        if (ErrorMessageHandledAction != null)
+                            ErrorMessageHandledAction("Connection to server is broken", "Connection to server is broken");
+
+                        return;
+                    }
+
                 }
             }
         }
