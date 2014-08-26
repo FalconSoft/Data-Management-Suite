@@ -230,7 +230,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 // TODO : this has to move to separate method and user should be able to specify specific connection string for each dataprovider or use default one 
-                return _liveDataPersistenceFactory ?? (_liveDataPersistenceFactory = s => new LiveDataPersistence(_persistenceDataConnectionString, s.GetName()));
+                return _liveDataPersistenceFactory ?? (_liveDataPersistenceFactory = s => new LiveDataPersistence(_persistenceDataConnectionString, s.GetName(),Logger));
             }
         }
 
