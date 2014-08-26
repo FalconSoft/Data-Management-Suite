@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
@@ -102,6 +103,14 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
+            _logger.Debug(string.Format("MetaDataBroker. Method Name {0}; User Token {1}; Params {2}",
+              message.MethodName,
+              message.UserToken ?? string.Empty,
+              message.MethodsArgs != null
+                  ? message.MethodsArgs.Aggregate("",
+                      (cur, next) => cur + " | " + (next != null ? next.ToString() : string.Empty))
+                  : string.Empty));
+
             switch (message.MethodName)
             {
                 case "InitializeConnection":

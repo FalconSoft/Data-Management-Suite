@@ -11,6 +11,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
         private const string SearchFacadeQueueName = "SearchFacadeRPC";
+        private const int TimeOut = 5000;
 
         public SearchFacade(string serverUrl, string userName, string password)
         {
@@ -79,7 +80,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 while (true)
                 {
                     BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(30000, out ea))
+                    if (consumer.Queue.Dequeue(TimeOut, out ea))
                     {
                         if (ea.BasicProperties.CorrelationId == correlationId)
                         {
@@ -125,7 +126,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 while (true)
                 {
                     BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(30000, out ea))
+                    if (consumer.Queue.Dequeue(TimeOut, out ea))
                     {
                         if (correlationId == ea.BasicProperties.CorrelationId)
                         {

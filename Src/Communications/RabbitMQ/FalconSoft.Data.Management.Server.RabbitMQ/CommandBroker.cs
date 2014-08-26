@@ -104,6 +104,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 try
                 {
+                    _logger.Debug("Command Broker. InitializeConnection starts");
+
                     var replyTo = string.Copy(basicProperties.ReplyTo);
 
                     var corelationId = string.Copy(basicProperties.CorrelationId);
@@ -126,10 +128,13 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             try
             {
+                _logger.Debug("Command Broker. SubmitChanges starts");
+
                 var toUpdateDataSubject = new Subject<Dictionary<string, object>>();
                 var toDeleteDataSubject = new Subject<string>();
-                var toUpdateQueueNameLocal = toUpdateQueueName != null ? string.Copy(toUpdateQueueName) : null;
-                var toDeleteQueueNameLocal = toDeleteQueuName != null ? string.Copy(toDeleteQueuName) : null;
+
+                var toUpdateQueueNameLocal = toUpdateQueueName;
+                var toDeleteQueueNameLocal = toDeleteQueuName;
 
                 var changeRecordsEnumerator = toUpdateDataSubject.ToEnumerable();
                 var deletedEnumerator = toDeleteDataSubject.ToEnumerable();
@@ -143,13 +148,15 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 //initialise submit changes method work.
                 Task.Factory.StartNew(() =>
                 {
-                    var replyTo = string.Copy(basicProperties.ReplyTo);
-                    var corelationId = string.Copy(basicProperties.CorrelationId);
-                    var userTokenLocal = string.Copy(userToken);
-                    var dataSourcePathLocal = string.Copy(dataSourcePath);
+                    var replyTo = basicProperties.ReplyTo;
+                    var corelationId = basicProperties.CorrelationId;
+                    var userTokenLocal = userToken;
+                    var dataSourcePathLocal = dataSourcePath;
 
                     var changedRecords = task1.Result;
                     var deleted = task2.Result;
+
+                    _logger.Debug(string.Format("Command Broker. SubmitChanges, data to change count : {0}; data to delete count : {1}", changedRecords!= null ? changedRecords.Count() : 0, deleted!=null ? deleted.Count() : 0));
 
                     _commandFacade.SubmitChanges(dataSourcePathLocal, userTokenLocal, changedRecords, deleted, ri =>
                     {
@@ -238,6 +245,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         public void Dispose()
         {
+            _logger.Debug("Command Broker Disposed.");
+
             _keepAlive = false;
             _cts.Cancel();
             _cts.Dispose();

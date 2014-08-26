@@ -22,6 +22,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly IModel _commandChannel;
         private const string RPCQueryName = "ReactiveDataQueryFacadeRPC";
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private const int TimeOut = 5000;
+
         public ReactiveDataQueryFacade(string hostName, string userName, string password)
         {
             var factory = new ConnectionFactory
@@ -157,7 +159,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     try
                     {
                         BasicDeliverEventArgs ea;
-                        if (onSuccessConsumer.Queue.Dequeue(30000, out ea))
+                        if (onSuccessConsumer.Queue.Dequeue(TimeOut, out ea))
                         {
                             if (correlationId == ea.BasicProperties.CorrelationId)
                             {
@@ -196,7 +198,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     try
                     {
                         BasicDeliverEventArgs ea;
-                        if (onFailConsumer.Queue.Dequeue(30000, out ea))
+                        if (onFailConsumer.Queue.Dequeue(TimeOut, out ea))
                         {
                             if (correlationId == ea.BasicProperties.CorrelationId)
                             {
@@ -257,7 +259,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 while (true)
                 {
                     BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(3000, out ea))
+                    if (consumer.Queue.Dequeue(TimeOut, out ea))
                     {
                         if (ea.BasicProperties.CorrelationId == correlationId)
                         {
@@ -307,7 +309,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 while (true)
                 {
                     BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(30000, out ea))
+                    if (consumer.Queue.Dequeue(TimeOut, out ea))
                     {
                         if (correlationId == ea.BasicProperties.CorrelationId)
                         {
@@ -389,12 +391,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 var consumer = new QueueingBasicConsumer(channel);
                 channel.BasicConsume(replyTo, true, consumer);
 
-                channel.BasicPublish("", replyTo, props, messageBytes);
+                channel.BasicPublish("", commandQueueName, props, messageBytes);
 
                 while (true)
                 {
                     BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(30000, out ea))
+                    if (consumer.Queue.Dequeue(TimeOut, out ea))
                     {
                         if (correlationId == ea.BasicProperties.CorrelationId)
                         {

@@ -20,6 +20,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const string PermissionSecurityFacadeQueueName = "PermissionSecurityFacadeRPC";
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private const int TimeOut = 5000;
 
         public PermissionSecurityFacade(string serverUrl, string userName, string password)
         {
@@ -75,7 +76,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 while (true)
                 {
                     BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(30000, out ea))
+                    if (consumer.Queue.Dequeue(TimeOut, out ea))
                     {
 
                         if (correlationId == ea.BasicProperties.CorrelationId)
@@ -202,7 +203,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 while (true)
                 {
                     BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(30000, out ea))
+                    if (consumer.Queue.Dequeue(TimeOut, out ea))
                     {
                         if (ea.BasicProperties.CorrelationId == correlationId)
                         {
@@ -248,7 +249,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 while (true)
                 {
                     BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(30000, out ea))
+                    if (consumer.Queue.Dequeue(TimeOut, out ea))
                     {
                         if (correlationId == ea.BasicProperties.CorrelationId)
                         {
