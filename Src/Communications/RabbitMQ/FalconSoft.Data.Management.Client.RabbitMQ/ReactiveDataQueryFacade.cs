@@ -330,7 +330,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                     else
                     {
-                        subject.OnCompleted();
+                        channel.Dispose();
                         break;
                     }
                 }

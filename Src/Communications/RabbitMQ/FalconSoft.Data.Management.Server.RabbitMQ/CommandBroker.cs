@@ -190,16 +190,15 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                             if (responce.LastMessage)
                             {
-                                toUpdateDataSubject.OnCompleted();
                                 break;
                             }
 
-                            foreach (var dictionary in (IEnumerable<Dictionary<string, object>>)responce.Data)
+                            foreach (var dictionary in (List<Dictionary<string, object>>)responce.Data)
                             {
                                 toUpdateDataSubject.OnNext(dictionary);
                             }
                         }
-                    }, con, _cts.Token);
+                    }, con, _cts.Token).ContinueWith(t=>toUpdateDataSubject.OnCompleted());
                 }
 
                 //collect record keys to delete
@@ -225,7 +224,6 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                             if (responce.LastMessage)
                             {
-                                toDeleteDataSubject.OnCompleted();
                                 break;
                             }
 
@@ -234,7 +232,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                                 toDeleteDataSubject.OnNext(dictionary);
                             }
                         }
-                    }, con, _cts.Token);
+                    }, con, _cts.Token).ContinueWith(t => toDeleteDataSubject.OnCompleted()); ;
                 }
             }
             catch (Exception ex)
