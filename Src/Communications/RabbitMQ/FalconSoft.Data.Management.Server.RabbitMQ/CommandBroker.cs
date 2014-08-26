@@ -33,6 +33,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 HostName = hostName,
                 UserName = userName,
                 Password = password,
+                VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort,
                 RequestedHeartbeat = 30
