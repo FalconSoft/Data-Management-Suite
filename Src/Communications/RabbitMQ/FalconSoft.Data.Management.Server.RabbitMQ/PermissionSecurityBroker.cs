@@ -229,7 +229,13 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 lock (_establishConnectionLock)
                 {
-                    var dataBytes = BinaryConverter.CastToBytes(data);
+                    var responce = new RabbitMQResponce
+                    {
+                        Id = 0,
+                        Data = data
+                    };
+
+                    var dataBytes = BinaryConverter.CastToBytes(responce);
 
                     _commandChannel.BasicPublish(PermissionSecurityFacadeExchangeName, userToken, null, dataBytes);
                 }
