@@ -17,7 +17,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
-        private const int TimeOut = 5000;
+        private const int TimeOut = 2000;
 
         public SecurityFacade(string hostName, string userName, string password)
         {

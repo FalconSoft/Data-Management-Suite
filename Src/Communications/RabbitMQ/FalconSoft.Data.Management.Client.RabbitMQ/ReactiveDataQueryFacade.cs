@@ -334,8 +334,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         break;
                     }
                 }
-                subject.OnCompleted();
-            }, _cts.Token);
+            }, _cts.Token).ContinueWith(t => subject.OnCompleted());
 
             return subject.ToEnumerable();
         }

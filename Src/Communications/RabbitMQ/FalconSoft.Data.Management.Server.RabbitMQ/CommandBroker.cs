@@ -193,7 +193,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                                 break;
                             }
 
-                            foreach (var dictionary in (List<Dictionary<string, object>>)responce.Data)
+                            foreach (var dictionary in (IEnumerable<Dictionary<string, object>>)responce.Data)
                             {
                                 toUpdateDataSubject.OnNext(dictionary);
                             }

@@ -190,9 +190,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                 }
                 _commandChannel.QueueDelete(queueName);
-
-                subject.OnCompleted();
-            });
+            }).ContinueWith(t => subject.OnCompleted());
             return subject.ToEnumerable();
         }
 
