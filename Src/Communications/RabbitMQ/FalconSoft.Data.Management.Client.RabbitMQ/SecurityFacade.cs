@@ -17,6 +17,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private readonly QueueingBasicConsumer _consumerForExceptions;
+        private readonly string _queueNameForExceptions;
         private const int TimeOut = 2000;
 
         public SecurityFacade(string hostName, string userName, string password)
@@ -38,11 +40,11 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
 
-            var queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.QueueBind(queueNameForExceptions, ExceptionsExchangeName, "");
+            _queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
+            _commandChannel.QueueBind(_queueNameForExceptions, ExceptionsExchangeName, "");
 
-            var consumerForExceptions = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(queueNameForExceptions, false, consumerForExceptions);
+            _consumerForExceptions = new QueueingBasicConsumer(_commandChannel);
+            _commandChannel.BasicConsume(_queueNameForExceptions, false, _consumerForExceptions);
 
             Task.Factory.StartNew(() =>
             {
@@ -50,7 +52,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 {
                     try
                     {
-                        var ea = consumerForExceptions.Queue.Dequeue();
+                        var ea = _consumerForExceptions.Queue.Dequeue();
 
                         var array = BinaryConverter.CastTo<string>(ea.Body).Split('#');
 
@@ -101,7 +103,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-           
+
         }
 
         public Action<string, string> ErrorMessageHandledAction { get; set; }
@@ -252,7 +254,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Close()
         {
+            _commandChannel.QueueUnbind(_queueNameForExceptions, ExceptionsExchangeName, "", null);
             _cts.Cancel();
+            _cts.Dispose();
             _commandChannel.Close();
             _connection.Close();
         }

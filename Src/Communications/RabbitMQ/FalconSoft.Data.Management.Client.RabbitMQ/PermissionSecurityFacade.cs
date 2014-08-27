@@ -157,6 +157,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 return Disposable.Create(() =>
                 {
+                    _commandChannel.QueueUnbind(queueName, PermissionSecurityFacadeExchangeName, userToken, null);
                     con.OnCancel();
                     dispoce.Dispose();
                     taskComplete = false;

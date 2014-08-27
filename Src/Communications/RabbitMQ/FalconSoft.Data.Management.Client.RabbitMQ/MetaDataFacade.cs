@@ -19,6 +19,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const string MetadataExchangeName = "MetaDataFacadeExchange";
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private string _queueName;
+        private string _queueNameForExceptions;
         private const int TimeOut = 5000;
 
         public MetaDataFacade(string hostName, string userName, string password)
@@ -41,11 +43,11 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             _commandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
 
-            var queueName = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.QueueBind(queueName, MetadataExchangeName, "");
+            _queueName = _commandChannel.QueueDeclare().QueueName;
+            _commandChannel.QueueBind(_queueName, MetadataExchangeName, "");
 
             var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(queueName, true, consumer);
+            _commandChannel.BasicConsume(_queueName, true, consumer);
 
             Task.Factory.StartNew(() =>
             {
@@ -69,11 +71,11 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
 
-            var queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.QueueBind(queueNameForExceptions, ExceptionsExchangeName, "");
+            _queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
+            _commandChannel.QueueBind(_queueNameForExceptions, ExceptionsExchangeName, "");
 
             var consumerForExceptions = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(queueNameForExceptions, false, consumerForExceptions);
+            _commandChannel.BasicConsume(_queueNameForExceptions, false, consumerForExceptions);
 
             Task.Factory.StartNew(() =>
             {
@@ -201,6 +203,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Close()
         {
+            _commandChannel.QueueUnbind(_queueName, MetadataExchangeName, "", null);
+            _commandChannel.QueueUnbind(_queueNameForExceptions, ExceptionsExchangeName, "",null);
             _cts.Cancel();
             _commandChannel.Close();
             _connection.Close();
