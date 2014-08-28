@@ -57,6 +57,7 @@ namespace FalconSoft.Data.Server.EDI.Feeds
 
         private IEnumerable<DataProvidersContext> CreateDataProviders(string sourcePath)
         {
+            if (!Directory.Exists(sourcePath)) return new List<DataProvidersContext>();
             _watcher.StartFileWatcher(@"C:\data\", "*690.txt");
             var providers = new List<DataProvidersContext>();
             //if (Directory.Exists(sourcePath))

@@ -79,6 +79,7 @@ namespace FalconSoft.Data.Console
 
         public static IEnumerable<string> ReadRecordsToDelete(string fileName)
         {
+            if (string.IsNullOrEmpty(fileName)) return new string[0];
             using (var streamReader = new StreamReader(fileName))
             {
                 var recordsKyToDelete = streamReader.ReadToEnd();
