@@ -24,7 +24,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private bool _keepAlive = true;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
-        private readonly Dictionary<string, IDisposable> _getDataChangesDispocebles = new Dictionary<string, IDisposable>(); 
+        private readonly Dictionary<string, IDisposable> _getDataChangesDispocebles = new Dictionary<string, IDisposable>();
+        private ConnectionFactory connectionFactory;
 
         public ReactiveDataQueryBroker(string hostName, string username, string pass, IReactiveDataQueryFacade reactiveDataQueryFacade, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
         {
@@ -33,18 +34,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             _logger = logger;
 
-            var factory = new ConnectionFactory
+            connectionFactory = new ConnectionFactory
             {
-                HostName = hostName,
-                UserName = username,
-                Password = pass,
-                VirtualHost = "/",
-                Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort,
-                RequestedHeartbeat = 30
+                HostName = hostName, UserName = username, Password = pass, VirtualHost = "/", Protocol = Protocols.FromEnvironment(), Port = AmqpTcpEndpoint.UseDefaultPort, RequestedHeartbeat = 30
             };
 
-            _connection = factory.CreateConnection();
+            _connection = connectionFactory.CreateConnection();
 
             _commandChannel = _connection.CreateModel();
 
@@ -74,7 +69,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         {
                             if (_keepAlive)
                             {
-                                _connection = factory.CreateConnection();
+                                _connection = connectionFactory.CreateConnection();
                                 _commandChannel = _connection.CreateModel();
 
                                 _commandChannel.QueueDelete(ReactiveDataQueryFacadeQueueName);
@@ -397,10 +392,18 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     {
                         lock (_establishConnectionLock)
                         {
-                            var message = new RabbitMQResponce { Data = rcpArgs };
+                            var message = new RabbitMQResponce {Data = rcpArgs};
 
-                            _commandChannel.BasicPublish("GetDataChangesTopic",
-                                routingKey, null, BinaryConverter.CastToBytes(message));
+                            try
+                            {
+                                _commandChannel.BasicPublish("GetDataChangesTopic",
+                                    routingKey, null, BinaryConverter.CastToBytes(message));
+                            }
+                            catch (Exception)
+                            {
+                                _connection = connectionFactory.CreateConnection();
+                                _commandChannel = _connection.CreateModel();
+                            }
                         }
                     }, () =>
                     {
@@ -470,7 +473,6 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 var dataSourcePathLocal = string.Copy(dataSourceUrn);
 
                 var fieldNameLockal = string.Copy(fieldName);
-
 
                 var checkResult = _reactiveDataQueryFacade.CheckExistence(userTokenLocal, dataSourcePathLocal, fieldNameLockal, obj);
 

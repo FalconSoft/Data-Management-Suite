@@ -14,7 +14,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
     {
         private readonly IConnection _connection;
         private readonly IModel _commandChannel;
-        private const int TimeOut = 5000;
+        private const int TimeOut = 2000;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
 
         public CommandFacade(string hostName, string userName, string password)
