@@ -105,7 +105,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 try
                 {
-                    _logger.Debug("Command Broker. InitializeConnection starts");
+                    _logger.Debug(DateTime.Now + " Command Broker. InitializeConnection starts");
 
                     var replyTo = string.Copy(basicProperties.ReplyTo);
 
@@ -118,7 +118,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    _logger.Debug("Failed to responce to client connection confirming.", ex);
+                    _logger.Debug(DateTime.Now + " Failed to responce to client connection confirming.", ex);
                     throw;
                 }
             }, _cts.Token);
@@ -129,7 +129,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             try
             {
-                _logger.Debug("Command Broker. SubmitChanges starts");
+                _logger.Debug(DateTime.Now + " Command Broker. SubmitChanges starts");
 
                 var toUpdateDataSubject = new Subject<Dictionary<string, object>>();
                 var toDeleteDataSubject = new Subject<string>();
@@ -157,7 +157,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     var changedRecords = task1.Result;
                     var deleted = task2.Result;
 
-                    _logger.Debug(string.Format("Command Broker. SubmitChanges, data to change count : {0}; data to delete count : {1}", changedRecords!= null ? changedRecords.Count() : 0, deleted!=null ? deleted.Count() : 0));
+                    _logger.Debug(string.Format("{2} Command Broker. SubmitChanges, data to change count : {0}; data to delete count : {1}", changedRecords != null ? changedRecords.Count() : 0, deleted != null ? deleted.Count() : 0, DateTime.Now));
 
                     _commandFacade.SubmitChanges(dataSourcePathLocal, userTokenLocal, changedRecords, deleted, ri =>
                     {
@@ -238,13 +238,13 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             }
             catch (Exception ex)
             {
-                _logger.Debug("SubmitChanges failed", ex);
+                _logger.Debug(DateTime.Now + " SubmitChanges failed", ex);
             }
         }
 
         public void Dispose()
         {
-            _logger.Debug("Command Broker Disposed.");
+            _logger.Debug(DateTime.Now + " Command Broker Disposed.");
 
             _keepAlive = false;
             _cts.Cancel();

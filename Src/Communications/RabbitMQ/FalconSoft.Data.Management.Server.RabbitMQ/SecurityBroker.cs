@@ -97,7 +97,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
-            _logger.Debug(string.Format("SecurityBroker. Method Name {0}; User Token {1}; Params {2}",
+            _logger.Debug(string.Format(DateTime.Now + " SecurityBroker. Method Name {0}; User Token {1}; Params {2}",
               message.MethodName,
               message.UserToken ?? string.Empty,
               message.MethodsArgs != null
