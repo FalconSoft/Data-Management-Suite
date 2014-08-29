@@ -58,7 +58,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                     catch (EndOfStreamException ex)
                     {
-                        _logger.Debug("SearchBroker failed", ex);
+                        _logger.Debug(DateTime.Now + " SearchBroker failed", ex);
 
                         if (_keepAlive)
                         {
@@ -80,7 +80,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
-            _logger.Debug(string.Format("SearchBroker. Method Name {0}; User Token {1}; Params {2}",
+            _logger.Debug(string.Format(DateTime.Now + " SearchBroker. Method Name {0}; User Token {1}; Params {2}",
               message.MethodName,
               message.UserToken ?? string.Empty,
               message.MethodsArgs != null
