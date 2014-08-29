@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
@@ -23,6 +21,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public PermissionSecurityFacade(string hostName, string userName, string password):base(hostName, userName,password)
         {
             InitializeConnection(PermissionSecurityFacadeQueueName);
+            KeepAliveAction = () => InitializeConnection(PermissionSecurityFacadeQueueName);
         }
 
         public Permission GetUserPermissions(string userToken)
@@ -93,12 +92,39 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public IObservable<Dictionary<string, AccessLevel>> GetPermissionChanged(string userToken)
         {
+            var routingKeys = userToken;
+            string bindingQueueName;
             var observable = CreateExchngeObservable<Dictionary<string, AccessLevel>>(CommandChannel,
-                PermissionSecurityFacadeExchangeName, "direct", userToken);
+                PermissionSecurityFacadeExchangeName, "direct", routingKeys, out bindingQueueName);
 
-            RPCServerTaskExecute(Connection, PermissionSecurityFacadeQueueName, "GetPermissionChanged", userToken, null);
+            RPCServerTaskExecuteAsync(Connection, PermissionSecurityFacadeQueueName, "GetPermissionChanged", userToken, null);
 
-            return observable;
+            var result = Observable.Create<Dictionary<string, AccessLevel>>(subj =>
+            {
+                var dispoce = observable.Subscribe(subj);
+
+                var keepAlive = new EventHandler<ServerReconnectionArgs>((obj, eargs) =>
+                {
+                    dispoce.Dispose();
+
+                    observable = CreateExchngeObservable<Dictionary<string, AccessLevel>>(CommandChannel,
+                        PermissionSecurityFacadeExchangeName, "direct", routingKeys, out bindingQueueName);
+
+                    RPCServerTaskExecuteAsync(Connection, PermissionSecurityFacadeQueueName, "GetPermissionChanged", userToken, null);
+
+                    dispoce = observable.Subscribe(subj);
+                });
+
+                ServerReconnectedEvent += keepAlive;
+
+                return Disposable.Create(() =>
+                {
+                    ServerReconnectedEvent -= keepAlive;
+                    dispoce.Dispose();
+                });
+            });
+
+            return result;
         }
 
         public void Dispose()

@@ -16,13 +16,25 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const string MetadataExchangeName = "MetaDataFacadeExchange";
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
-        private readonly string _queueName;
-        private readonly string _queueNameForExceptions;
+        private string _queueName;
+        private string _queueNameForExceptions;
+        private readonly EventHandler<ServerReconnectionArgs> _exhcangeKeepAlive;
 
         public MetaDataFacade(string hostName, string userName, string password) : base(hostName, userName, password)
         {
             InitializeConnection(MetadataQueueName);
 
+            KeepAliveAction = () => InitializeConnection(MetadataQueueName);
+
+            InitializeFacadeFanoutExchanges();
+
+            _exhcangeKeepAlive = (obj, evArgs) => InitializeFacadeFanoutExchanges();
+
+            ServerReconnectedEvent += _exhcangeKeepAlive;
+        }
+
+        private void InitializeFacadeFanoutExchanges()
+        {
             CommandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
 
             _queueName = CommandChannel.QueueDeclare().QueueName;
@@ -77,7 +89,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         break;
                     }
                 }
-            },_cts.Token);
+            }, _cts.Token);
         }
 
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
@@ -188,7 +200,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             CommandChannel.QueueUnbind(_queueName, MetadataExchangeName, "", null);
             CommandChannel.QueueUnbind(_queueNameForExceptions, ExceptionsExchangeName, "",null);
             _cts.Cancel();
-          
+
+            ServerReconnectedEvent -= _exhcangeKeepAlive;
+
             base.Close();
         }
     }

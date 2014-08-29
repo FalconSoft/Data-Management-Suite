@@ -23,13 +23,14 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
         private readonly List<string> _getPermissionChangesDisposables = new List<string>();
+        private readonly ConnectionFactory _factory;
 
         public PermissionSecurityBroker(string hostName, string userName, string password, IPermissionSecurityFacade permissionSecurityFacade, ILogger logger)
         {
             _permissionSecurityFacade = permissionSecurityFacade;
             _logger = logger;
 
-            var factory = new ConnectionFactory
+            _factory = new ConnectionFactory
             {
                 HostName = hostName,
                 UserName = userName,
@@ -39,7 +40,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Port = AmqpTcpEndpoint.UseDefaultPort,
                 RequestedHeartbeat = 30
             };
-            _connection = factory.CreateConnection();
+            _connection = _factory.CreateConnection();
 
             _commandChannel = _connection.CreateModel();
 
@@ -72,7 +73,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         {
                             if (_keepAlive)
                             {
-                                _connection = factory.CreateConnection();
+                                _connection = _factory.CreateConnection();
 
                                 _commandChannel = _connection.CreateModel();
 
@@ -237,7 +238,16 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                     var dataBytes = BinaryConverter.CastToBytes(responce);
 
-                    _commandChannel.BasicPublish(PermissionSecurityFacadeExchangeName, userToken, null, dataBytes);
+                    try
+                    {
+                        _commandChannel.BasicPublish(PermissionSecurityFacadeExchangeName, userToken, null, dataBytes);
+                    }
+                    catch (Exception)
+                    {
+                        _connection = _factory.CreateConnection();
+
+                        _commandChannel = _connection.CreateModel();
+                    }
                 }
             }, _cts.Token);
 

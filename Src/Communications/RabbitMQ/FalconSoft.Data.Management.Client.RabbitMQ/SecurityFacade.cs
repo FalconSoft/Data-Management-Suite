@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
@@ -15,14 +14,26 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
-        private readonly QueueingBasicConsumer _consumerForExceptions;
-        private readonly string _queueNameForExceptions;
+        private QueueingBasicConsumer _consumerForExceptions;
+        private string _queueNameForExceptions;
+        private EventHandler<ServerReconnectionArgs> _exhcangeKeepAlive;
 
         public SecurityFacade(string hostName, string userName, string password) : base(hostName, userName, password)
         {
             InitializeConnection(SecurityFacadeQueueName);
 
-           CommandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
+            KeepAliveAction= ()=> InitializeConnection(SecurityFacadeQueueName);
+
+            InitializeFanoutExchanges();
+
+            _exhcangeKeepAlive = (obj, evArgs) => InitializeFanoutExchanges();
+
+            ServerReconnectedEvent += _exhcangeKeepAlive;
+        }
+
+        private void InitializeFanoutExchanges()
+        {
+            CommandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
 
             _queueNameForExceptions = CommandChannel.QueueDeclare().QueueName;
             CommandChannel.QueueBind(_queueNameForExceptions, ExceptionsExchangeName, "");
@@ -97,6 +108,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             CommandChannel.QueueUnbind(_queueNameForExceptions, ExceptionsExchangeName, "", null);
             _cts.Cancel();
             _cts.Dispose();
+
+            ServerReconnectedEvent -= _exhcangeKeepAlive;
+
             base.Close();
         }
 

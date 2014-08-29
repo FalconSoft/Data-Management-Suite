@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
@@ -10,18 +9,23 @@ using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Observable = System.Reactive.Linq.Observable;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
     internal sealed class ReactiveDataQueryFacade : RabbitMQFacadeBase, IReactiveDataQueryFacade
     {
         private const string RPCQueryName = "ReactiveDataQueryFacadeRPC";
+        private const string GetDataChangesTopic = "GetDataChangesTopic";
+
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private const int TimeOut = 5000;
 
-        public ReactiveDataQueryFacade(string hostName, string userName, string password):base(hostName, userName, password)
+        public ReactiveDataQueryFacade(string hostName, string userName, string password)
+            : base(hostName, userName, password)
         {
             InitializeConnection(RPCQueryName);
+            KeepAliveAction = () => InitializeConnection(RPCQueryName);
         }
 
         public IEnumerable<Dictionary<string, object>> GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
@@ -50,13 +54,42 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
-            var observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, "GetDataChangesTopic",
-                "topic", dataSourcePath + "." + userToken);
+            var routingKey = dataSourcePath + "." + userToken;
+            string bindingQueueName;
 
-            RPCServerTaskExecute(Connection, RPCQueryName, "GetDataChanges", userToken,
-                new object[] {dataSourcePath, filterRules});
+            var observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
+                "topic", routingKey, out bindingQueueName);
 
-            return observable;
+            RPCServerTaskExecuteAsync(Connection, RPCQueryName, "GetDataChanges", userToken,
+                new object[] { dataSourcePath, filterRules });
+
+            var result = Observable.Create<RecordChangedParam[]>(subj =>
+            {
+                var dispoce = observable.Subscribe(subj);
+
+                var keepAlive = new EventHandler<ServerReconnectionArgs>((obj, eargs) =>
+                {
+                    dispoce.Dispose();
+
+                    observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
+                        "topic", routingKey, out bindingQueueName);
+
+                    RPCServerTaskExecuteAsync(Connection, RPCQueryName, "GetDataChanges", userToken,
+                        new object[] {dataSourcePath, filterRules});
+
+                    dispoce = observable.Subscribe(subj);
+                });
+
+                ServerReconnectedEvent += keepAlive;
+
+                return Disposable.Create(() =>
+                {
+                    ServerReconnectedEvent -= keepAlive;
+                    dispoce.Dispose();
+                });
+            });
+
+            return result;
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken,
@@ -107,12 +140,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                                 if (onSuccess != null)
                                 {
-                                    onSuccess((string) array[0], (RecordChangedParam[]) array[1]);
+                                    onSuccess((string)array[0], (RecordChangedParam[])array[1]);
                                 }
 
                                 breakFlag = false;
                             }
-                        } 
+                        }
                         else
                         {
                             if (onFail != null)
@@ -146,7 +179,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                                 if (onFail != null)
                                 {
-                                    onFail((string) array[0], (Exception) array[1]);
+                                    onFail((string)array[0], (Exception)array[1]);
                                 }
 
                                 breakFlag = false;
@@ -173,7 +206,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public bool CheckExistence(string userToken, string dataSourceUrn, string fieldName, object value)
         {
             return RPCServerTaskExecute<bool>(Connection, RPCQueryName, "CheckExistence", userToken,
-                new[] {dataSourceUrn, fieldName, value});
+                new[] { dataSourceUrn, fieldName, value });
         }
 
         public void Dispose()

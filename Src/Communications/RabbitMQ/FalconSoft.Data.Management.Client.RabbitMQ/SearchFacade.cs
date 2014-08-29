@@ -10,6 +10,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public SearchFacade(string serverUrl, string userName, string password):base(serverUrl, userName, password)
         {
             InitializeConnection(SearchFacadeQueueName);
+            KeepAliveAction = () => InitializeConnection(SearchFacadeQueueName);
         }
 
         public SearchData[] Search(string searchString)

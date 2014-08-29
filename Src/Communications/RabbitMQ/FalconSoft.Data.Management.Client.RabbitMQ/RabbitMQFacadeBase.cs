@@ -8,24 +8,27 @@ using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using FalconSoft.Data.Management.Common.Facades;
-using FalconSoft.Data.Management.Common.Security;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.Client.Exceptions;
+using Timer = System.Timers.Timer;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
     internal class RabbitMQFacadeBase : IServerNotification
     {
-        private readonly IConnection _connection;
-        private readonly IModel _commandChannel;
+        private IConnection _connection;
+        private IModel _commandChannel;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private volatile bool _hasConnection;
         private const int TimeOut = 2000;
+        private readonly Timer _keepAliveTimer;
 
         public RabbitMQFacadeBase(string hostName, string userName, string password)
         {
-            var factory = new ConnectionFactory
+            factory = new ConnectionFactory
             {
                 HostName = hostName,
                 UserName = userName,
@@ -36,41 +39,53 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 RequestedHeartbeat = 30
             };
 
-            _connection = factory.CreateConnection();
-            _commandChannel = _connection.CreateModel();
+            RestoreConnection();
+
+            _keepAliveTimer = new Timer(5000);
+            _keepAliveTimer.Elapsed += KeepAlive;
+            _keepAliveTimer.Start();
+        }
+
+        private void KeepAlive(object sender, ElapsedEventArgs e)
+        {
+            if (!_hasConnection && KeepAliveAction != null)
+            {
+                KeepAliveAction();
+                if (_hasConnection && ServerReconnectedEvent != null)
+                    ServerReconnectedEvent(this, new ServerReconnectionArgs());
+            }
+            else
+            {
+                if (KeepAliveAction != null)
+                    KeepAliveAction();
+            }
         }
 
         public event EventHandler<ServerErrorEvArgs> ServerErrorHandler;
 
-        protected IConnection Connection {get { return _connection; }}
+        public event EventHandler<ServerReconnectionArgs> ServerReconnectedEvent;
+
+        protected IConnection Connection { get { return _connection; } }
 
         protected IModel CommandChannel { get { return _commandChannel; } }
-        
+
+        protected Action KeepAliveAction;
+        private readonly object _restoreConnectionLock = new object();
+        private ConnectionFactory factory;
+
         protected IEnumerable<T> RPCServerTaskExecuteEnumerable<T>(IConnection connection,
           string commandQueueName, string methodName, string userToken, object[] methodArgs)
         {
             try
             {
                 if (!_hasConnection)
-                    InitializeConnection(commandQueueName);
+                    return default(IEnumerable<T>);
 
                 var channel = connection.CreateModel();
 
                 var correlationId = Guid.NewGuid().ToString();
 
-                var consumer = new QueueingBasicConsumer(channel);
-
-                var replyTo = channel.QueueDeclare().QueueName;
-                channel.BasicConsume(replyTo, true, consumer);
-
-                var props = channel.CreateBasicProperties();
-                props.ReplyTo = replyTo;
-                props.CorrelationId = correlationId;
-                props.SetPersistent(true);
-
-                var message = MethdoArgsToByte(methodName, userToken, methodArgs);
-
-                channel.BasicPublish("", commandQueueName, props, message);
+                var consumer = SendMessage(channel, commandQueueName, methodName, userToken, methodArgs, correlationId);
 
                 var subject = new Subject<T>();
 
@@ -113,7 +128,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             catch (Exception ex)
             {
                 if (ServerErrorHandler != null)
-                    ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
+                    ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex) { MethodCallerName = methodName });
 
                 return default(IEnumerable<T>);
             }
@@ -125,33 +140,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             try
             {
                 if (!_hasConnection)
-                    InitializeConnection(commandQueueName);
+                    return default(T);
 
                 using (var channel = connection.CreateModel())
                 {
                     var correlationId = Guid.NewGuid().ToString();
 
-                    var queueName = channel.QueueDeclare().QueueName;
-
-                    var props = channel.CreateBasicProperties();
-                    props.CorrelationId = correlationId;
-                    props.ReplyTo = queueName;
-                    props.SetPersistent(true);
-
-                    var consumer = new QueueingBasicConsumer(channel);
-
-                    channel.BasicConsume(queueName, false, consumer);
-
-                    var message = new MethodArgs
-                    {
-                        MethodName = methodName,
-                        UserToken = userToken,
-                        MethodsArgs = methodArgs
-                    };
-
-                    var messageBytes = BinaryConverter.CastToBytes(message);
-
-                    channel.BasicPublish("", commandQueueName, props, messageBytes);
+                    var consumer = SendMessage(channel, commandQueueName, methodName, userToken, methodArgs, correlationId);
 
                     while (true)
                     {
@@ -160,7 +155,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         {
                             if (ea.BasicProperties.CorrelationId == correlationId)
                             {
-                                channel.QueueDelete(queueName);
                                 return BinaryConverter.CastTo<T>(ea.Body);
                             }
                         }
@@ -187,33 +181,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             try
             {
                 if (!_hasConnection)
-                    InitializeConnection(commandQueueName);
+                    return;
 
                 using (var channel = connection.CreateModel())
                 {
                     var correlationId = Guid.NewGuid().ToString();
 
-                    var queueName = channel.QueueDeclare().QueueName;
-
-                    var props = channel.CreateBasicProperties();
-                    props.CorrelationId = correlationId;
-                    props.ReplyTo = queueName;
-                    props.SetPersistent(true);
-
-                    var consumer = new QueueingBasicConsumer(channel);
-
-                    channel.BasicConsume(queueName, false, consumer);
-
-                    var message = new MethodArgs
-                    {
-                        MethodName = methodName,
-                        UserToken = userToken,
-                        MethodsArgs = methodArgs
-                    };
-
-                    var messageBytes = BinaryConverter.CastToBytes(message);
-
-                    channel.BasicPublish("", commandQueueName, props, messageBytes);
+                    var consumer = SendMessage(channel, commandQueueName, methodName, userToken, methodArgs, correlationId);
 
                     while (true)
                     {
@@ -240,18 +214,42 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             }
         }
 
+        protected void RPCServerTaskExecuteAsync(IConnection connection, string commandQueueName, string methodName, string userToken,
+           object[] methodArgs)
+        {
+            try
+            {
+                if (!_hasConnection)
+                    return;
+
+                using (var channel = connection.CreateModel())
+                {
+                    var correlationId = Guid.NewGuid().ToString();
+
+                    SendMessage(channel, commandQueueName, methodName, userToken, methodArgs, correlationId);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ServerErrorHandler != null)
+                    ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
+            }
+        }
+
         protected IObservable<T> CreateExchngeObservable<T>(IModel channel, string exchangeName,
-            string exchangeType, string routingKey)
+            string exchangeType, string routingKey, out string bindingQueueName)
         {
             var subjects = new Subject<T>();
 
-            CommandChannel.ExchangeDeclare(exchangeName, exchangeType);
+            channel.ExchangeDeclare(exchangeName, exchangeType);
 
             var queueName = CommandChannel.QueueDeclare().QueueName;
-            CommandChannel.QueueBind(queueName, exchangeName, routingKey);
+            channel.QueueBind(queueName, exchangeName, routingKey);
+
+            bindingQueueName = queueName;
 
             var con = new QueueingBasicConsumer(CommandChannel);
-            CommandChannel.BasicConsume(queueName, true, con);
+            channel.BasicConsume(queueName, true, con);
 
             var taskComplete = true;
 
@@ -268,7 +266,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                         if (responce.LastMessage) break;
 
-                        var data = (T) responce.Data;
+                        var data = (T)responce.Data;
 
                         subjects.OnNext(data);
                     }
@@ -293,49 +291,31 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             });
 
             return Observable.Create(func);
-        } 
+        }
 
         protected void InitializeConnection(string commandQueueName)
         {
-            using (var channel = _connection.CreateModel())
+            try
             {
-                var message = new MethodArgs
-                {
-                    MethodName = "InitializeConnection",
-                    UserToken = null,
-                    MethodsArgs = null
-                };
+                CheckConnection(commandQueueName);
+            }
+            catch (Exception ex)
+            {
+                if (ex is AlreadyClosedException)
+                    RestoreConnection();
 
-                var messageBytes = BinaryConverter.CastToBytes(message);
+                if (ServerErrorHandler != null)
+                    ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
+            }
+        }
 
-                var replyTo = channel.QueueDeclare().QueueName;
-
-                var correlationId = Guid.NewGuid().ToString();
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = replyTo;
-                props.SetPersistent(true);
-
-                var consumer = new QueueingBasicConsumer(channel);
-                channel.BasicConsume(replyTo, true, consumer);
-
-                channel.BasicPublish("", commandQueueName, props, messageBytes);
-
-                while (true)
-                {
-                    BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(TimeOut, out ea))
-                    {
-                        if (correlationId == ea.BasicProperties.CorrelationId)
-                        {
-                            _hasConnection = true;
-                            return;
-                        }
-                    }
-                    _hasConnection = false;
-                    throw new Exception("Connection to server failed");
-                }
+        private void RestoreConnection()
+        {
+            lock (_restoreConnectionLock)
+            {
+                _hasConnection = false;
+                _connection = factory.CreateConnection();
+                _commandChannel = _connection.CreateModel();
             }
         }
 
@@ -343,8 +323,88 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             _cts.Cancel();
             _cts.Dispose();
+            _keepAliveTimer.Close();
             _commandChannel.Close();
             _connection.Close();
+        }
+
+        private QueueingBasicConsumer SendMessage(IModel channel, string commandQueueName, string methodName, string userToken, object[] methodArgs, string correlationId)
+        {
+            var consumer = new QueueingBasicConsumer(channel);
+
+            var replyTo = channel.QueueDeclare().QueueName;
+            channel.BasicConsume(replyTo, true, consumer);
+
+            var props = channel.CreateBasicProperties();
+            props.ReplyTo = replyTo;
+            props.CorrelationId = correlationId;
+            props.SetPersistent(true);
+
+            var message = MethdoArgsToByte(methodName, userToken, methodArgs);
+
+            channel.BasicPublish("", commandQueueName, props, message);
+
+            return consumer;
+        }
+
+        private void CheckConnection(string commandQueueName)
+        {
+            IModel channel = null;
+            try
+            {
+                channel = _connection.CreateModel();
+                if (channel != null)
+                {
+                    var message = new MethodArgs
+                    {
+                        MethodName = "InitializeConnection",
+                        UserToken = null,
+                        MethodsArgs = null
+                    };
+
+                    var messageBytes = BinaryConverter.CastToBytes(message);
+
+                    var replyTo = channel.QueueDeclare().QueueName;
+
+                    var correlationId = Guid.NewGuid().ToString();
+
+                    var props = channel.CreateBasicProperties();
+                    props.CorrelationId = correlationId;
+                    props.ReplyTo = replyTo;
+                    props.SetPersistent(true);
+
+                    var consumer = new QueueingBasicConsumer(channel);
+                    channel.BasicConsume(replyTo, true, consumer);
+
+                    channel.BasicPublish("", commandQueueName, props, messageBytes);
+
+                    while (true)
+                    {
+                        BasicDeliverEventArgs ea;
+                        if (consumer.Queue.Dequeue(TimeOut, out ea))
+                        {
+                            if (correlationId == ea.BasicProperties.CorrelationId)
+                            {
+                                _hasConnection = true;
+                                return;
+                            }
+                        }
+                        _hasConnection = false;
+                        throw new TimeoutException("Connection to server failed due to time out !");
+                    }
+                }
+                else
+                {
+                    _hasConnection = false;
+                    throw new NullReferenceException("Cannot connect to server!");
+                }
+            }
+           
+            finally
+            {
+                if (channel != null)
+                    channel.Dispose();
+            }
         }
 
         private byte[] MethdoArgsToByte(string methodName, string userToken, object[] methodArgs)

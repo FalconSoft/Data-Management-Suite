@@ -12,6 +12,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public TemporalDataQueryFacade(string hostName, string userName, string password):base(hostName, userName, password)
         {
             InitializeConnection(TemporalDataQueryFacadeQueryName);
+            KeepAliveAction = ()=>InitializeConnection(TemporalDataQueryFacadeQueryName);
         }
 
         public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)
