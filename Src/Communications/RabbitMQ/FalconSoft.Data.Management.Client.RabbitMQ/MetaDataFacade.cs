@@ -7,47 +7,41 @@ using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
-    internal class MetaDataFacade : IMetaDataAdminFacade
+    internal sealed class MetaDataFacade : RabbitMQFacadeBase, IMetaDataAdminFacade
     {
-        private readonly IConnection _connection;
-        private readonly IModel _commandChannel;
         private const string MetadataQueueName = "MetaDataFacadeRPC";
         private const string MetadataExchangeName = "MetaDataFacadeExchange";
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private string _queueName;
         private string _queueNameForExceptions;
-        private const int TimeOut = 5000;
+        private readonly EventHandler<ServerReconnectionArgs> _exhcangeKeepAlive;
 
-        public MetaDataFacade(string hostName, string userName, string password)
+        public MetaDataFacade(string hostName, string userName, string password) : base(hostName, userName, password)
         {
-            var factory = new ConnectionFactory
-            {
-                HostName = hostName,
-                UserName = userName,
-                Password = password,
-                VirtualHost = "/",
-                Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort,
-                RequestedHeartbeat = 30
-            };
-
-            _connection = factory.CreateConnection();
-            _commandChannel = _connection.CreateModel();
-
             InitializeConnection(MetadataQueueName);
 
-            _commandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
+            KeepAliveAction = () => InitializeConnection(MetadataQueueName);
 
-            _queueName = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.QueueBind(_queueName, MetadataExchangeName, "");
+            InitializeFacadeFanoutExchanges();
 
-            var consumer = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(_queueName, true, consumer);
+            _exhcangeKeepAlive = (obj, evArgs) => InitializeFacadeFanoutExchanges();
+
+            ServerReconnectedEvent += _exhcangeKeepAlive;
+        }
+
+        private void InitializeFacadeFanoutExchanges()
+        {
+            CommandChannel.ExchangeDeclare(MetadataExchangeName, "fanout");
+
+            _queueName = CommandChannel.QueueDeclare().QueueName;
+            CommandChannel.QueueBind(_queueName, MetadataExchangeName, "");
+
+            var consumer = new QueueingBasicConsumer(CommandChannel);
+            CommandChannel.BasicConsume(_queueName, true, consumer);
 
             Task.Factory.StartNew(() =>
             {
@@ -69,13 +63,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 }
             }, _cts.Token);
 
-            _commandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
+            CommandChannel.ExchangeDeclare(ExceptionsExchangeName, "fanout");
 
-            _queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.QueueBind(_queueNameForExceptions, ExceptionsExchangeName, "");
+            _queueNameForExceptions = CommandChannel.QueueDeclare().QueueName;
+            CommandChannel.QueueBind(_queueNameForExceptions, ExceptionsExchangeName, "");
 
-            var consumerForExceptions = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(_queueNameForExceptions, false, consumerForExceptions);
+            var consumerForExceptions = new QueueingBasicConsumer(CommandChannel);
+            CommandChannel.BasicConsume(_queueNameForExceptions, false, consumerForExceptions);
 
             Task.Factory.StartNew(() =>
             {
@@ -95,101 +89,101 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         break;
                     }
                 }
-            },_cts.Token);
+            }, _cts.Token);
         }
 
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            return RPCServerTaskExecute<DataSourceInfo[]>(_connection, MetadataQueueName, "GetAvailableDataSources",
+            return RPCServerTaskExecute<DataSourceInfo[]>(Connection, MetadataQueueName, "GetAvailableDataSources",
                 userToken, new object[] { minAccessLevel });
         }
 
         public DataSourceInfo GetDataSourceInfo(string dataSourceUrn, string userToken)
         {
-            return RPCServerTaskExecute<DataSourceInfo>(_connection, MetadataQueueName, "GetDataSourceInfo", userToken,
+            return RPCServerTaskExecute<DataSourceInfo>(Connection, MetadataQueueName, "GetDataSourceInfo", userToken,
                 new object[] { dataSourceUrn });
         }
 
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userToken)
         {
-            RPCServerTaskExecute(_connection, MetadataQueueName, "UpdateDataSourceInfo", userToken,
+            RPCServerTaskExecute(Connection, MetadataQueueName, "UpdateDataSourceInfo", userToken,
                 new object[] { dataSource, oldDataSourceUrn });
         }
 
         public void CreateDataSourceInfo(DataSourceInfo dataSource, string userToken)
         {
-            RPCServerTaskExecute(_connection, MetadataQueueName, "CreateDataSourceInfo", userToken,
+            RPCServerTaskExecute(Connection, MetadataQueueName, "CreateDataSourceInfo", userToken,
                 new object[] { dataSource });
         }
 
         public void DeleteDataSourceInfo(string dataSourceUrn, string userToken)
         {
-            RPCServerTaskExecute(_connection, MetadataQueueName, "DeleteDataSourceInfo", userToken,
+            RPCServerTaskExecute(Connection, MetadataQueueName, "DeleteDataSourceInfo", userToken,
                 new object[] { dataSourceUrn });
         }
 
         public WorksheetInfo GetWorksheetInfo(string worksheetUrn, string userToken)
         {
-            return RPCServerTaskExecute<WorksheetInfo>(_connection, MetadataQueueName, "GetWorksheetInfo", userToken,
+            return RPCServerTaskExecute<WorksheetInfo>(Connection, MetadataQueueName, "GetWorksheetInfo", userToken,
                 new object[] { worksheetUrn });
         }
 
         public WorksheetInfo[] GetAvailableWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            return RPCServerTaskExecute<WorksheetInfo[]>(_connection, MetadataQueueName, "GetAvailableWorksheets",
+            return RPCServerTaskExecute<WorksheetInfo[]>(Connection, MetadataQueueName, "GetAvailableWorksheets",
                 userToken, new object[] { minAccessLevel });
         }
 
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
         {
-            RPCServerTaskExecute(_connection, MetadataQueueName, "UpdateWorksheetInfo", userToken,
+            RPCServerTaskExecute(Connection, MetadataQueueName, "UpdateWorksheetInfo", userToken,
                 new object[] { wsInfo, oldWorksheetUrn });
         }
 
         public void CreateWorksheetInfo(WorksheetInfo wsInfo, string userToken)
         {
-            RPCServerTaskExecute(_connection, MetadataQueueName, "CreateWorksheetInfo", userToken, new object[] { wsInfo });
+            RPCServerTaskExecute(Connection, MetadataQueueName, "CreateWorksheetInfo", userToken, new object[] { wsInfo });
         }
 
         public void DeleteWorksheetInfo(string worksheetUrn, string userToken)
         {
-            RPCServerTaskExecute(_connection, MetadataQueueName, "DeleteWorksheetInfo", userToken,
+            RPCServerTaskExecute(Connection, MetadataQueueName, "DeleteWorksheetInfo", userToken,
                 new object[] { worksheetUrn });
         }
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            return RPCServerTaskExecute<AggregatedWorksheetInfo[]>(_connection, MetadataQueueName,
+            return RPCServerTaskExecute<AggregatedWorksheetInfo[]>(Connection, MetadataQueueName,
                 "GetAvailableAggregatedWorksheets", userToken, new object[] { minAccessLevel });
         }
 
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn,
             string userToken)
         {
-            RPCServerTaskExecute(_connection, MetadataQueueName, "UpdateAggregatedWorksheetInfo", userToken,
+            RPCServerTaskExecute(Connection, MetadataQueueName, "UpdateAggregatedWorksheetInfo", userToken,
                 new object[] { wsInfo, oldWorksheetUrn });
         }
 
         public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userToken)
         {
-            RPCServerTaskExecute(_connection, MetadataQueueName, "CreateAggregatedWorksheetInfo", userToken, new object[] { wsInfo });
+            RPCServerTaskExecute(Connection, MetadataQueueName, "CreateAggregatedWorksheetInfo", userToken, new object[] { wsInfo });
         }
 
         public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
-            RPCServerTaskExecute(_connection, MetadataQueueName, "DeleteAggregatedWorksheetInfo", userToken,
+            RPCServerTaskExecute(Connection, MetadataQueueName, "DeleteAggregatedWorksheetInfo", userToken,
                 new object[] { worksheetUrn });
         }
 
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
-            return RPCServerTaskExecute<AggregatedWorksheetInfo>(_connection, MetadataQueueName,
+            return RPCServerTaskExecute<AggregatedWorksheetInfo>(Connection, MetadataQueueName,
                 "GetAggregatedWorksheetInfo", userToken, new object[] { worksheetUrn });
         }
 
         public ServerInfo GetServerInfo()
         {
-            return RPCServerTaskExecute<ServerInfo>(_connection, MetadataQueueName, "GetServerInfo", null, null);
+            return RPCServerTaskExecute<ServerInfo>(Connection, MetadataQueueName, "GetServerInfo", null, null);
         }
 
         public void Dispose()
@@ -201,150 +195,15 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public Action<string, string> ErrorMessageHandledAction { get; set; }
 
-        public void Close()
+        public new void Close()
         {
-            _commandChannel.QueueUnbind(_queueName, MetadataExchangeName, "", null);
-            _commandChannel.QueueUnbind(_queueNameForExceptions, ExceptionsExchangeName, "",null);
+            CommandChannel.QueueUnbind(_queueName, MetadataExchangeName, "", null);
+            CommandChannel.QueueUnbind(_queueNameForExceptions, ExceptionsExchangeName, "",null);
             _cts.Cancel();
-            _commandChannel.Close();
-            _connection.Close();
-        }
 
-        private T RPCServerTaskExecute<T>(IConnection connection, string commandQueueName, string methodName, string userToken,
-            object[] methodArgs)
-        {
-            using (var channel = connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
+            ServerReconnectedEvent -= _exhcangeKeepAlive;
 
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-                props.SetPersistent(true);
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var message = new MethodArgs
-                {
-                    MethodName = methodName,
-                    UserToken = userToken,
-                    MethodsArgs = methodArgs
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", commandQueueName, props, messageBytes);
-
-                while (true)
-                {
-                    BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(TimeOut, out ea))
-                    {
-                        if (ea.BasicProperties.CorrelationId == correlationId)
-                        {
-                            channel.QueueDelete(queueName);
-                            return BinaryConverter.CastTo<T>(ea.Body);
-                        }
-                    }
-                    else
-                    {
-                        return default(T);
-                    }
-                }
-            }
-        }
-
-        private void RPCServerTaskExecute(IConnection connection, string commandQueueName, string methodName, string userToken,
-            object[] methodArgs)
-        {
-            using (var channel = connection.CreateModel())
-            {
-                var correlationId = Guid.NewGuid().ToString();
-
-                var queueName = channel.QueueDeclare().QueueName;
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = queueName;
-                props.SetPersistent(true);
-
-                var consumer = new QueueingBasicConsumer(channel);
-
-                channel.BasicConsume(queueName, false, consumer);
-
-                var message = new MethodArgs
-                {
-                    MethodName = methodName,
-                    UserToken = userToken,
-                    MethodsArgs = methodArgs
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                channel.BasicPublish("", commandQueueName, props, messageBytes);
-
-                while (true)
-                {
-                    BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(TimeOut, out ea))
-                    {
-                        if (ea.BasicProperties.CorrelationId == correlationId)
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-
-        private void InitializeConnection(string commandQueueName)
-        {
-            using (var channel = _connection.CreateModel())
-            {
-                var message = new MethodArgs
-                {
-                    MethodName = "InitializeConnection",
-                    UserToken = null,
-                    MethodsArgs = null
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                var replyTo = channel.QueueDeclare().QueueName;
-
-                var correlationId = Guid.NewGuid().ToString();
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = replyTo;
-                props.SetPersistent(true);
-
-                var consumer = new QueueingBasicConsumer(channel);
-                channel.BasicConsume(replyTo, true, consumer);
-
-                channel.BasicPublish("", commandQueueName, props, messageBytes);
-
-                while (true)
-                {
-                    BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(TimeOut, out ea))
-                    {
-                        if (correlationId == ea.BasicProperties.CorrelationId)
-                        {
-                            return;
-                        }
-                    }
-                    throw new Exception("Connection to server failed");
-                }
-            }
+            base.Close();
         }
     }
 }

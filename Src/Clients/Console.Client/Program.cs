@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using FalconSoft.Data.Management.Client.RabbitMQ;
 using FalconSoft.Data.Management.Client.SignalR;
 using FalconSoft.Data.Management.Common;
@@ -17,7 +19,7 @@ namespace FalconSoft.Data.Console
     class Program
     {
         private static ILogger _logger;
-        
+
         public static ILogger Logger
         {
             get { return _logger ?? (_logger = new Logger()); }
@@ -64,7 +66,7 @@ namespace FalconSoft.Data.Console
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
 
             ConsoleClientToken = FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console").Value;
-            
+
             var commandLineParser = new CommandLineParser();
             var withArgs = false;
             while (true)
@@ -87,7 +89,7 @@ namespace FalconSoft.Data.Console
                     {
                         case CommandLineParser.CommandType.Create:
                             Create(commandLineParser.CreateArguments);
-                            if(withArgs) return;
+                            if (withArgs) return;
                             break;
                         case CommandLineParser.CommandType.Get:
                             Get(commandLineParser.GetArguments);
@@ -137,8 +139,8 @@ namespace FalconSoft.Data.Console
                 return;
             }
             var metadataAdminFacade = FacadesFactory.CreateMetaDataAdminFacade();
-            metadataAdminFacade.CreateDataSourceInfo(dataSource, createArguments.UserName??"1");
-            System.Console.WriteLine("Create Success "+dataSource.DataSourcePath);
+            metadataAdminFacade.CreateDataSourceInfo(dataSource, createArguments.UserName ?? "1");
+            System.Console.WriteLine("Create Success " + dataSource.DataSourcePath);
         }
 
         private static void WriteHelpInfoToConsole(CommandLineParser commandLineParser)
@@ -173,7 +175,7 @@ namespace FalconSoft.Data.Console
             var data = reactiveDataQueryFacade.GetData(ConsoleClientToken, getArguments.DataSourceUrn).ToArray();
             var executionSpan = DateTime.Now - startTime;
             CSVHelper.WriteRecords(data, getArguments.FileName, getArguments.Separator);
-            System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds.", getArguments.DataSourceUrn, getArguments.FileName, executionSpan);            
+            System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds.", getArguments.DataSourceUrn, getArguments.FileName, executionSpan);
         }
 
         private static void Submit(CommandLineParser.SubmitParams submitParams)
@@ -182,15 +184,65 @@ namespace FalconSoft.Data.Console
             var metaDataFacade = FacadesFactory.CreateMetaDataFacade();
             var dsInfo = metaDataFacade.GetDataSourceInfo(submitParams.DataSourceUrn, ConsoleClientToken);
 
-            var sw = new Stopwatch();
             Trace.WriteLine("   Parsing start");
-            
-            var recordsToUpdate = CSVHelper.ReadRecords(dsInfo, submitParams.UpdateFileName, submitParams.Separator);
-            var recordsToDelete = CSVHelper.ReadRecordsToDelete(submitParams.DeleteFileName);
-            
+
+            var fileToUpdateExist = File.Exists(submitParams.UpdateFileName);
+            var fileToDeleteExist = File.Exists(submitParams.DeleteFileName);
+
+            if (!fileToDeleteExist && !fileToUpdateExist)
+            {
+                System.Console.WriteLine("Files not Exist");
+                return;
+            }
+
             var commandFacade = FacadesFactory.CreateCommandFacade();
-            commandFacade.SubmitChanges(submitParams.DataSourceUrn, ConsoleClientToken, recordsToUpdate, null, (r) => System.Console.WriteLine("Submit Success"), (ex) => System.Console.WriteLine("Submit Failed"),
-                (key, msg) => System.Console.WriteLine(msg));
+
+            if (new FileInfo(submitParams.UpdateFileName).Length < 2000000)
+            {
+                var recordsToUpdate = fileToUpdateExist
+                    ? CSVHelper.ReadRecords(dsInfo, submitParams.UpdateFileName, submitParams.Separator)
+                    : null;
+                var recordsToDelete = fileToDeleteExist
+                    ? CSVHelper.ReadRecordsToDelete(submitParams.DeleteFileName)
+                    : null;
+
+                commandFacade.SubmitChanges(submitParams.DataSourceUrn, ConsoleClientToken, recordsToUpdate,
+                    recordsToDelete,
+                    r => System.Console.WriteLine("Submit Success"), ex => System.Console.WriteLine("Submit Failed"),
+                    (key, msg) => System.Console.WriteLine(msg));
+            }
+            else
+            {
+                if (fileToDeleteExist)
+                {
+                    var recordsToDelete = CSVHelper.ReadRecordsToDelete(submitParams.DeleteFileName);
+                    commandFacade.SubmitChanges(submitParams.DataSourceUrn, ConsoleClientToken, null, recordsToDelete,
+                    r => System.Console.WriteLine("Submit Of Deleted Records Success"), ex => System.Console.WriteLine("Submit Of Deleted Records Failed"),
+                    (key, msg) => System.Console.WriteLine(msg));
+                }
+                if (!fileToUpdateExist) return;
+                foreach (var portionOfData in CSVHelper.ReadBigRecords(dsInfo, submitParams.UpdateFileName, submitParams.Separator))
+                {
+                    System.Console.WriteLine("Read {0} Lines from file", portionOfData.Count());
+                    var are = new AutoResetEvent(false);
+                    Task.Factory.StartNew(()=>
+                    commandFacade.SubmitChanges(submitParams.DataSourceUrn, ConsoleClientToken, portionOfData, null,
+                        r =>
+                        {
+                            System.Console.WriteLine("Submit Of Updated Records Success");
+                            are.Set();
+                        },
+                        ex =>
+                        {
+                            System.Console.WriteLine(
+                                "Submit Of Updated Records Failed, Exception Message - {0}, Inner Exception - {1}",
+                                ex.Message, ex.InnerException);
+                            are.Set();
+                        },
+                        (key, msg) => System.Console.WriteLine(msg)));
+                    are.WaitOne();
+                }
+            }
         }
     }
 }
