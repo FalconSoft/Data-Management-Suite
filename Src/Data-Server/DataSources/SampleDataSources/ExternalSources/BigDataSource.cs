@@ -12,7 +12,7 @@ namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
         public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
         public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
-            using (var parser = new TextFieldParser(@"c:\data\300000x200.csv"))
+            using (var parser = new TextFieldParser(@"..\..\..\DataSources\SampleDataSources\Samples\1000x200.csv"))
             {
                 string separator = @",";
                 parser.SetDelimiters(new[] { separator });
