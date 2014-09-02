@@ -46,9 +46,16 @@ namespace FalconSoft.Data.Server.SampleDataSources
                   DataProvider = new YahooEquityRefDataProvider(),
                   ProviderInfo = yahoo
               };
+              // BigData
+              var bigData = ExternalExtensions.CreateDefaultDataSource(new[] { "ID" }, typeof(BigData));
+              var bigDataContext = new DataProvidersContext
+              {
+                  Urn = bigData.DataSourcePath,
+                  DataProvider = new BigDataSource(),
+                  ProviderInfo = bigData
+              };
 
-
-            return new[] {quoteContext, testContext, calcContext ,yahooContext};
+              return new[] { quoteContext, testContext, calcContext, yahooContext, bigDataContext };
 
         }
 

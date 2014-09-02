@@ -37,6 +37,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\HtmlAgilityPack.1.4.6\lib\Net40\HtmlAgilityPack.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -51,6 +52,7 @@
     </Compile>
     <Compile Include="ExternalExtensions.cs" />
     <Compile Include="ExternalProviderCatalog.cs" />
+    <Compile Include="ExternalSources\BigDataSource.cs" />
     <Compile Include="ExternalSources\Calculator.cs" />
     <Compile Include="ExternalSources\MyTestData.cs" />
     <Compile Include="ExternalSources\QuotesFeed.cs" />
