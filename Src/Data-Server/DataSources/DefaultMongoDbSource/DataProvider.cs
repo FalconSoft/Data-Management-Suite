@@ -232,6 +232,11 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             if (!db.CollectionExists(name))
                 throw new InvalidDataException("No collection with such name exists!!!");
             var collection = db.GetCollection(name);
+            foreach (var keyField in DataSourceInfo.GetKeyFieldsName())
+            {
+                collection.EnsureIndex(keyField);    
+            }
+            
             return collection;
         }
 
