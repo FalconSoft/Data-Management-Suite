@@ -127,12 +127,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                                 }
                             }
                         }
-                        //else
-                        //{
-                        //    channel.Dispose();
-                        //    HasConnection = false;
-                        //    break;
-                        //}
                     }
                 }, _cts.Token)
                 .ContinueWith(t => subject.OnCompleted());
@@ -281,10 +275,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                     catch (Exception ex)
                     {
-                        if (ex is AlreadyClosedException)
+                        if (ex is AlreadyClosedException || ex is NotSupportedException)
                             RestoreConnection();
 
-                        if (ex is NullReferenceException || ex is TimeoutException || ex is AlreadyClosedException)
+                        if (ex is NullReferenceException || ex is TimeoutException || ex is AlreadyClosedException || ex is NotSupportedException)
                         {
                             ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
                         }
