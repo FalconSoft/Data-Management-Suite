@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -26,6 +27,17 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const int TimeOut = 2000;
         private readonly Timer _keepAliveTimer;
 
+        private bool HasConnection
+        {
+            get { return _hasConnection; }
+            set
+            {
+                _hasConnection = value;
+                if (!_hasConnection)
+                    Trace.WriteLine("Connectio Lost" + new StackTrace().GetFrame(2).GetMethod().Name);
+            }
+        }
+
         public RabbitMQFacadeBase(string hostName, string userName, string password)
         {
             factory = new ConnectionFactory
@@ -48,10 +60,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         private void KeepAlive(object sender, ElapsedEventArgs e)
         {
-            if (!_hasConnection && KeepAliveAction != null)
+            if (!HasConnection && KeepAliveAction != null)
             {
                 KeepAliveAction();
-                if (_hasConnection && ServerReconnectedEvent != null)
+                if (HasConnection && ServerReconnectedEvent != null)
                     ServerReconnectedEvent(this, new ServerReconnectionArgs());
             }
             else
@@ -78,7 +90,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             try
             {
-                if (!_hasConnection)
+                if (!HasConnection)
                     return default(IEnumerable<T>);
 
                 var channel = connection.CreateModel();
@@ -116,7 +128,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         else
                         {
                             channel.Dispose();
-                            _hasConnection = false;
+                            HasConnection = false;
                             break;
                         }
                     }
@@ -139,7 +151,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             try
             {
-                if (!_hasConnection)
+                if (!HasConnection)
                 {
                     if (typeof (T).IsArray)
                         return (T)(object)Array.CreateInstance(typeof (T).GetElementType(), 0);
@@ -165,7 +177,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         }
                         else
                         {
-                            _hasConnection = false;
+                            HasConnection = false;
                             return default(T);
                         }
                     }
@@ -185,7 +197,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             try
             {
-                if (!_hasConnection)
+                if (!HasConnection)
                     return;
 
                 using (var channel = connection.CreateModel())
@@ -206,7 +218,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         }
                         else
                         {
-                            _hasConnection = false;
+                            HasConnection = false;
                             break;
                         }
                     }
@@ -224,7 +236,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             try
             {
-                if (!_hasConnection)
+                if (!HasConnection)
                     return;
 
                 using (var channel = connection.CreateModel())
@@ -318,9 +330,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             lock (_restoreConnectionLock)
             {
-                _hasConnection = false;
                 _connection = factory.CreateConnection();
                 _commandChannel = _connection.CreateModel();
+                HasConnection = true;
             }
         }
 
@@ -390,17 +402,17 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         {
                             if (correlationId == ea.BasicProperties.CorrelationId)
                             {
-                                _hasConnection = true;
+                                HasConnection = true;
                                 return;
                             }
                         }
-                        _hasConnection = false;
+                        HasConnection = false;
                         throw new TimeoutException("Connection to server failed due to time out !");
                     }
                 }
                 else
                 {
-                    _hasConnection = false;
+                    HasConnection = false;
                     throw new NullReferenceException("Cannot connect to server!");
                 }
             }
