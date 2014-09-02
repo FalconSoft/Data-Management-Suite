@@ -24,7 +24,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private IModel _commandChannel;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private volatile bool _hasConnection;
-        private const int TimeOut = 2000;
+        private const int TimeOut = 5000;
         private readonly Timer _keepAliveTimer;
 
         private bool HasConnection
@@ -40,7 +40,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public RabbitMQFacadeBase(string hostName, string userName, string password)
         {
-            factory = new ConnectionFactory
+            _factory = new ConnectionFactory
             {
                 HostName = hostName,
                 UserName = userName,
@@ -83,7 +83,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         protected Action KeepAliveAction;
         private readonly object _restoreConnectionLock = new object();
-        private ConnectionFactory factory;
+        private readonly ConnectionFactory _factory;
 
         protected IEnumerable<T> RPCServerTaskExecuteEnumerable<T>(IConnection connection,
           string commandQueueName, string methodName, string userToken, object[] methodArgs)
@@ -91,7 +91,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             try
             {
                 if (!HasConnection)
-                    return default(IEnumerable<T>);
+                {
+                    CheckConnection(commandQueueName);
+                }
 
                 var channel = connection.CreateModel();
 
@@ -106,7 +108,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     while (true)
                     {
                         BasicDeliverEventArgs ea;
-                        if (consumer.Queue.Dequeue(TimeOut, out ea))
+                        if (consumer.Queue.Dequeue(20000, out ea))
                         {
                             if (correlationId == ea.BasicProperties.CorrelationId)
                             {
@@ -125,12 +127,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                                 }
                             }
                         }
-                        else
-                        {
-                            channel.Dispose();
-                            HasConnection = false;
-                            break;
-                        }
+                        //else
+                        //{
+                        //    channel.Dispose();
+                        //    HasConnection = false;
+                        //    break;
+                        //}
                     }
                 }, _cts.Token)
                 .ContinueWith(t => subject.OnCompleted());
@@ -153,10 +155,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 if (!HasConnection)
                 {
-                    if (typeof (T).IsArray)
-                        return (T)(object)Array.CreateInstance(typeof (T).GetElementType(), 0);
-
-                    return default(T);
+                    CheckConnection(commandQueueName);
                 }
 
                 using (var channel = connection.CreateModel())
@@ -188,6 +187,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 if (ServerErrorHandler != null)
                     ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
 
+                if (typeof(T).IsArray)
+                    return (T)(object)Array.CreateInstance(typeof(T).GetElementType(), 0);
+
                 return default(T);
             }
         }
@@ -198,8 +200,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             try
             {
                 if (!HasConnection)
-                    return;
-
+                {
+                    CheckConnection(commandQueueName);
+                }
                 using (var channel = connection.CreateModel())
                 {
                     var correlationId = Guid.NewGuid().ToString();
@@ -254,7 +257,62 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         }
 
         protected IObservable<T> CreateExchngeObservable<T>(IModel channel, string exchangeName,
-            string exchangeType, string routingKey, out string bindingQueueName)
+            string exchangeType, string routingKey, string commandQueue, string methodName, string userToken, object[] methodArgs)
+        {
+            var subjects = CreateSubject<T>(channel, exchangeName, exchangeType, routingKey);
+
+            var func = new Func<IObserver<T>, IDisposable>(subj =>
+            {
+                var dispoce = subjects.Subscribe(subj);
+
+                var keepAlive = new EventHandler<ServerReconnectionArgs>((sender, evArgs) =>
+                {
+                    try
+                    {
+                        CheckConnection(commandQueue);
+
+                        dispoce.Dispose();
+
+                        subjects = CreateSubject<T>(channel, exchangeName, exchangeType, routingKey);
+
+                        dispoce = subjects.Subscribe(subj);
+
+                        RPCServerTaskExecuteAsync(Connection, commandQueue, methodName, userToken, methodArgs);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex is AlreadyClosedException)
+                            RestoreConnection();
+
+                        if (ex is NullReferenceException || ex is TimeoutException || ex is AlreadyClosedException)
+                        {
+                            ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
+                        }
+                        else
+                        {
+                            dispoce.Dispose();
+
+                            throw;
+                        }
+                    }
+                });
+
+                ServerReconnectedEvent += keepAlive;
+
+                return Disposable.Create(() =>
+                {
+                    ServerReconnectedEvent -= keepAlive;
+                    dispoce.Dispose();
+                });
+            });
+
+            RPCServerTaskExecuteAsync(Connection, commandQueue, methodName, userToken, methodArgs);
+
+            return Observable.Create(func);
+        }
+
+        private IObservable<T> CreateSubject<T>(IModel channel, string exchangeName,
+            string exchangeType, string routingKey)
         {
             var subjects = new Subject<T>();
 
@@ -262,8 +320,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             var queueName = CommandChannel.QueueDeclare().QueueName;
             channel.QueueBind(queueName, exchangeName, routingKey);
-
-            bindingQueueName = queueName;
 
             var con = new QueueingBasicConsumer(CommandChannel);
             channel.BasicConsume(queueName, true, con);
@@ -294,7 +350,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 }
             }, con, _cts.Token);
 
-            var func = new Func<IObserver<T>, IDisposable>(subj =>
+            return Observable.Create<T>(subj =>
             {
                 var dispoce = subjects.Subscribe(subj);
 
@@ -306,8 +362,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     taskComplete = false;
                 });
             });
-
-            return Observable.Create(func);
         }
 
         protected void InitializeConnection(string commandQueueName)
@@ -318,7 +372,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             }
             catch (Exception ex)
             {
-                if (ex is AlreadyClosedException)
+                if (ex is AlreadyClosedException || ex is NotSupportedException)
                     RestoreConnection();
 
                 if (ServerErrorHandler != null)
@@ -330,7 +384,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             lock (_restoreConnectionLock)
             {
-                _connection = factory.CreateConnection();
+                _connection = _factory.CreateConnection();
                 _commandChannel = _connection.CreateModel();
                 HasConnection = true;
             }
@@ -416,7 +470,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     throw new NullReferenceException("Cannot connect to server!");
                 }
             }
-           
+
             finally
             {
                 if (channel != null)

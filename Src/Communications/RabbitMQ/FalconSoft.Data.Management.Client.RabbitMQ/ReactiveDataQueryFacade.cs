@@ -55,41 +55,40 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
             var routingKey = dataSourcePath + "." + userToken;
-            string bindingQueueName;
 
             var observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
-                "topic", routingKey, out bindingQueueName);
+                "topic", routingKey, RPCQueryName, "GetDataChanges", userToken, new object[] { dataSourcePath, filterRules });
 
-            RPCServerTaskExecuteAsync(Connection, RPCQueryName, "GetDataChanges", userToken,
-                new object[] { dataSourcePath, filterRules });
+            //RPCServerTaskExecuteAsync(Connection, RPCQueryName, "GetDataChanges", userToken,
+            //    new object[] { dataSourcePath, filterRules });
 
-            var result = Observable.Create<RecordChangedParam[]>(subj =>
-            {
-                var dispoce = observable.Subscribe(subj);
+            //var result = Observable.Create<RecordChangedParam[]>(subj =>
+            //{
+            //    var dispoce = observable.Subscribe(subj);
 
-                var keepAlive = new EventHandler<ServerReconnectionArgs>((obj, eargs) =>
-                {
-                    dispoce.Dispose();
+            //    var keepAlive = new EventHandler<ServerReconnectionArgs>((obj, eargs) =>
+            //    {
+            //        dispoce.Dispose();
 
-                    observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
-                        "topic", routingKey, out bindingQueueName);
+            //        observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
+            //            "topic", routingKey, RPCQueryName, "GetDataChanges", userToken, new object[] { dataSourcePath, filterRules });
 
-                    RPCServerTaskExecuteAsync(Connection, RPCQueryName, "GetDataChanges", userToken,
-                        new object[] {dataSourcePath, filterRules});
+            //        RPCServerTaskExecuteAsync(Connection, RPCQueryName, "GetDataChanges", userToken,
+            //            new object[] {dataSourcePath, filterRules});
 
-                    dispoce = observable.Subscribe(subj);
-                });
+            //        dispoce = observable.Subscribe(subj);
+            //    });
 
-                ServerReconnectedEvent += keepAlive;
+            //    ServerReconnectedEvent += keepAlive;
 
-                return Disposable.Create(() =>
-                {
-                    ServerReconnectedEvent -= keepAlive;
-                    dispoce.Dispose();
-                });
-            });
+            //    return Disposable.Create(() =>
+            //    {
+            //        ServerReconnectedEvent -= keepAlive;
+            //        dispoce.Dispose();
+            //    });
+            //});
 
-            return result;
+            return observable;
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken,

@@ -93,38 +93,11 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public IObservable<Dictionary<string, AccessLevel>> GetPermissionChanged(string userToken)
         {
             var routingKeys = userToken;
-            string bindingQueueName;
+
             var observable = CreateExchngeObservable<Dictionary<string, AccessLevel>>(CommandChannel,
-                PermissionSecurityFacadeExchangeName, "direct", routingKeys, out bindingQueueName);
+                PermissionSecurityFacadeExchangeName, "direct", routingKeys, PermissionSecurityFacadeQueueName, "GetPermissionChanged", userToken, null);
 
-            RPCServerTaskExecuteAsync(Connection, PermissionSecurityFacadeQueueName, "GetPermissionChanged", userToken, null);
-
-            var result = Observable.Create<Dictionary<string, AccessLevel>>(subj =>
-            {
-                var dispoce = observable.Subscribe(subj);
-
-                var keepAlive = new EventHandler<ServerReconnectionArgs>((obj, eargs) =>
-                {
-                    dispoce.Dispose();
-
-                    observable = CreateExchngeObservable<Dictionary<string, AccessLevel>>(CommandChannel,
-                        PermissionSecurityFacadeExchangeName, "direct", routingKeys, out bindingQueueName);
-
-                    RPCServerTaskExecuteAsync(Connection, PermissionSecurityFacadeQueueName, "GetPermissionChanged", userToken, null);
-
-                    dispoce = observable.Subscribe(subj);
-                });
-
-                ServerReconnectedEvent += keepAlive;
-
-                return Disposable.Create(() =>
-                {
-                    ServerReconnectedEvent -= keepAlive;
-                    dispoce.Dispose();
-                });
-            });
-
-            return result;
+            return observable;
         }
 
         public void Dispose()
