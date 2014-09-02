@@ -6,34 +6,19 @@ using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
-    internal class CommandFacade : ICommandFacade
+    internal class CommandFacade : RabbitMQFacadeBase, ICommandFacade
     {
-        private readonly IConnection _connection;
-        private readonly IModel _commandChannel;
         private const int TimeOut = 2000;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
 
-        public CommandFacade(string hostName, string userName, string password)
+        public CommandFacade(string hostName, string userName, string password):base(hostName,userName,password)
         {
-            var factory = new ConnectionFactory
-            {
-                HostName = hostName,
-                UserName = userName,
-                Password = password,
-                VirtualHost = "/",
-                Protocol = Protocols.FromEnvironment(),
-                Port = AmqpTcpEndpoint.UseDefaultPort,
-                RequestedHeartbeat = 30
-            };
+           InitializeConnection(CommandFacadeQueueName);
 
-            _connection = factory.CreateConnection();
-            _commandChannel = _connection.CreateModel();
-
-            InitializeConnection(CommandFacadeQueueName);
+           KeepAliveAction = () => InitializeConnection(CommandFacadeQueueName);
         }
 
         public void SubmitChanges<T>(string dataSourcePath, string userToken, IEnumerable<T> changedRecords = null,
@@ -55,13 +40,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 if (changedRecords != null)
                 {
                     toUpdateQueueName = Guid.NewGuid().ToString();
-                    _commandChannel.QueueDeclare(toUpdateQueueName, false, false, false, null);
+                    CommandChannel.QueueDeclare(toUpdateQueueName, false, false, false, null);
                 }
 
                 if (deleted != null)
                 {
                     toDeleteQueueName = Guid.NewGuid().ToString();
-                    _commandChannel.QueueDeclare(toDeleteQueueName, false, false, false, null);
+                    CommandChannel.QueueDeclare(toDeleteQueueName, false, false, false, null);
                 }
 
                 var message = new MethodArgs
@@ -71,19 +56,19 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     MethodsArgs = new object[] {dataSourcePath, toUpdateQueueName, toDeleteQueueName}
                 };
 
-                var replyTo = _commandChannel.QueueDeclare().QueueName;
+                var replyTo = CommandChannel.QueueDeclare().QueueName;
 
                 var correlationId = Guid.NewGuid().ToString();
 
-                var props = _commandChannel.CreateBasicProperties();
+                var props = CommandChannel.CreateBasicProperties();
                 props.ReplyTo = replyTo;
                 props.CorrelationId = correlationId;
                 props.SetPersistent(true);
 
-                var consumer = new QueueingBasicConsumer(_commandChannel);
-                _commandChannel.BasicConsume(replyTo, false, consumer);
+                var consumer = new QueueingBasicConsumer(CommandChannel);
+                CommandChannel.BasicConsume(replyTo, false, consumer);
 
-                _commandChannel.BasicPublish("", CommandFacadeQueueName, props, BinaryConverter.CastToBytes(message));
+                CommandChannel.BasicPublish("", CommandFacadeQueueName, props, BinaryConverter.CastToBytes(message));
 
                 if (changedRecords != null)
                 {
@@ -104,7 +89,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                             var messageBytes = ms.ToArray();
 
-                            _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
+                            CommandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
 
                             changeRecordsList.Clear();
                         }
@@ -122,7 +107,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                         var messageBytes = ms.ToArray();
 
-                        _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
+                        CommandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
 
                         changeRecordsList.Clear();
 
@@ -134,7 +119,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         bf.Serialize(ms, data);
 
                         messageBytes = ms.ToArray();
-                        _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
+                        CommandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
                     }
                     else
                     {
@@ -146,7 +131,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                         var messageBytes = ms.ToArray();
 
-                        _commandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
+                        CommandChannel.BasicPublish("", toUpdateQueueName, null, messageBytes);
                     }
                 }
 
@@ -171,7 +156,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                             var messageBytes = ms.ToArray();
 
-                            _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
+                            CommandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
 
                             deletedList.Clear();
                         }
@@ -189,7 +174,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                         var messageBytes = ms.ToArray();
 
-                        _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
+                        CommandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
 
                         deletedList.Clear();
 
@@ -201,7 +186,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         bf.Serialize(ms, data);
 
                         messageBytes = ms.ToArray();
-                        _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
+                        CommandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
                     }
                     else
                     {
@@ -213,7 +198,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                         var messageBytes = ms.ToArray();
 
-                        _commandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
+                        CommandChannel.BasicPublish("", toDeleteQueueName, null, messageBytes);
                     }
                 }
 
@@ -249,51 +234,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             
         }
 
-        private void InitializeConnection(string commandQueueName)
+        public new void Close()
         {
-            using (var channel = _connection.CreateModel())
-            {
-                var message = new MethodArgs
-                {
-                    MethodName = "InitializeConnection",
-                    UserToken = null,
-                    MethodsArgs = null
-                };
-
-                var messageBytes = BinaryConverter.CastToBytes(message);
-
-                var replyTo = channel.QueueDeclare().QueueName;
-
-                var correlationId = Guid.NewGuid().ToString();
-
-                var props = channel.CreateBasicProperties();
-                props.CorrelationId = correlationId;
-                props.ReplyTo = replyTo;
-
-                var consumer = new QueueingBasicConsumer(channel);
-                channel.BasicConsume(replyTo, true, consumer);
-
-                channel.BasicPublish("",commandQueueName,props, messageBytes);
-
-                while (true)
-                {
-                    BasicDeliverEventArgs ea;
-                    if (consumer.Queue.Dequeue(TimeOut, out ea))
-                    {
-                        if (correlationId == ea.BasicProperties.CorrelationId)
-                        {
-                            return;
-                        }
-                    }
-                    throw new Exception("Connection to server failed");
-                }
-            }
-        }
-
-        public void Close()
-        {
-            _commandChannel.Close();
-            _connection.Close();
+            base.Close();
         }
 
     }

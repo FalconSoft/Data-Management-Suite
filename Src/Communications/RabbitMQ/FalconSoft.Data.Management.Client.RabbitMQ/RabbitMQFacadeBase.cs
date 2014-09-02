@@ -140,7 +140,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             try
             {
                 if (!_hasConnection)
+                {
+                    if (typeof (T).IsArray)
+                        return (T)(object)Array.CreateInstance(typeof (T).GetElementType(), 0);
+
                     return default(T);
+                }
 
                 using (var channel = connection.CreateModel())
                 {
