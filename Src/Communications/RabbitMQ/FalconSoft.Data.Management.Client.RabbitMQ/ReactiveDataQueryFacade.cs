@@ -149,7 +149,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         {
                             if (onFail != null)
                             {
-                                onFail("Connection to server is broken", null);
+                                onFail("Connection to server is broken",  new TimeoutException("TimeOut for respoce elapsed!"));
                             }
 
                             breakFlag = false;
@@ -186,9 +186,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         }
                         else
                         {
-                            if (onFail != null)
+                            if (breakFlag && onFail != null)
                             {
-                                onFail("Connection to server is broken", null);
+                                onFail("Connection to server is broken", new TimeoutException("TimeOut for respoce elapsed!"));
                             }
 
                             breakFlag = false;
