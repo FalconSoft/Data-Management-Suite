@@ -108,7 +108,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     while (true)
                     {
                         BasicDeliverEventArgs ea;
-                        if (consumer.Queue.Dequeue(20000, out ea))
+                        if (consumer.Queue.Dequeue(TimeOut, out ea))
                         {
                             if (correlationId == ea.BasicProperties.CorrelationId)
                             {
@@ -125,6 +125,14 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                                 {
                                     subject.OnNext(dictionary);
                                 }
+                            }
+                        }
+                        else
+                        {
+                            if (!HasConnection)
+                            {
+                                channel.Dispose();
+                                break;
                             }
                         }
                     }
@@ -170,8 +178,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         }
                         else
                         {
-                            HasConnection = false;
-                            return default(T);
+                            if (!HasConnection)
+                            {
+                                if (typeof(T).IsArray)
+                                    return (T)(object)Array.CreateInstance(typeof(T).GetElementType(), 0);
+                                return default(T);
+                            }
                         }
                     }
                 }
@@ -215,8 +227,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         }
                         else
                         {
-                            HasConnection = false;
-                            break;
+                            if (!HasConnection)
+                            {
+                                return;
+                            }
                         }
                     }
                 }
