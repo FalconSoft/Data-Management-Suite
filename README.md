@@ -43,6 +43,9 @@ FalconSoft Data Management Suite is organized into several high level assemblies
 ####Communications
 FalconSoft Data Server implementation does not depend on any specific communication technology. Even more, we made it easy to implement custom communication mechanisms, which better suits your infrastructure.
 
+- RabbitMQ
+ * **Client.RabbitMQ** - Client assembly what implements façades communication with [RabbitMQ](http://www.rabbitmq.com/). 
+ * **Server.RabbitMQ** - Server side assembly what implements broker communication with [RabbitMQ](http://www.rabbitmq.com/) 
 - SignalR
  * **Client.SignalR** - Client assembly what implements façades communication with [Microsoft SignalR](http://www.asp.net/signalr). 
  * **Server.SignalR** - Server side assembly what implements facades communication with [Microsoft SignalR](http://www.asp.net/signalr) 
@@ -59,9 +62,9 @@ A simple library what references server-side logic into clients AppDomain. It do
  - [Reactive Extensions (RX)](http://msdn.microsoft.com/en-gb/data/gg577609.aspx) - is a library to compose asynchronous and event-based programs using observable collections and LINQ-style query operators.
  - [Json.Net](http://json.codeplex.com/) -  is a popular high-performance JSON framework for .NET
  - [log4net](http://logging.apache.org/log4net) - is a logging library
- - [Asp.Net SignalR](http://www.asp.net/signalr) -  is a Microsoft Asp.Net technology to enable bi-directional communication between the client and server. However, communication layer can be elegantly implemented with other technologies e.g. RabbitMQ, ZeroMQ, Tibco ...
+ - [RabbitMQ](http://www.rabbitmq.com/) - is a message broker to enable communication between the client and server.
+ - [Asp.Net SignalR](http://www.asp.net/signalr) -  is a Microsoft Asp.Net technology to enable bi-directional communication between the client and server. However, communication layer can be elegantly implemented with other technologies e.g. ZeroMQ, Tibco ...
  - [DevExpress for WPF](https://www.devexpress.com/Products/NET/Controls/WPF) - is a commercial WPF controls library
- - [Extended WPF Toolkit™ Community Edition](https://wpftoolkit.codeplex.com) - is a collection of WPF controls, components and utilities for creating Windows applications.
  - [IronPython](http://ironpython.net) is an open-source implementation of the Python programming language which is tightly integrated with the .NET Framework.
  - [CS Script](http://www.csscript.net/) is a CLR based scripting system which uses ECMA-compliant C# as a programming language.
  - [AvalonEdit](http://avalonedit.net) - is a WPF-based text editor component
