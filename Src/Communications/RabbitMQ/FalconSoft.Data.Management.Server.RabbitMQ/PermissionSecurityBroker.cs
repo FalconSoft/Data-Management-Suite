@@ -19,7 +19,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string PermissionSecurityFacadeQueueName = "PermissionSecurityFacadeRPC";
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
         private readonly object _establishConnectionLock = new object();
-        private bool _keepAlive = true;
+        private volatile bool _keepAlive = true;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
         private readonly List<string> _getPermissionChangesDisposables = new List<string>();
@@ -94,6 +94,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
+            if (!_keepAlive) return;
+
             _logger.Debug(string.Format(DateTime.Now + " PermissionSecurityBroker. Method Name {0}; User Token {1}; Params {2}",
                message.MethodName,
                message.UserToken ?? string.Empty,
@@ -226,7 +228,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             if (_getPermissionChangesDisposables.Contains(userToken)) return;
 
-            _permissionSecurityFacade.GetPermissionChanged(userToken).Subscribe(data =>
+             _permissionSecurityFacade.GetPermissionChanged(userToken).Subscribe(data =>
             {
                 lock (_establishConnectionLock)
                 {
@@ -269,6 +271,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         public void Dispose()
         {
             _keepAlive = false;
+
             _cts.Cancel();
             _cts.Dispose();
             _commandChannel.Close();

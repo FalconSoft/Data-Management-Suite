@@ -19,7 +19,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly ILogger _logger;
         private IModel _commandChannel;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
-        private bool _keepAlive = true;
+        private volatile bool _keepAlive = true;
         private CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
 
@@ -84,6 +84,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
+            if (!_keepAlive) return;
+
             switch (message.MethodName)
             {
                 case "InitializeConnection":

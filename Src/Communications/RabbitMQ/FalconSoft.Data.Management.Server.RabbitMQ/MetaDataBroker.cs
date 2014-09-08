@@ -16,13 +16,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly IMetaDataAdminFacade _metaDataAdminFacade;
         private readonly ILogger _logger;
         private IModel _commandChannel;
-        private readonly Task _task;
         private const string MetadataQueueName = "MetaDataFacadeRPC";
         private const string MetadataExchangeName = "MetaDataFacadeExchange";
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
         private readonly object _establishConnectionLock = new object();
-        private bool _keepAlive = true;
-        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private volatile bool _keepAlive = true;
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
 
         public MetaDataBroker(string hostName, string userName, string password, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
@@ -61,7 +60,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             var consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(MetadataQueueName, false, consumer);
 
-            _task = Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(() =>
             {
                 while (_keepAlive)
                 {
@@ -97,12 +96,19 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                             }
                         }
                     }
+
+                    catch (NullReferenceException ex)
+                    {
+                        logger.Debug("MetaDataBroker failed due to wrong parameters", ex);
+                    }
                 }
             }, _cts.Token);
         }
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
+            if (!_keepAlive) return;
+
             _logger.Debug(string.Format(DateTime.Now + " MetaDataBroker. Method Name {0}; User Token {1}; Params {2}",
               message.MethodName,
               message.UserToken ?? string.Empty,
@@ -692,6 +698,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         public void Dispose()
         {
             _keepAlive = false;
+
+            _metaDataAdminFacade.ObjectInfoChanged -= OnObjectInfoChanged;
+
             _cts.Cancel();
             _cts.Dispose();
             _commandChannel.Close();

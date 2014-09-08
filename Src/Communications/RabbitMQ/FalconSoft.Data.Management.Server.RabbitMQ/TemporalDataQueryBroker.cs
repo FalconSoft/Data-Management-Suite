@@ -20,7 +20,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private IModel _commandChannel;
         private const string TemporalDataQueryFacadeQueryName = "TemporalDataQueryFacadeRPC";
         private const int Limit = 100;
-        private bool _keepAlive = true;
+        private volatile bool _keepAlive = true;
         private CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
 
@@ -86,6 +86,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
+            if (!_keepAlive) return;
+
             _logger.Debug(string.Format(DateTime.Now + " TemporalDataQueryBroker. Method Name {0}; User Token {1}; Params {2}",
                message.MethodName,
                message.UserToken ?? string.Empty,

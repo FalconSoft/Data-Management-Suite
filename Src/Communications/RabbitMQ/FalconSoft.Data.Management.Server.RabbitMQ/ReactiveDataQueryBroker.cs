@@ -21,7 +21,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string ReactiveDataQueryFacadeQueueName = "ReactiveDataQueryFacadeRPC";
         private const int Limit = 100;
         private readonly object _establishConnectionLock = new object();
-        private bool _keepAlive = true;
+        private volatile bool _keepAlive = true;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
         private readonly Dictionary<string, IDisposable> _getDataChangesDispocebles = new Dictionary<string, IDisposable>();
@@ -110,6 +110,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
+            if (!_keepAlive) return;
+
             _logger.Debug(string.Format(DateTime.Now + " ReactiveDataQueryBroker. Method Name {0}; User Token {1}; Params {2}",
                message.MethodName,
                message.UserToken ?? string.Empty,
@@ -498,6 +500,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         public void Dispose()
         {
             _keepAlive = false;
+            
+            foreach (var dispoceble in _getDataChangesDispocebles.Values)
+            {
+                dispoceble.Dispose();
+            }
+            
             _cts.Cancel();
             _cts.Dispose();
             _commandChannel.Close();
