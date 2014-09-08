@@ -173,7 +173,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         {
                             if (ea.BasicProperties.CorrelationId == correlationId)
                             {
-                                return BinaryConverter.CastTo<T>(ea.Body);
+                                return CastTo<T>(ea.Body);
                             }
                         }
                         else
@@ -343,7 +343,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     {
                         var ea = consumer.Queue.Dequeue();
 
-                        var responce = BinaryConverter.CastTo<RabbitMQResponce>(ea.Body);
+                        var responce = CastTo<RabbitMQResponce>(ea.Body);
 
                         if (responce.LastMessage) break;
 
@@ -394,7 +394,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 _connection = _factory.CreateConnection();
                 _commandChannel = _connection.CreateModel();
-                HasConnection = true;
             }
         }
 
@@ -488,16 +487,19 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         private byte[] MethdoArgsToByte(string methodName, string userToken, object[] methodArgs)
         {
-            var bf = new BinaryFormatter();
-            var ms = new MemoryStream();
-            bf.Serialize(ms, new MethodArgs
+            using (var ms = new MemoryStream())
             {
-                MethodName = methodName,
-                UserToken = userToken,
-                MethodsArgs = methodArgs
-            });
+                var bf = new BinaryFormatter();
 
-            return ms.ToArray();
+                bf.Serialize(ms, new MethodArgs
+                {
+                    MethodName = methodName,
+                    UserToken = userToken,
+                    MethodsArgs = methodArgs
+                });
+
+                return ms.ToArray();
+            }
         }
 
         private T CastTo<T>(byte[] byteArray)
@@ -505,11 +507,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             if (!byteArray.Any())
                 return default(T);
 
-            var memStream = new MemoryStream();
-            var binForm = new BinaryFormatter();
-            memStream.Write(byteArray, 0, byteArray.Length);
-            memStream.Seek(0, SeekOrigin.Begin);
-            return (T)binForm.Deserialize(memStream);
+            using (var memStream = new MemoryStream())
+            {
+                var binForm = new BinaryFormatter();
+                memStream.Write(byteArray, 0, byteArray.Length);
+                memStream.Seek(0, SeekOrigin.Begin);
+                return (T) binForm.Deserialize(memStream);
+            }
         }
     }
 }
