@@ -103,41 +103,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 var subject = new Subject<T>();
 
-                Task.Factory.StartNew(() =>
-                {
-                    while (true)
-                    {
-                        BasicDeliverEventArgs ea;
-                        if (consumer.Queue.Dequeue(TimeOut, out ea))
-                        {
-                            if (correlationId == ea.BasicProperties.CorrelationId)
-                            {
-                                var responce = CastTo<RabbitMQResponce>(ea.Body);
-
-                                if (responce.LastMessage)
-                                {
-                                    channel.Dispose();
-                                    break;
-                                }
-
-                                var list = (List<T>)responce.Data;
-                                foreach (var dictionary in list)
-                                {
-                                    subject.OnNext(dictionary);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (!HasConnection)
-                            {
-                                channel.Dispose();
-                                break;
-                            }
-                        }
-                    }
-                }, _cts.Token)
-                .ContinueWith(t => subject.OnCompleted());
+                Task.Factory.StartNew(() => ConsumerDataToSubject(consumer, channel, subject, correlationId), _cts.Token)
+                    .ContinueWith(t => subject.OnCompleted());
 
                 return subject.ToEnumerable();
             }
@@ -317,6 +284,41 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             RPCServerTaskExecuteAsync(Connection, commandQueue, methodName, userToken, methodArgs);
 
             return Observable.Create(func);
+        }
+
+        private void ConsumerDataToSubject<T>(QueueingBasicConsumer consumer, IModel channel, Subject<T> subject, string correlationId)
+        {
+            while (true)
+            {
+                BasicDeliverEventArgs ea;
+                if (consumer.Queue.Dequeue(TimeOut, out ea))
+                {
+                    if (correlationId == ea.BasicProperties.CorrelationId)
+                    {
+                        var responce = CastTo<RabbitMQResponce>(ea.Body);
+
+                        if (responce.LastMessage)
+                        {
+                            channel.Dispose();
+                            break;
+                        }
+
+                        var list = (List<T>)responce.Data;
+                        foreach (var dictionary in list)
+                        {
+                            subject.OnNext(dictionary);
+                        }
+                    }
+                }
+                else
+                {
+                    if (!HasConnection)
+                    {
+                        channel.Dispose();
+                        break;
+                    }
+                }
+            }
         }
 
         private IObservable<T> CreateSubject<T>(IModel channel, string exchangeName,

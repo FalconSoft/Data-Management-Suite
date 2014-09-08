@@ -144,22 +144,10 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 var changeRecordsEnumerator = toUpdateDataSubject.ToEnumerable();
                 var deletedEnumerator = toDeleteDataSubject.ToEnumerable();
 
-                var are1 = toUpdateQueueNameLocal != null ? new AutoResetEvent(false) : null;
-                var are2 = toDeleteQueueNameLocal != null ? new AutoResetEvent(false) : null;
-
                 var task1 = Task.Factory.StartNew(
-                    () =>
-                    {
-                        if (are1 != null) are1.Set();
-                        Trace.WriteLine("********   To Array call! " + DateTime.Now.ToString("fffff"));
-                        return toUpdateQueueNameLocal != null ? changeRecordsEnumerator.ToArray() : null;
-                    });
+                    () => toUpdateQueueNameLocal != null ? changeRecordsEnumerator.ToArray() : null);
 
-                var task2 = Task.Factory.StartNew(() =>
-                {
-                    if (are2 != null) are2.Set();
-                    return toDeleteQueueNameLocal != null ? deletedEnumerator.ToArray() : null;
-                });
+                var task2 = Task.Factory.StartNew(() => toDeleteQueueNameLocal != null ? deletedEnumerator.ToArray() : null);
 
                 //initialise submit changes method work.
                 Task.Factory.StartNew(() =>
@@ -181,7 +169,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(ri));
                     }, ex =>
                     {
-                        
+                    
                     });
                 }, _cts.Token);
 
@@ -192,44 +180,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     var con = new QueueingBasicConsumer(_commandChannel);
                     _commandChannel.BasicConsume(toUpdateQueueNameLocal, false, con);
 
-                    Task.Factory.StartNew(obj =>
-                    {
-                        var consumer = (QueueingBasicConsumer)obj;
-
-                        are1.WaitOne();
-                        are1.Dispose();
-
-                        while (true)
-                        {
-                            var ea = consumer.Queue.Dequeue();
-
-                            using (var memStream = new MemoryStream())
-                            {
-                                var binForm = new BinaryFormatter();
-                                memStream.Write(ea.Body, 0, ea.Body.Length);
-                                memStream.Seek(0, SeekOrigin.Begin);
-
-                                var responce = (RabbitMQResponce) binForm.Deserialize(memStream);
-
-                                if (responce.LastMessage)
-                                {
-                                    break;
-                                }
-
-                                var data = (List<Dictionary<string, object>>) responce.Data;
-
-                                foreach (var dictionary in data)
-                                {
-                                    toUpdateDataSubject.OnNext(dictionary);
-                                }
-
-                            }
-                        }
-                    }, con, _cts.Token).ContinueWith(t =>
-                    {
-                        toUpdateDataSubject.OnCompleted();
-                        Trace.WriteLine("****** Complete call! " + DateTime.Now.ToString("fffff"));
-                    });
+                    Task.Factory.StartNew(() => ConsumerDataToSubject(con, toUpdateDataSubject), _cts.Token)
+                        .ContinueWith(t => toUpdateDataSubject.OnCompleted());
                 }
 
                 //collect record keys to delete
@@ -238,43 +190,43 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     var con = new QueueingBasicConsumer(_commandChannel);
                     _commandChannel.BasicConsume(toDeleteQueueNameLocal, false, con);
 
-                    Task.Factory.StartNew(obj =>
-                    {
-                        var consumer = (QueueingBasicConsumer)obj;
-
-                        are2.WaitOne();
-                        are2.Dispose();
-
-                        while (true)
-                        {
-                            var ea = consumer.Queue.Dequeue();
-
-                            using (var memStream = new MemoryStream())
-                            {
-                                var binForm = new BinaryFormatter();
-                                memStream.Write(ea.Body, 0, ea.Body.Length);
-                                memStream.Seek(0, SeekOrigin.Begin);
-
-                                var responce = (RabbitMQResponce) binForm.Deserialize(memStream);
-
-                                if (responce.LastMessage)
-                                {
-                                    break;
-                                }
-                                var data = (List<string>) responce.Data;
-
-                                foreach (var dictionary in data)
-                                {
-                                    toDeleteDataSubject.OnNext(dictionary);
-                                }
-                            }
-                        }
-                    }, con, _cts.Token).ContinueWith(t => toDeleteDataSubject.OnCompleted()); ;
+                    Task.Factory.StartNew(() => ConsumerDataToSubject(con, toDeleteDataSubject), _cts.Token)
+                        .ContinueWith(t => toDeleteDataSubject.OnCompleted());
                 }
             }
             catch (Exception ex)
             {
                 _logger.Debug(DateTime.Now + " SubmitChanges failed", ex);
+            }
+        }
+
+        private void ConsumerDataToSubject<T>(QueueingBasicConsumer consumer, Subject<T> subject)
+        {
+            while (true)
+            {
+                var ea = consumer.Queue.Dequeue();
+
+                using (var memStream = new MemoryStream())
+                {
+                    var binForm = new BinaryFormatter();
+                    memStream.Write(ea.Body, 0, ea.Body.Length);
+                    memStream.Seek(0, SeekOrigin.Begin);
+
+                    var responce = (RabbitMQResponce)binForm.Deserialize(memStream);
+
+                    if (responce.LastMessage)
+                    {
+                        break;
+                    }
+
+                    var data = (List<T>)responce.Data;
+
+                    foreach (var dictionary in data)
+                    {
+                        subject.OnNext(dictionary);
+                    }
+
+                }
             }
         }
 

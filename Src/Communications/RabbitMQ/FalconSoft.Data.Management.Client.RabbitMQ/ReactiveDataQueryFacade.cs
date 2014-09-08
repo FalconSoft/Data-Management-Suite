@@ -59,35 +59,6 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             var observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
                 "topic", routingKey, RPCQueryName, "GetDataChanges", userToken, new object[] { dataSourcePath, filterRules });
 
-            //RPCServerTaskExecuteAsync(Connection, RPCQueryName, "GetDataChanges", userToken,
-            //    new object[] { dataSourcePath, filterRules });
-
-            //var result = Observable.Create<RecordChangedParam[]>(subj =>
-            //{
-            //    var dispoce = observable.Subscribe(subj);
-
-            //    var keepAlive = new EventHandler<ServerReconnectionArgs>((obj, eargs) =>
-            //    {
-            //        dispoce.Dispose();
-
-            //        observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
-            //            "topic", routingKey, RPCQueryName, "GetDataChanges", userToken, new object[] { dataSourcePath, filterRules });
-
-            //        RPCServerTaskExecuteAsync(Connection, RPCQueryName, "GetDataChanges", userToken,
-            //            new object[] {dataSourcePath, filterRules});
-
-            //        dispoce = observable.Subscribe(subj);
-            //    });
-
-            //    ServerReconnectedEvent += keepAlive;
-
-            //    return Disposable.Create(() =>
-            //    {
-            //        ServerReconnectedEvent -= keepAlive;
-            //        dispoce.Dispose();
-            //    });
-            //});
-
             return observable;
         }
 
