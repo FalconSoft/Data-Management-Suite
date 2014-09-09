@@ -35,6 +35,10 @@
     <Reference Include="ExcelDna.Integration">
       <HintPath>..\..\..\Data-Management-Suite-Private\Src\Clients\DesktopUI\.ThirdParty\ExcelDna\ExcelDna.Integration.dll</HintPath>
     </Reference>
+    <Reference Include="FalconSoft.Data.Management.Common, Version=1.0.6.19938, Culture=neutral, PublicKeyToken=2f05f4cae3a73241, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\FalconSoft.Data.Management.Common.1.0.6\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+    </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
@@ -75,10 +79,6 @@
     <ProjectReference Include="..\..\..\Data-Management-Suite-Private\Src\FalconSoft.ExcelAddIn\FalconSoft.ExcelAddIn.csproj">
       <Project>{EC20C5ED-CDA0-4C7F-B456-0B1686EAFCD9}</Project>
       <Name>FalconSoft.ExcelAddIn</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
-      <Project>{322CB0EC-5C6C-400C-9315-2A679DA9CDA9}</Project>
-      <Name>FalconSoft.Data.Management.Common</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\Data-Management-Suite-Private\Tests\RW.Server.Tests\Server.Tests.csproj">
       <Project>{EEFE3B49-B7C6-47FA-9171-B80D939178E8}</Project>

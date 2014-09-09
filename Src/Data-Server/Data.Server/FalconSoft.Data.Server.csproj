@@ -39,13 +39,13 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FalconSoft.Data.Management.Common, Version=1.0.5.18177, Culture=neutral, PublicKeyToken=2f05f4cae3a73241, processorArchitecture=MSIL">
+    <Reference Include="FalconSoft.Data.Management.Common, Version=1.0.6.19938, Culture=neutral, PublicKeyToken=2f05f4cae3a73241, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\FalconSoft.Data.Management.Common.1.0.5\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+      <HintPath>..\..\packages\FalconSoft.Data.Management.Common.1.0.6\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="FalconSoft.Data.Management.Components, Version=1.0.5.18543, Culture=neutral, PublicKeyToken=2f05f4cae3a73241, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\FalconSoft.Data.Management.Components.1.0.5\lib\net40\FalconSoft.Data.Management.Components.dll</HintPath>
+    <Reference Include="FalconSoft.Data.Management.Components">
+      <HintPath>..\..\packages\FalconSoft.Data.Management.Components.1.0.6\lib\net40\FalconSoft.Data.Management.Components.dll</HintPath>
     </Reference>
     <Reference Include="log4net">
       <HintPath>..\..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
@@ -71,7 +71,7 @@
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Newtonsoft.Json.6.0.4\lib\net40\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\packages\Newtonsoft.Json.6.0.5\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Owin, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f0ebd12fd5e55cc5, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
