@@ -52,7 +52,7 @@
   <ItemGroup>
     <Reference Include="FalconSoft.Data.Management.Common">
       <HintPath>..\..\packages\FalconSoft.Data.Management.Common.1.0.6\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
-      <Private>False</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
