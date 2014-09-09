@@ -209,8 +209,9 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
         public bool CheckExistence(string fieldName, object value)
         {
-            var count = _collection.AsQueryable<LiveDataObject>().Count(x => x.RecordValues[fieldName].Equals(value));
-
+            var queryList =  Query.EQ(string.Format("RecordValues.{0}", fieldName), BsonValue.Create(value));
+            var colecton = _collection.Find(queryList);
+            var count = colecton.Count();
             if (count > 0)
             {
                 return true;
