@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ServiceProcess;
+using System.Threading;
 using FalconSoft.Data.Server.Installers;
 
 namespace FalconSoft.Data.Server
@@ -19,15 +20,15 @@ namespace FalconSoft.Data.Server
                 Console.WindowWidth *= 2;
                 Console.WindowHeight *= 2;
                 serverService.Start();
-                if (Console.ReadLine() == "\n")
+                if (Console.ReadKey(true).Key == ConsoleKey.Enter)
+                {
                     serverService.Stop();
+                    Thread.Sleep(2000);
+                }
             }
             else
             {
-                var servicesToRun = new ServiceBase[]
-                {
-                    new ServerService()
-                };
+                var servicesToRun = new ServiceBase[] { new ServerService() };
                 ServiceBase.Run(servicesToRun);
             }
         }

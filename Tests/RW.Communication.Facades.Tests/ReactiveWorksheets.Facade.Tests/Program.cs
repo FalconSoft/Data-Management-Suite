@@ -19,7 +19,7 @@ namespace ReactiveWorksheets.Facade.Tests
 
         private static void Main()
         {
-            _facadesFactory = GetFacadesFactory("SignalR");
+            _facadesFactory = GetFacadesFactory("RabbitMQ");
 
             _securityFacade = _facadesFactory.CreateSecurityFacade();
 
@@ -175,6 +175,10 @@ namespace ReactiveWorksheets.Facade.Tests
             if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
             {
                 return new SignalRFacadesFactory(ConnectionString);
+            }
+            if (facadeType.Equals("RabbitMQ"))
+            {
+                
             }
             if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
             {

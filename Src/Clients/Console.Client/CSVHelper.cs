@@ -17,8 +17,10 @@ namespace FalconSoft.Data.Console
                 parser.SetDelimiters(new[] { separator });
                 parser.HasFieldsEnclosedInQuotes = true;
                 parser.TextFieldType = FieldType.Delimited;
-                var header = parser.ReadLine().Split(separator.ToCharArray());
-                
+                var readLine = parser.ReadLine();
+                if (readLine == null) yield break;
+                var header = readLine.Split(separator.ToCharArray());
+
                 while (!parser.EndOfData)
                 {
                     var fields = parser.ReadFields();
@@ -32,11 +34,44 @@ namespace FalconSoft.Data.Console
             }
         }
 
-        public static bool AppendRecords(IEnumerable<IDictionary<string, object>> data, string fileName,
-            string separator)
+        public static IEnumerable<IEnumerable<Dictionary<string, object>>> ReadBigRecords(DataSourceInfo dsInfo, string fileName, string separator, int bufferCount = 10000)
         {
-            if (data == null || !data.Any())
-                return false;
+            using (var parser = new TextFieldParser(fileName))
+            {
+                parser.SetDelimiters(new[] { separator });
+                parser.HasFieldsEnclosedInQuotes = true;
+                parser.TextFieldType = FieldType.Delimited;
+
+                var data = new List<Dictionary<string, object>>();
+                var counter = 0;
+
+                var readLine = parser.ReadLine();
+                if (readLine == null) yield break;
+                var header = readLine.Split(separator.ToCharArray());
+
+                while (!parser.EndOfData)
+                {
+                    if (counter >= bufferCount)
+                    {
+                        yield return data;
+                        counter = 0;
+                        data.Clear();
+                    }
+
+                    var fields = parser.ReadFields();
+                    var dict = new Dictionary<string, object>();
+                    for (var i = 0; i < header.Count(); i++)
+                        dict.Add(header[i], TryConvert(fields[i], dsInfo.Fields[header[i]].DataType));
+                    data.Add(dict);
+                    counter++;
+                }
+                if (data.Any()) yield return data;
+            }
+        }
+
+        public static bool AppendRecords(IEnumerable<IDictionary<string, object>> data, string fileName, string separator)
+        {
+            if (data == null || !data.Any()) return false;
 
             StreamWriter fileStream;
             if (!File.Exists(fileName))
@@ -71,14 +106,16 @@ namespace FalconSoft.Data.Console
 
             using (var streamWriter = new StreamWriter(fileName, append))
             {
-                streamWriter.Write(recordsSb);    
+                streamWriter.Write(recordsSb);
             }
-            
+
             return true;
         }
 
         public static IEnumerable<string> ReadRecordsToDelete(string fileName)
         {
+            if (string.IsNullOrEmpty(fileName)) return new string[0];
+
             using (var streamReader = new StreamReader(fileName))
             {
                 var recordsKyToDelete = streamReader.ReadToEnd();
@@ -92,9 +129,8 @@ namespace FalconSoft.Data.Console
         {
             if (string.IsNullOrEmpty(value)) return string.Empty;
             if (type != DataTypes.Null)
-            {
                 return ConvertFromDataType(value, type);
-            }
+            
             DataTypes supposedType;
             DateTime dateTime;
             int _int;
@@ -115,37 +151,35 @@ namespace FalconSoft.Data.Console
 
         private static object ConvertFromDataType(string value, DataTypes type)
         {
-            
-                switch (type)
-                {
-                    case DataTypes.String:
-                        return value;
-                    case DataTypes.Int:
-                        int i;
-                        if (int.TryParse(value,out i))
+
+            switch (type)
+            {
+                case DataTypes.String:
+                    return value;
+                case DataTypes.Int:
+                    int i;
+                    if (int.TryParse(value, out i))
                         return i;
-                        return value;
-                    case DataTypes.Double:
-                        double d;
-                        if (double.TryParse(value, out d))
+                    return value;
+                case DataTypes.Double:
+                    double d;
+                    if (double.TryParse(value, out d))
                         return d;
-                        return value;
-                    case DataTypes.Date:
-                    case DataTypes.DateTime:
-                        DateTime dt;
-                        if (DateTime.TryParse(value,out dt))
+                    return value;
+                case DataTypes.Date:
+                case DataTypes.DateTime:
+                    DateTime dt;
+                    if (DateTime.TryParse(value, out dt))
                         return dt;
-                        return value;
-                    case DataTypes.Bool:
-                        bool b;
-                        if (bool.TryParse(value, out b))
+                    return value;
+                case DataTypes.Bool:
+                    bool b;
+                    if (bool.TryParse(value, out b))
                         return b;
-                        return value;
-                    default:
-                        throw new ArgumentOutOfRangeException("type");
-                }
-           
-            return value;
+                    return value;
+                default:
+                    throw new ArgumentOutOfRangeException("type");
+            }
         }
     }
 }

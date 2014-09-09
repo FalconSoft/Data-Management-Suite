@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
@@ -17,7 +18,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private const string SecurityFacadeQueueName = "SecurityFacadeRPC";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
         private readonly object _establishConnectionLock = new object();
-        private bool _keepAlive = true;
+        private volatile bool _keepAlive = true;
         private CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
 
@@ -96,6 +97,16 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
+            if (!_keepAlive) return;
+
+            _logger.Debug(string.Format(DateTime.Now + " SecurityBroker. Method Name {0}; User Token {1}; Params {2}",
+              message.MethodName,
+              message.UserToken ?? string.Empty,
+              message.MethodsArgs != null
+                  ? message.MethodsArgs.Aggregate("",
+                      (cur, next) => cur + " | " + (next != null ? next.ToString() : string.Empty))
+                  : string.Empty));
+
             switch (message.MethodName)
             {
                 case "InitializeConnection":

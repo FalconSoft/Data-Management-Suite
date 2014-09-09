@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,13 +15,13 @@ using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Server.RabbitMQ
 {
-    public class CommandBroker : IDisposable
+    public sealed class CommandBroker : IDisposable
     {
         private readonly ICommandFacade _commandFacade;
         private readonly ILogger _logger;
         private IModel _commandChannel;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
-        private bool _keepAlive = true;
+        private volatile bool _keepAlive = true;
         private CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
 
@@ -33,10 +35,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 HostName = hostName,
                 UserName = userName,
                 Password = password,
+                VirtualHost = "/",
                 Protocol = Protocols.FromEnvironment(),
                 Port = AmqpTcpEndpoint.UseDefaultPort,
                 RequestedHeartbeat = 30
             };
+            
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
 
@@ -82,6 +86,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
+            if (!_keepAlive) return;
+
             switch (message.MethodName)
             {
                 case "InitializeConnection":
@@ -103,6 +109,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 try
                 {
+                    _logger.Debug(DateTime.Now + " Command Broker. InitializeConnection starts");
+
                     var replyTo = string.Copy(basicProperties.ReplyTo);
 
                     var corelationId = string.Copy(basicProperties.CorrelationId);
@@ -114,7 +122,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    _logger.Debug("Failed to responce to client connection confirming.", ex);
+                    _logger.Debug(DateTime.Now + " Failed to responce to client connection confirming.", ex);
                     throw;
                 }
             }, _cts.Token);
@@ -125,36 +133,43 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             try
             {
+                _logger.Debug(DateTime.Now + " Command Broker. SubmitChanges starts");
+
                 var toUpdateDataSubject = new Subject<Dictionary<string, object>>();
                 var toDeleteDataSubject = new Subject<string>();
-                var toUpdateQueueNameLocal = toUpdateQueueName != null ? string.Copy(toUpdateQueueName) : null;
-                var toDeleteQueueNameLocal = toDeleteQueuName != null ? string.Copy(toDeleteQueuName) : null;
+
+                var toUpdateQueueNameLocal = toUpdateQueueName;
+                var toDeleteQueueNameLocal = toDeleteQueuName;
 
                 var changeRecordsEnumerator = toUpdateDataSubject.ToEnumerable();
                 var deletedEnumerator = toDeleteDataSubject.ToEnumerable();
 
                 var task1 = Task.Factory.StartNew(
-                        () => toUpdateQueueNameLocal != null ? changeRecordsEnumerator.ToArray() : null);
+                    () => toUpdateQueueNameLocal != null ? changeRecordsEnumerator.ToArray() : null);
 
-                var task2 =
-                    Task.Factory.StartNew(() => toDeleteQueueNameLocal != null ? deletedEnumerator.ToArray() : null);
+                var task2 = Task.Factory.StartNew(() => toDeleteQueueNameLocal != null ? deletedEnumerator.ToArray() : null);
 
                 //initialise submit changes method work.
                 Task.Factory.StartNew(() =>
                 {
-                    var replyTo = string.Copy(basicProperties.ReplyTo);
-                    var corelationId = string.Copy(basicProperties.CorrelationId);
-                    var userTokenLocal = string.Copy(userToken);
-                    var dataSourcePathLocal = string.Copy(dataSourcePath);
+                    var replyTo = basicProperties.ReplyTo;
+                    var corelationId = basicProperties.CorrelationId;
+                    var userTokenLocal = userToken;
+                    var dataSourcePathLocal = dataSourcePath;
 
                     var changedRecords = task1.Result;
                     var deleted = task2.Result;
+
+                    _logger.Debug(string.Format("{2} Command Broker. SubmitChanges, data to change count : {0}; data to delete count : {1}", changedRecords != null ? changedRecords.Count() : 0, deleted != null ? deleted.Count() : 0, DateTime.Now));
 
                     _commandFacade.SubmitChanges(dataSourcePathLocal, userTokenLocal, changedRecords, deleted, ri =>
                     {
                         var props = _commandChannel.CreateBasicProperties();
                         props.CorrelationId = corelationId;
                         _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(ri));
+                    }, ex =>
+                    {
+                    
                     });
                 }, _cts.Token);
 
@@ -165,33 +180,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     var con = new QueueingBasicConsumer(_commandChannel);
                     _commandChannel.BasicConsume(toUpdateQueueNameLocal, false, con);
 
-                    Task.Factory.StartNew(obj =>
-                    {
-                        var consumer = (QueueingBasicConsumer)obj;
-
-                        while (true)
-                        {
-                            var ea = consumer.Queue.Dequeue();
-
-                            var memStream = new MemoryStream();
-                            var binForm = new BinaryFormatter();
-                            memStream.Write(ea.Body, 0, ea.Body.Length);
-                            memStream.Seek(0, SeekOrigin.Begin);
-
-                            var responce = (RabbitMQResponce)binForm.Deserialize(memStream);
-
-                            if (responce.LastMessage)
-                            {
-                                toUpdateDataSubject.OnCompleted();
-                                break;
-                            }
-
-                            foreach (var dictionary in (IEnumerable<Dictionary<string, object>>)responce.Data)
-                            {
-                                toUpdateDataSubject.OnNext(dictionary);
-                            }
-                        }
-                    }, con, _cts.Token);
+                    Task.Factory.StartNew(() => ConsumerDataToSubject(con, toUpdateDataSubject), _cts.Token)
+                        .ContinueWith(t => toUpdateDataSubject.OnCompleted());
                 }
 
                 //collect record keys to delete
@@ -200,43 +190,50 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     var con = new QueueingBasicConsumer(_commandChannel);
                     _commandChannel.BasicConsume(toDeleteQueueNameLocal, false, con);
 
-                    Task.Factory.StartNew(obj =>
-                    {
-                        var consumer = (QueueingBasicConsumer)obj;
-
-                        while (true)
-                        {
-                            var ea = consumer.Queue.Dequeue();
-
-                            var memStream = new MemoryStream();
-                            var binForm = new BinaryFormatter();
-                            memStream.Write(ea.Body, 0, ea.Body.Length);
-                            memStream.Seek(0, SeekOrigin.Begin);
-
-                            var responce = (RabbitMQResponce)binForm.Deserialize(memStream);
-
-                            if (responce.LastMessage)
-                            {
-                                toDeleteDataSubject.OnCompleted();
-                                break;
-                            }
-
-                            foreach (var dictionary in (IEnumerable<string>)responce.Data)
-                            {
-                                toDeleteDataSubject.OnNext(dictionary);
-                            }
-                        }
-                    }, con, _cts.Token);
+                    Task.Factory.StartNew(() => ConsumerDataToSubject(con, toDeleteDataSubject), _cts.Token)
+                        .ContinueWith(t => toDeleteDataSubject.OnCompleted());
                 }
             }
             catch (Exception ex)
             {
-                _logger.Debug("SubmitChanges failed", ex);
+                _logger.Debug(DateTime.Now + " SubmitChanges failed", ex);
+            }
+        }
+
+        private void ConsumerDataToSubject<T>(QueueingBasicConsumer consumer, Subject<T> subject)
+        {
+            while (true)
+            {
+                var ea = consumer.Queue.Dequeue();
+
+                using (var memStream = new MemoryStream())
+                {
+                    var binForm = new BinaryFormatter();
+                    memStream.Write(ea.Body, 0, ea.Body.Length);
+                    memStream.Seek(0, SeekOrigin.Begin);
+
+                    var responce = (RabbitMQResponce)binForm.Deserialize(memStream);
+
+                    if (responce.LastMessage)
+                    {
+                        break;
+                    }
+
+                    var data = (List<T>)responce.Data;
+
+                    foreach (var dictionary in data)
+                    {
+                        subject.OnNext(dictionary);
+                    }
+
+                }
             }
         }
 
         public void Dispose()
         {
+            _logger.Debug(DateTime.Now + " Command Broker Disposed.");
+
             _keepAlive = false;
             _cts.Cancel();
             _cts.Dispose();

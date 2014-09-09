@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -14,13 +15,15 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
     public class LiveDataPersistence : ILiveDataPersistence
     {
         private readonly MongoCollection<BsonDocument> _collection;
+        private readonly ILogger _logger;
 
-        public LiveDataPersistence(string connectionString, string collectionName)
+        public LiveDataPersistence(string connectionString, string collectionName, ILogger logger)
         {
+            _logger = logger;
             var database = MongoDatabase.Create(connectionString);
             if (database.CollectionExists(collectionName))
             {
-               _collection = database.GetCollection(collectionName);
+                _collection = database.GetCollection(collectionName);
             }
             else
             {
@@ -38,18 +41,26 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         /// <returns>Return data for records</returns>
         public IEnumerable<LiveDataObject> GetData(string[] fields = null, FilterRule[] filterRules = null)
         {
-            var query = CreateFilterRuleQuery(filterRules);
-            MongoCursor<LiveDataObject> cursor;
-
-            if (!string.IsNullOrEmpty(query))
+            try
             {
-                var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(query));
-                cursor = _collection.FindAs<LiveDataObject>(qwraper);
-                return cursor.SetFields(Fields.Exclude("_id")).ToList();
-            }
+                var query = CreateFilterRuleQuery(filterRules);
+                MongoCursor<LiveDataObject> cursor;
 
-            cursor = _collection.FindAllAs<LiveDataObject>();
-            return cursor.SetFields(Fields.Exclude("_id")).ToList();
+                if (!string.IsNullOrEmpty(query))
+                {
+                    var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(query));
+                    cursor = _collection.FindAs<LiveDataObject>(qwraper);
+                    return cursor;
+                }
+
+                cursor = _collection.FindAllAs<LiveDataObject>();
+                return cursor;
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug("GetData() Error: " + ex.Message);
+                return new List<LiveDataObject>();
+            }
         }
 
         public IEnumerable<T> GetData<T>(string dataSourcePath, FilterRule[] filterRules = null)
@@ -75,84 +86,136 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         /// <returns>All matched data</returns>
         public IEnumerable<LiveDataObject> GetDataByKey(string[] rekordKey)
         {
-            return _collection.AsQueryable().Cast<LiveDataObject>()
-                    .Where(e => rekordKey.Contains(e.RecordKey)).ToList();
+            try
+            {
+                return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
+            }
+            catch (Exception ex)
+            {
+                var primaryKeys = rekordKey.Aggregate(string.Empty, (current, record) => current + (record + ", "));
+                _logger.Debug("GetDataByKey() Error:" + "Keys : " + primaryKeys + " Error:" + ex.Message);
+                return new List<LiveDataObject>();
+            }
         }
 
         public IEnumerable<LiveDataObject> GetAggregatedData(AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)
         {
-            var keyCols = aggregatedWorksheet.GroupByColumns.Select(x => x.Header).ToArray();
-            var result = new List<LiveDataObject>();
-            var collection = _collection.Aggregate(aggregatedWorksheet.GetPipeline()).ResultDocuments;
-
-            foreach (var row in collection)
+            try
             {
-                var dic = keyCols.ToDictionary<string, string, object>(key => key, key => row["_id"][key]);
-                foreach (var el in row.ToDictionary(x => x.Name, x => (object) x.Value.ToString()).Where(x => x.Key != "_id"))
+                var keyCols = aggregatedWorksheet.GroupByColumns.Select(x => x.Header).ToArray();
+                var result = new List<LiveDataObject>();
+                var collection = _collection.Aggregate(aggregatedWorksheet.GetPipeline()).ResultDocuments;
+
+                foreach (var row in collection)
                 {
-                    dic.Add(el.Key,el.Value);
+                    var dic = keyCols.ToDictionary<string, string, object>(key => key, key => row["_id"][key]);
+                    foreach (
+                        var el in
+                            row.ToDictionary(x => x.Name, x => (object)x.Value.ToString()).Where(x => x.Key != "_id"))
+                    {
+                        dic.Add(el.Key, el.Value);
+                    }
+                    result.Add(new LiveDataObject
+                    {
+                        _id = Guid.NewGuid(),
+                        RecordKey = dic.WorkOutRecordKey(keyCols),
+                        RecordValues = dic
+                    });
                 }
-                result.Add(new LiveDataObject
-                {
-                    RecordKey = DataHelper.WorkOutRecordKey(dic, keyCols),
-                    RecordValues = dic
-                });
+                return result;
             }
-            return result;
+            catch (Exception ex)
+            {
+                _logger.Debug("GetAggregatedData() Error:" + ex.Message);
+                return new List<LiveDataObject>();
+            }
+
         }
 
         public IEnumerable<LiveDataObject> GetDataByForeignKey(Dictionary<string, object> record)
         {
-            if (record.Keys.Any(a => a == null))
-                return null;
+            try
+            {
+                if (record.Keys.Any(a => a == null))
+                    return null;
 
-            var queryList = record.Select(rec => Query.EQ(string.Format("RecordValues.{0}", rec.Key), BsonValue.Create(rec.Value)));
-            if (!queryList.Any()) return new LiveDataObject[0];
-            return _collection.FindAs<LiveDataObject>(Query.And(queryList)).SetFields(Fields.Exclude("_id"));
+                var queryList = record.Select(rec => Query.EQ(string.Format("RecordValues.{0}", rec.Key), BsonValue.Create(rec.Value)));
+                if (!queryList.Any()) return new LiveDataObject[0];
+                return _collection.FindAs<LiveDataObject>(Query.And(queryList));
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug("GetDataByForeignKey() Error:" + ex.Message);
+                return new List<LiveDataObject>();
+            }
         }
 
         public void UpdateForeignIndexes(string[] fields)
         {
-            if ((fields == null) || !fields.Any())
-                return;
-            
-            foreach (var field in fields)
+            try
             {
-                _collection.EnsureIndex(string.Format("RecordValues.{0}", field));
+                if ((fields == null) || !fields.Any())
+                    return;
+
+                foreach (var field in fields)
+                {
+                    _collection.EnsureIndex(string.Format("RecordValues.{0}", field));
+                }
+            }
+            catch (Exception ex)
+            {
+                var ufields = fields.Aggregate(string.Empty, (current, record) => current + (record + ", "));
+                _logger.Debug("UpdateForeignIndexes() Error:" + "Fields : " + ufields + " Error:" + ex.Message);
             }
         }
 
         public void BulkUpsertData(IEnumerable<RecordChangedParam> recordParams)
         {
-            var groupedRecords = new Dictionary<string, RecordChangedParam>();
-            foreach (var recordChangedParam in recordParams)
+            try
             {
-                groupedRecords[recordChangedParam.RecordKey] = recordChangedParam;
-            }
-                
-            //var query = Query<LiveDataObject>.In(e => e.RecordKey, groupedRecords.Keys);
-
-            var existedRecords =  _collection.FindAllAs<LiveDataObject>().SetFields(Fields.Exclude("_id")).AsQueryable().Select(r => r.RecordKey);
-
-            var recordsToUpdate = groupedRecords.Keys.Intersect(existedRecords);
-            var recordsToInsert = groupedRecords.Keys.Except(existedRecords)
-                .ToDictionary(k => k, k => new LiveDataObject()
+                var groupedRecords = new Dictionary<string, RecordChangedParam>();
+                foreach (var recordChangedParam in recordParams)
                 {
-                    RecordKey = groupedRecords[k].RecordKey,
-                    UserToken = groupedRecords[k].UserToken,
-                    RecordValues = groupedRecords[k].RecordValues
-                });
+                    groupedRecords[recordChangedParam.RecordKey] = recordChangedParam;
+                }
 
+                var existedRecords = GetDataByKey(groupedRecords.Keys.ToArray()).Select(s => s.RecordKey).ToArray();
+                var recordsToUpdate = groupedRecords.Keys.Intersect(existedRecords);
+                var recordsToInsert = groupedRecords.Keys.Except(existedRecords)
+                    .ToDictionary(k => k, k => new LiveDataObject
+                    {
+                        _id = Guid.NewGuid(),
+                        RecordKey = groupedRecords[k].RecordKey,
+                        UserToken = groupedRecords[k].UserToken,
+                        RecordValues = groupedRecords[k].RecordValues
+                    });
 
-            foreach (var recordtoUpdate in recordsToUpdate)
-            {
-                UpdateRecord(groupedRecords[recordtoUpdate]);
+                foreach (var recordtoUpdate in recordsToUpdate)
+                {
+                    UpdateRecord(groupedRecords[recordtoUpdate]);
+                }
+
+                if (recordsToInsert.Any())
+                {
+                    _collection.InsertBatch(recordsToInsert.Values);
+                }
             }
-
-            if (recordsToInsert.Any())
+            catch (Exception ex)
             {
-                _collection.InsertBatch(recordsToInsert.Values);
+                var keys = recordParams.Select(s => s.RecordKey).Aggregate(string.Empty, (current, record) => current + (record + ", "));
+                _logger.Debug("BulkUpsertData() Error:" + "RecordKeys : " + keys + " Error:" + ex.Message);
             }
+        }
+
+        public bool CheckExistence(string fieldName, object value)
+        {
+            var count = _collection.AsQueryable<LiveDataObject>().Count(x => x.RecordValues[fieldName].Equals(value));
+
+            if (count > 0)
+            {
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -162,36 +225,45 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         /// <returns>Return recordChangedParam fith full record data</returns>
         public RecordChangedParam SaveData(RecordChangedParam record)
         {
-            // make query that will find document by original record key
-            var query = Query<LiveDataObject>.EQ(e => e.RecordKey, record.RecordKey);
-
-            var entity = new LiveDataObject
+            try
             {
-                RecordKey = record.RecordKey,
-                UserToken = record.UserToken,
-                RecordValues = record.RecordValues
-            };
+                // make query that will find document by original record key
+                var query = Query<LiveDataObject>.EQ(e => e.RecordKey, record.RecordKey);
 
-            if (record.ChangedAction == RecordChangedAction.AddedOrUpdated)
-                
-                if (_collection.FindAs<LiveDataObject>(query).SetFields(Fields.Exclude("_id")).FirstOrDefault() != null)
+                var entity = new LiveDataObject
                 {
-                    UpdateRecord(record);
+                    _id = Guid.NewGuid(),
+                    RecordKey = record.RecordKey,
+                    UserToken = record.UserToken,
+                    RecordValues = record.RecordValues
+                };
+
+                if (record.ChangedAction == RecordChangedAction.AddedOrUpdated)
+
+                    if (_collection.FindAs<LiveDataObject>(query).FirstOrDefault() != null)
+                    {
+                        UpdateRecord(record);
+                        return record;
+                    }
+                    else
+                    {
+                        _collection.Insert(entity);
+                        return record;
+                    }
+                if (record.ChangedAction == RecordChangedAction.Removed)
+                {
+                    record.RecordValues =
+                        _collection.FindAs<LiveDataObject>(Query.EQ("RecordKey", record.RecordKey)).First().RecordValues;
+                    _collection.Remove(query);
                     return record;
                 }
-                else
-                {
-                    _collection.Insert(entity);
-                    return record;
-                }
-            if (record.ChangedAction == RecordChangedAction.Removed)
-            {
-                record.RecordValues =
-                    _collection.FindAs<LiveDataObject>(Query.EQ("RecordKey", record.RecordKey)).SetFields(Fields.Exclude("_id")).First().RecordValues;
-                _collection.Remove(query);
-                return record;
+                return null;
             }
-            return null;
+            catch (Exception ex)
+            {
+                _logger.Debug("SaveData() Error:" + "RecordKey : " + record.RecordKey + " Error:" + ex.Message);
+                return null;
+            }
         }
 
         private void UpdateRecord(RecordChangedParam record)
@@ -237,13 +309,13 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 case Operations.GreaterThan: return "{ $gt :" + value + " }";
                 case Operations.LessThan: return "{ $lt :" + value + " }";
                 case Operations.In:
-                {
-                    var query = "{ $in :" + 
-                                value.Replace("'(", "[")
-                                    .Replace(")'", "]")
-                                    .Replace(Convert.ToChar("'"), Convert.ToChar("\"")) + " }";
-                    return query;
-                }
+                    {
+                        var query = "{ $in :" +
+                                    value.Replace("'(", "[")
+                                        .Replace(")'", "]")
+                                        .Replace(Convert.ToChar("'"), Convert.ToChar("\"")) + " }";
+                        return query;
+                    }
                 case Operations.Like: return "/" + value.Replace("'", "") + "/";
             }
             return "";
@@ -258,7 +330,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 switch (condition.Combine)
                 {
                     case CombineState.And:
-                        query += " $and : [{ \"RecordValues."+ condition.FieldName + "\" : " +
+                        query += " $and : [{ \"RecordValues." + condition.FieldName + "\" : " +
                                  ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
                         break;
                     case CombineState.Or:

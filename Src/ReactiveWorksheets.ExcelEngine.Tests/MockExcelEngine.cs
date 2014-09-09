@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using ExcelDna.Integration;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.ExcelAddIn.ReactiveExcel;
@@ -24,7 +27,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         public Dictionary<string, Dictionary<string, Dictionary<string, object>>> LocalDb { get; set; }
 
 
-        public void SubmitData(string urn, Dictionary<string, object>[] data)
+        public void SubmitData(string urn, Dictionary<string, object>[] data, string[] dataToRemove)
         {
             if (!LocalDb.Any()) return;
             var ds = DataSourceInfos.FirstOrDefault(f=>f.DataSourcePath == urn);
@@ -48,14 +51,14 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
 
         }
 
-        public IObservable<object> RegisterSubject(string dataSourceUrn, string primaryKey, string fieldName)
+        public IExcelObservable RegisterSubject(string dataSourceUrn, string primaryKey, string fieldName)
         {
-            if (!LocalDb.ContainsKey(dataSourceUrn)) return null;
             return ExcelMessanger.RegisterSubject(dataSourceUrn, "|" + primaryKey, fieldName, OnSubscribed);
         }
 
-        public void RegisterSource(string dataSourceUrn)
+        public void RegisterSource(ExcelPoint point)
         {
+            if (!LocalDb.ContainsKey(point.DataSourceUrn)) ExcelMessanger.SendData(point, "Invalid DataSourcePath"); 
             var sub = _serverObs.Subscribe(s =>
             {
                 UpdateDb(s);
@@ -64,7 +67,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
                         ExcelMessanger.SendData(recordChangedParam.ProviderString, recordChangedParam.RecordKey,
                             changedPropertyName, recordChangedParam.RecordValues[changedPropertyName]);
             });
-            Subcribers.Add(dataSourceUrn,sub);
+            Subcribers.Add(point.DataSourceUrn,sub);
         }
 
         private void UpdateDb(IEnumerable<RecordChangedParam> recordChangedParams)
@@ -103,6 +106,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         {
             if(IsRdpSubcribed) return;
             PullData(excelPoint);
+            RegisterSource(excelPoint);
             IsRdpSubcribed = true;
         }
 
@@ -118,7 +122,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         {
             var ds = MockRepository.GetDataSourceFromJSON(dsjson);
             DataSourceInfos.Add(ds);
-            var data = RecordHelpers.TsvToDictionary(ds, tsvdata).ToList();
+            var data = RecordHelpers.TsvToDictionary(ds, tsvdata);
             var dbData = new Dictionary<string, Dictionary<string, object>>();
             foreach (var record in data)
             {

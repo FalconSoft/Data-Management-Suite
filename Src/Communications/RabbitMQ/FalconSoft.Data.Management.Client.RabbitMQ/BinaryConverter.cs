@@ -14,12 +14,14 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             {
                 if (obj == null)
                     return null;
-                
-                var bf = new BinaryFormatter();
-                var ms = new MemoryStream();
-                bf.Serialize(ms, obj);
+                using (var ms = new MemoryStream())
+                {
+                    var bf = new BinaryFormatter();
 
-                return ms.ToArray();
+                    bf.Serialize(ms, obj);
+
+                    return ms.ToArray();
+                }
             }
         }
 
@@ -30,11 +32,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 if (!byteArray.Any())
                     return default(T);
 
-                var memStream = new MemoryStream();
-                var binForm = new BinaryFormatter();
-                memStream.Write(byteArray, 0, byteArray.Length);
-                memStream.Seek(0, SeekOrigin.Begin);
-                return (T) binForm.Deserialize(memStream);
+                using (var memStream = new MemoryStream())
+                {
+                    var binForm = new BinaryFormatter();
+                    memStream.Write(byteArray, 0, byteArray.Length);
+                    memStream.Seek(0, SeekOrigin.Begin);
+                    return (T) binForm.Deserialize(memStream);
+                }
             }
         }
     }

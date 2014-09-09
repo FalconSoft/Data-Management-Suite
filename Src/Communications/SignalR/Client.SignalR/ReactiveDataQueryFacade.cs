@@ -285,6 +285,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
             return subject.ToEnumerable();
         }
 
+        public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys)
+        {
+            throw new NotImplementedException();
+        }
+
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
             var subject = new Subject<RecordChangedParam>();
@@ -349,6 +354,11 @@ namespace FalconSoft.Data.Management.Client.SignalR
             CheckConnectionToServer();
 
             _proxy.Invoke("ResolveRecordbyForeignKey", changedRecord, dataSourceUrn, userToken);
+        }
+
+        public bool CheckExistence(string userToken, string dataSourceUrn, string fieldName, object value)
+        {
+            return false;
         }
 
         private void CheckConnectionToServer()

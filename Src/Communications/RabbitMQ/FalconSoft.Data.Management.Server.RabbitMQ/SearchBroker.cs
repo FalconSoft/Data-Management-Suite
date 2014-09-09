@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
@@ -15,7 +16,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private readonly ILogger _logger;
         private IModel _commandChannel;
         private const string SearchFacadeQueueName = "SearchFacadeRPC";
-        private bool _keepAlive = true;
+        private volatile bool _keepAlive = true;
         private CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
 
@@ -57,7 +58,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                     catch (EndOfStreamException ex)
                     {
-                        _logger.Debug("SearchBroker failed", ex);
+                        _logger.Debug(DateTime.Now + " SearchBroker failed", ex);
 
                         if (_keepAlive)
                         {
@@ -79,6 +80,16 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
+            if (!_keepAlive) return;
+
+            _logger.Debug(string.Format(DateTime.Now + " SearchBroker. Method Name {0}; User Token {1}; Params {2}",
+              message.MethodName,
+              message.UserToken ?? string.Empty,
+              message.MethodsArgs != null
+                  ? message.MethodsArgs.Aggregate("",
+                      (cur, next) => cur + " | " + (next != null ? next.ToString() : string.Empty))
+                  : string.Empty));
+
             switch (message.MethodName)
             {
                 case "InitializeConnection":

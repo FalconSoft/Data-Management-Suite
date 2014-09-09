@@ -23,6 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -67,6 +68,7 @@
     <Compile Include="FacadeFactory.cs" />
     <Compile Include="MetaDataFacade.cs" />
     <Compile Include="PermissionSecurityFacade.cs" />
+    <Compile Include="RabbitMQFacadeBase.cs" />
     <Compile Include="ReactiveDataQueryFacade.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SearchFacade.cs" />
