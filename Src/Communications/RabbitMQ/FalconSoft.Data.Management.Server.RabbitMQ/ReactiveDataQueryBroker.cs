@@ -318,38 +318,31 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         // TODO: filter rules do not catche by thread and coud be changed while thread is running
         private void GetData(IBasicProperties basicProperties, string userToken, string dataSourcePath, FilterRule[] filterRules = null)
         {
-            Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(() => GetDataPrivate(basicProperties, userToken, dataSourcePath, filterRules), _cts.Token);
+        }
+
+        private void GetDataPrivate(IBasicProperties basicProperties, string userToken, string dataSourcePath, FilterRule[] filterRules)
+        {
+            try
             {
-                try
+                var replyTo =basicProperties.ReplyTo;
+
+                var correlationId = basicProperties.CorrelationId;
+
+                var userTokenLocal = userToken;
+
+                var dataSourcePathLocal = dataSourcePath;
+
+                var data = _reactiveDataQueryFacade.GetData(userTokenLocal, dataSourcePathLocal, filterRules);
+
+                var list = new List<Dictionary<string, object>>();
+
+                var responce = new RabbitMQResponce();
+
+                foreach (var d in data)
                 {
-                    var replyTo = string.Copy(basicProperties.ReplyTo);
-
-                    var correlationId = string.Copy(basicProperties.CorrelationId);
-
-                    var userTokenLocal = string.Copy(userToken);
-
-                    var dataSourcePathLocal = string.Copy(dataSourcePath);
-
-                    var data = _reactiveDataQueryFacade.GetData(userTokenLocal, dataSourcePathLocal, filterRules);
-
-                    var list = new List<Dictionary<string, object>>();
-
-                    var responce = new RabbitMQResponce();
-
-                    foreach (var d in data)
-                    {
-                        list.Add(d);
-                        if (list.Count == Limit)
-                        {
-                            responce.Id++;
-                            responce.Data = list;
-
-                            RPCSendTaskExecutionResults(replyTo, correlationId, responce);
-
-                            list.Clear();
-                        }
-                    }
-                    if (list.Count != 0)
+                    list.Add(d);
+                    if (list.Count == Limit)
                     {
                         responce.Id++;
                         responce.Data = list;
@@ -357,24 +350,33 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         RPCSendTaskExecutionResults(replyTo, correlationId, responce);
 
                         list.Clear();
-
-
-                        RPCSendTaskExecutionResults(replyTo, correlationId, new RabbitMQResponce { Id = responce.Id++, LastMessage = true });
-                    }
-                    else
-                    {
-                        responce.Id++;
-                        responce.LastMessage = true;
-
-                        RPCSendTaskExecutionResults(replyTo, correlationId, new RabbitMQResponce { Id = responce.Id++, LastMessage = true });
                     }
                 }
-                catch (Exception ex)
+                if (list.Count != 0)
                 {
-                    _logger.Debug("GetData failed", ex);
-                    throw;
+                    responce.Id++;
+                    responce.Data = list;
+
+                    RPCSendTaskExecutionResults(replyTo, correlationId, responce);
+
+                    list.Clear();
+
+
+                    RPCSendTaskExecutionResults(replyTo, correlationId, new RabbitMQResponce { Id = responce.Id++, LastMessage = true });
                 }
-            }, _cts.Token);
+                else
+                {
+                    responce.Id++;
+                    responce.LastMessage = true;
+
+                    RPCSendTaskExecutionResults(replyTo, correlationId, new RabbitMQResponce { Id = responce.Id++, LastMessage = true });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug("GetData failed", ex);
+                throw;
+            }
         }
 
         // TODO: filter rules do not catche by thread and coud be changed while thread is running
