@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -40,8 +39,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             }
             var data = cursor.SetFields(Fields.Exclude("_id"));
             var listOfRecords = data.Select(bsdocumnet =>
-                    bsdocumnet.ToDictionary(doc => doc.Name, doc => ToStrongTypedObject(doc.Value, doc.Name)))
-                    .ToList();
+                bsdocumnet.ToDictionary(doc => doc.Name, doc => BsonTypeMapper.MapToDotNetValue(doc.Value)));
             return listOfRecords;
         }
 
@@ -126,29 +124,6 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             return query;
         }
 
-        private object ToStrongTypedObject(BsonValue bsonValue, string fieldName)
-        {
-            var dataType = DataSourceInfo.Fields.First(f => f.Key == fieldName).Value.DataType;
-            if (bsonValue.ToString() == string.Empty)
-                return null;
-            switch (dataType)
-            {
-                case DataTypes.Int:
-                    return bsonValue.ToInt32();
-                case DataTypes.Double:
-                    return bsonValue.ToDouble();
-                case DataTypes.String:
-                    return bsonValue.ToString();
-                case DataTypes.Bool:
-                    return bsonValue.ToBoolean();
-                case DataTypes.Date:
-                case DataTypes.DateTime:
-                    return bsonValue.ToLocalTime();
-                default:
-                    throw new NotSupportedException("DataType is not supported");
-            }
-        }
-
         private BsonValue ToBsonValue(string value, string fieldName)
         {
             var dataType = DataSourceInfo.Fields.First(f => f.Key == fieldName).Value.DataType;
@@ -180,7 +155,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
                 var queryDoc = new QueryDocument();
                 foreach (var keyFieldName in DataSourceInfo.GetKeyFieldsName())
                 {
-                    queryDoc.Add(keyFieldName, ToBsonValue(record.Replace("|", ""), keyFieldName)); //TODO TEST this
+                    queryDoc.Add(keyFieldName, ToBsonValue(record.Replace("|", ""), keyFieldName)); 
                 }
                 var result = collection.Find(queryDoc);
                 if (!result.Any()) continue;
@@ -205,7 +180,6 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
                 if (!result.Any())
                 {
                     itemsToInsert.Add(queryDoc);
-                    //collection.Insert(queryDoc);
                     isSuccessful = true;
                 }
                 else if (!Equal(result.First(), records))
