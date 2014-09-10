@@ -229,12 +229,10 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
         private MongoCollection<BsonDocument> GetCollection(string name)
         {
             var db = MongoDatabase.Create(_connectionString);
-            if (!db.CollectionExists(name))
-                throw new InvalidDataException("No collection with such name exists!!!");
             var collection = db.GetCollection(name);
             foreach (var keyField in DataSourceInfo.GetKeyFieldsName())
             {
-                collection.EnsureIndex(keyField);    
+                collection.CreateIndex(keyField);    
             }
             
             return collection;

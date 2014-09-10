@@ -18,7 +18,7 @@ namespace FalconSoft.Data.Management.Client.SignalR
         private HubConnection _connection;
         private IHubProxy _proxy;
         private Task _startConnectionTask;
-        private Action _onCompleteAction;
+        private readonly Action _onCompleteAction = null;
         private readonly Timer _keepAliveTimer;
 
         public MetaDataFacade(string connectionString)

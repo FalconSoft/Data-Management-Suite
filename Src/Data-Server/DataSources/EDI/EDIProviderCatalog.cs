@@ -49,7 +49,7 @@ namespace FalconSoft.Data.Server.EDI.Feeds
                 var dataSource = JsonConvert.DeserializeObject<DataSourceInfo>(dsInfoJson);
                 return dataSource;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
