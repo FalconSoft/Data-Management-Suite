@@ -206,7 +206,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             var collection = db.GetCollection(name);
             foreach (var keyField in DataSourceInfo.GetKeyFieldsName())
             {
-                collection.EnsureIndex(keyField);    
+                collection.CreateIndex(keyField);    
             }
             
             return collection;

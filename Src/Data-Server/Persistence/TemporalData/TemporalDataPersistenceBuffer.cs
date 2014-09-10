@@ -49,8 +49,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             {
                 _mongoDatabase.CreateCollection(_dataSourceProviderString.ToValidDbString() + "_History");
                 _collection = _mongoDatabase.GetCollection(_dataSourceProviderString.ToValidDbString() + "_History");
-                _collection.EnsureIndex("RecordKey");
-                _collection.EnsureIndex("Current");
+                _collection.CreateIndex("RecordKey", "Current");
             }
         }
 

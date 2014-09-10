@@ -190,7 +190,7 @@ namespace ReactiveWorksheets.Facade.Tests
                 const string dataSources = @"..\..\..\DataSources\SampleDataSources\bin\Debug\;..\..\..\DataSources\DefaultMongoDbSource\bin\Debug\;..\..\..\DataSources\EDI\bin\Debug\;";
                 return new InProcessServerFacadesFactory(metaDataPersistenceConnectionString, persistenceDataConnectionString, mongoDataConnectionString, connectionString, dataSources);
             }
-            throw new ConfigurationException("Unsupported facade type - >" + facadeType);
+            throw new ConfigurationErrorsException("Unsupported facade type - >" + facadeType);
         }
     }
 }

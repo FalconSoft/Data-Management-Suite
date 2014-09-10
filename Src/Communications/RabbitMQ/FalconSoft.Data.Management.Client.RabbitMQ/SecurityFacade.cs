@@ -16,7 +16,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private QueueingBasicConsumer _consumerForExceptions;
         private string _queueNameForExceptions;
-        private EventHandler<ServerReconnectionArgs> _exhcangeKeepAlive;
+        private readonly EventHandler<ServerReconnectionArgs> _exhcangeKeepAlive;
 
         public SecurityFacade(string hostName, string userName, string password) : base(hostName, userName, password)
         {
@@ -54,7 +54,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         if (ErrorMessageHandledAction != null)
                             ErrorMessageHandledAction(array[0], array[1]);
                     }
-                    catch (EndOfStreamException ex)
+                    catch (EndOfStreamException)
                     {
                         return;
                     }

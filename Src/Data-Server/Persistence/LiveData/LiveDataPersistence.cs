@@ -29,7 +29,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             {
                 database.CreateCollection(collectionName);
                 _collection = database.GetCollection(collectionName);
-                _collection.EnsureIndex("RecordKey");
+                _collection.CreateIndex("RecordKey");
             }
         }
 
@@ -159,7 +159,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
                 foreach (var field in fields)
                 {
-                    _collection.EnsureIndex(string.Format("RecordValues.{0}", field));
+                    _collection.CreateIndex(string.Format("RecordValues.{0}", field));
                 }
             }
             catch (Exception ex)
@@ -217,6 +217,11 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 return true;
             }
             return false;
+        }
+
+        public void ClearCollection()
+        {
+            _collection.RemoveAll();
         }
 
         /// <summary>

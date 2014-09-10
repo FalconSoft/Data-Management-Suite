@@ -126,7 +126,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                             breakFlag = false;
                         }
                     }
-                    catch (EndOfStreamException ex)
+                    catch (EndOfStreamException)
                     {
                         return;
                     }
@@ -165,7 +165,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                             breakFlag = false;
                         }
                     }
-                    catch (EndOfStreamException ex)
+                    catch (EndOfStreamException)
                     {
                         return;
                     }
