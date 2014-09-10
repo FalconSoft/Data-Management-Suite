@@ -29,7 +29,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     return false;
                 }
             }
-            catch (BrokerUnreachableException ex)
+            catch (BrokerUnreachableException)
             {
                 errorMessage = "given server is unrechable";
                 return false;

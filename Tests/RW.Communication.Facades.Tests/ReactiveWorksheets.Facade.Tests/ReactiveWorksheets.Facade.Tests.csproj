@@ -45,6 +45,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core">
       <HintPath>..\..\..\Src\packages\Rx-Core.2.2.5\lib\net40\System.Reactive.Core.dll</HintPath>
