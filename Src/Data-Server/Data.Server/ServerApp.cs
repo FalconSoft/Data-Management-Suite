@@ -24,7 +24,6 @@ namespace FalconSoft.Data.Server
         private static string _metaDataPersistenceConnectionString;
         private static string _persistenceDataConnectionString;
         private static string _mongoDataConnectionString;
-        private static string _connectionString;
         private static string _dataSourcesPath;
 
         internal static void SetConfiguration(string metaDataPersistenceConnectionString, string persistenceDataConnectionString,
@@ -34,7 +33,6 @@ namespace FalconSoft.Data.Server
             _persistenceDataConnectionString = persistenceDataConnectionString;
             _mongoDataConnectionString = mongoDataConnectionString;
             _dataSourcesPath = dataSourcesPath;
-            _connectionString = url;
 
             _serverInfo = new ServerInfo
             {
@@ -179,7 +177,7 @@ namespace FalconSoft.Data.Server
                                 }
                                 catch (MissingMethodException)
                                 {
-                                    return (IDataProvidersCatalog)Activator.CreateInstance(x.Key, new[] { _mongoDataConnectionString });
+                                    return (IDataProvidersCatalog)Activator.CreateInstance(x.Key, new [] { _mongoDataConnectionString });
                                 }
 
                             }).ToArray();
