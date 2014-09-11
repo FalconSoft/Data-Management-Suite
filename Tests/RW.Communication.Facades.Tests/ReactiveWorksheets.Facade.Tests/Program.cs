@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
-using FalconSoft.Data.Management.Client.SignalR;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -172,13 +171,9 @@ namespace ReactiveWorksheets.Facade.Tests
 
         private static IFacadesFactory GetFacadesFactory(string facadeType)
         {
-            if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
-            {
-                return new SignalRFacadesFactory(ConnectionString);
-            }
             if (facadeType.Equals("RabbitMQ"))
             {
-                
+                //return new RabbitMQFacadeFactory();
             }
             if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
             {
