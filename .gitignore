@@ -170,3 +170,4 @@ UpgradeLog*.htm
 
 # Microsoft Fakes
 FakesAssemblies/
+Src/Data-Server/DataSources/SampleDataSources/Samples/300000x200.csv

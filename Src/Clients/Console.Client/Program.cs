@@ -7,7 +7,6 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Client.RabbitMQ;
-using FalconSoft.Data.Management.Client.SignalR;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -30,10 +29,6 @@ namespace FalconSoft.Data.Console
             if (facadeType.Equals("RabbitMQ", StringComparison.OrdinalIgnoreCase))
             {
                 return new RabbitMqFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RabbitMqAdminLogin"], ConfigurationManager.AppSettings["RabbitMqAdminPass"]);
-            }
-            if (facadeType.Equals("SignalR", StringComparison.OrdinalIgnoreCase))
-            {
-                return new SignalRFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"]);
             }
             if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
             {

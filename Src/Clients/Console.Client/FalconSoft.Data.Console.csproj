@@ -108,10 +108,6 @@
       <Project>{e5f3dec3-b616-4a4e-bfe4-266ea569291c}</Project>
       <Name>FalconSoft.Data.Management.Client.RabbitMQ</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Communications\SignalR\Client.SignalR\FalconSoft.Data.Management.Client.SignalR.csproj">
-      <Project>{750ea2e3-e290-4e44-bbf0-033ff8b9fc9d}</Project>
-      <Name>FalconSoft.Data.Management.Client.SignalR</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">

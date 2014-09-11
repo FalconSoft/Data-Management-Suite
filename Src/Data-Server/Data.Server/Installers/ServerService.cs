@@ -2,13 +2,11 @@
 using System.Configuration;
 using System.ServiceProcess;
 using FalconSoft.Data.Management.Server.RabbitMQ;
-using FalconSoft.Data.Management.Server.SignalR;
 
 namespace FalconSoft.Data.Server.Installers
 {
     public class ServerService : ServiceBase
     {
-        DataServerHost DataServerHost { get; set; }
         ReactiveDataQueryBroker ReactiveDataQueryBroker { get; set; }
         MetaDataBroker MetaDataBroker { get; set; }
         CommandBroker CommandBroker { get; set; }
@@ -57,28 +55,8 @@ namespace FalconSoft.Data.Server.Installers
 
             switch (ConfigurationManager.AppSettings["serverMessagingType"])
             {
-                case "SignalR": RunSignalRServer(); break;
                 case "RabbitMQ": RunRabbitMQServer(); break;
             }
-        }
-
-        private void RunSignalRServer()
-        {
-
-            DataServerHost = new DataServerHost
-                            (
-                                ConfigurationManager.AppSettings["ConnectionString"],
-                                ServerApp.Logger,
-                                ServerApp.CommandFacade,
-                                ServerApp.MetaDataFacade,
-                                ServerApp.ReactiveDataQueryFacade,
-                                ServerApp.TemporalQueryFacade,
-                                ServerApp.SearchFacade,
-                                ServerApp.SecurityFacade,
-                                ServerApp.PermissionSecurityFacade
-                            );
-
-            DataServerHost.StartServer();
         }
 
         private void RunRabbitMQServer()
@@ -88,7 +66,7 @@ namespace FalconSoft.Data.Server.Installers
             var userName = ConfigurationManager.AppSettings["RabbitMqAdminLogin"];
             var password = ConfigurationManager.AppSettings["RabbitMqAdminPass"];
 
-            ReactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName, userName, password, ServerApp.ReactiveDataQueryFacade,ServerApp.MetaDataFacade, ServerApp.Logger);
+            ReactiveDataQueryBroker = new ReactiveDataQueryBroker(hostName, userName, password, ServerApp.ReactiveDataQueryFacade, ServerApp.MetaDataFacade, ServerApp.Logger);
             ServerApp.Logger.Info("ReactiveDataQueryBroker starts");
 
             MetaDataBroker = new MetaDataBroker(hostName, userName, password, ServerApp.MetaDataFacade, ServerApp.Logger);
@@ -115,21 +93,13 @@ namespace FalconSoft.Data.Server.Installers
         public new void Stop()
         {
             ServerApp.Logger.Info("Server stopped running...");
-            switch (ConfigurationManager.AppSettings["serverMessagingType"])
-            {
-                case "SignalR":
-                    if (DataServerHost != null) DataServerHost.StopServer();
-                    break;
-                case "RabbitMQ":
-                    ReactiveDataQueryBroker.Dispose();
-                    MetaDataBroker.Dispose();
-                    CommandBroker.Dispose();
-                    SecurityBroker.Dispose();
-                    PermissionSecurityBroker.Dispose();
-                    SearchBroker.Dispose();
-                    TemporalDataQueryBroker.Dispose();
-                    break;
-            }
+            ReactiveDataQueryBroker.Dispose();
+            MetaDataBroker.Dispose();
+            CommandBroker.Dispose();
+            SecurityBroker.Dispose();
+            PermissionSecurityBroker.Dispose();
+            SearchBroker.Dispose();
+            TemporalDataQueryBroker.Dispose();
         }
 
         /// <summary> 
@@ -148,11 +118,6 @@ namespace FalconSoft.Data.Server.Installers
                 components.Dispose();
             }
             base.Dispose(disposing);
-
-            if (DataServerHost != null)
-            {
-                DataServerHost.StopServer();
-            }
         }
 
         #region Component Designer generated code
