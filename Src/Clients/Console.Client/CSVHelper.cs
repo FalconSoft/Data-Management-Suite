@@ -97,7 +97,6 @@ namespace FalconSoft.Data.Console
         public static bool WriteRecords(IEnumerable<IDictionary<string, object>> data, string fileName, string separator, bool append = false)
         {
             var recordsSb = new StringBuilder();
-            recordsSb.AppendLine(string.Join(separator, data.First().Keys));
 
             foreach (var record in data)
             {

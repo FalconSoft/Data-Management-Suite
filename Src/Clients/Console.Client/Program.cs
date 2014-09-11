@@ -173,8 +173,8 @@ namespace FalconSoft.Data.Console
             var reactiveDataQueryFacade = FacadesFactory.CreateReactiveDataQueryFacade();
             var startTime = DateTime.Now;
             var data = reactiveDataQueryFacade.GetData(ConsoleClientToken, getArguments.DataSourceUrn);
-            var executionSpan = DateTime.Now - startTime;
             CSVHelper.WriteRecords(data, getArguments.FileName, getArguments.Separator);
+            var executionSpan = DateTime.Now - startTime;
             System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds.", getArguments.DataSourceUrn, getArguments.FileName, executionSpan);
         }
 
@@ -225,7 +225,7 @@ namespace FalconSoft.Data.Console
                 {
                     System.Console.WriteLine("Read {0} Lines from file", portionOfData.Count());
                     var are = new AutoResetEvent(false);
-                    Task.Factory.StartNew(()=>
+                    Task.Factory.StartNew(() =>
                     commandFacade.SubmitChanges(submitParams.DataSourceUrn, ConsoleClientToken, portionOfData, null,
                         r =>
                         {
