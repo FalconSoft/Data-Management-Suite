@@ -33,6 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FalconSoft.Data.Management.Common">
+      <HintPath>..\..\..\packages\FalconSoft.Data.Management.Common.1.0.6\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Newtonsoft.Json.6.0.5\lib\net40\Newtonsoft.Json.dll</HintPath>
@@ -47,12 +50,6 @@
     <Compile Include="FileDataParser.cs" />
     <Compile Include="JsonSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
-      <Project>{322CB0EC-5C6C-400C-9315-2A679DA9CDA9}</Project>
-      <Name>FalconSoft.Data.Management.Common</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Sources\AGM_json.txt" />

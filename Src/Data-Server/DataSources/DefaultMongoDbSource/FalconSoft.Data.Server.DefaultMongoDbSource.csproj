@@ -33,6 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FalconSoft.Data.Management.Common">
+      <HintPath>..\..\..\packages\FalconSoft.Data.Management.Common.1.0.6\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+    </Reference>
     <Reference Include="MongoDB.Bson, Version=1.9.2.235, Culture=neutral, PublicKeyToken=f686731cfb9cc103, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\mongocsharpdriver.1.9.2\lib\net35\MongoDB.Bson.dll</HintPath>
@@ -62,10 +65,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
-      <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
-      <Name>FalconSoft.Data.Management.Common</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\FalconSoft.PythonEngine\FalconSoft.PythonEngine.csproj">
       <Project>{62C5F485-45DA-45CD-935A-365E4AFCB932}</Project>
       <Name>FalconSoft.PythonEngine</Name>

@@ -50,6 +50,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FalconSoft.Data.Management.Common">
+      <HintPath>..\..\packages\FalconSoft.Data.Management.Common.1.0.6\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="FalconSoft.Data.Management.Components">
+      <HintPath>..\..\packages\FalconSoft.Data.Management.Components.1.0.6\lib\net40\FalconSoft.Data.Management.Components.dll</HintPath>
+    </Reference>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
@@ -98,10 +104,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
-      <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
-      <Name>FalconSoft.Data.Management.Common</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Communications\RabbitMQ\FalconSoft.Data.Management.Client.RabbitMQ\FalconSoft.Data.Management.Client.RabbitMQ.csproj">
       <Project>{e5f3dec3-b616-4a4e-bfe4-266ea569291c}</Project>
       <Name>FalconSoft.Data.Management.Client.RabbitMQ</Name>
