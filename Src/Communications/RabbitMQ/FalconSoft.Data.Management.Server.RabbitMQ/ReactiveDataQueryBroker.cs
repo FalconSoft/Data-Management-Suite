@@ -135,12 +135,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                 case "GetData":
                     {
-                        GetData(basicProperties, message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as FilterRule[]);
+                        GetData(basicProperties, message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string[], message.MethodsArgs[2] as FilterRule[]);
                         break;
                     }
                 case "GetDataChanges":
                     {
-                        GetDataChanges(message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as FilterRule[]);
+                        GetDataChanges(message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string[]);
                         break;
                     }
                 case "ResolveRecordbyForeignKey":
@@ -316,12 +316,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         }
 
         // TODO: filter rules do not catche by thread and coud be changed while thread is running
-        private void GetData(IBasicProperties basicProperties, string userToken, string dataSourcePath, FilterRule[] filterRules = null)
+        private void GetData(IBasicProperties basicProperties, string userToken, string dataSourcePath, string[] fields, FilterRule[] filterRules = null)
         {
-            Task.Factory.StartNew(() => GetDataPrivate(basicProperties, userToken, dataSourcePath, filterRules), _cts.Token);
+            Task.Factory.StartNew(() => GetDataPrivate(basicProperties, userToken, dataSourcePath,fields, filterRules), _cts.Token);
         }
 
-        private void GetDataPrivate(IBasicProperties basicProperties, string userToken, string dataSourcePath, FilterRule[] filterRules)
+        private void GetDataPrivate(IBasicProperties basicProperties, string userToken, string dataSourcePath, string[] fields, FilterRule[] filterRules)
         {
             try
             {
@@ -333,7 +333,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                 var dataSourcePathLocal = dataSourcePath;
 
-                var data = _reactiveDataQueryFacade.GetData(userTokenLocal, dataSourcePathLocal, filterRules);
+                var data = _reactiveDataQueryFacade.GetData(userTokenLocal, dataSourcePathLocal,fields, filterRules: filterRules);
 
                 var list = new List<Dictionary<string, object>>();
 
@@ -380,7 +380,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         }
 
         // TODO: filter rules do not catche by thread and coud be changed while thread is running
-        private void GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
+        private void GetDataChanges(string userToken, string dataSourcePath, string[] fields = null)
         {
             try
             {
@@ -391,7 +391,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
 
                 
-                var disposer = _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath, filterRules).Subscribe(
+                var disposer = _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath,fields).Subscribe(
                     rcpArgs =>
                     {
                         lock (_establishConnectionLock)

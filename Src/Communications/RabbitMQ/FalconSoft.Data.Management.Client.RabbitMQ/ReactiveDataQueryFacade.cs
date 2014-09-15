@@ -40,10 +40,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             throw new NotImplementedException();
         }
 
-        public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
+        public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, string[] fields = null, FilterRule[] filterRules = null)
         {
             return RPCServerTaskExecuteEnumerable<Dictionary<string, object>>(Connection, RPCQueryName, "GetData", userToken,
-                new object[] { dataSourcePath, filterRules });
+                new object[] { dataSourcePath,fields, filterRules });
         }
 
         public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys)
@@ -52,12 +52,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                new object[] { dataSourcePath, recordKeys });
         }
 
-        public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
+        public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, string[] fields = null)
         {
             var routingKey = dataSourcePath + "." + userToken;
 
             var observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
-                "topic", routingKey, RPCQueryName, "GetDataChanges", userToken, new object[] { dataSourcePath, filterRules });
+                "topic", routingKey, RPCQueryName, "GetDataChanges", userToken, new object[] { dataSourcePath, fields });
 
             return observable;
         }
