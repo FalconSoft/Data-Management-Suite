@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
@@ -40,7 +41,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 Port = AmqpTcpEndpoint.UseDefaultPort,
                 RequestedHeartbeat = 30
             };
-            
+
             _connection = factory.CreateConnection();
             _commandChannel = _connection.CreateModel();
 
@@ -133,66 +134,60 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             try
             {
-                _logger.Debug(DateTime.Now + " Command Broker. SubmitChanges starts");
-
-                var toUpdateDataSubject = new Subject<Dictionary<string, object>>();
-                var toDeleteDataSubject = new Subject<string>();
-
-                var toUpdateQueueNameLocal = toUpdateQueueName;
-                var toDeleteQueueNameLocal = toDeleteQueuName;
-
-                var changeRecordsEnumerator = toUpdateDataSubject.ToEnumerable();
-                var deletedEnumerator = toDeleteDataSubject.ToEnumerable();
-
-                var task1 = Task.Factory.StartNew(
-                    () => toUpdateQueueNameLocal != null ? changeRecordsEnumerator.ToArray() : null);
-
-                var task2 = Task.Factory.StartNew(() => toDeleteQueueNameLocal != null ? deletedEnumerator.ToArray() : null);
-
-                //initialise submit changes method work.
                 Task.Factory.StartNew(() =>
                 {
+
+                    _logger.Debug(DateTime.Now + " Command Broker. SubmitChanges starts");
+
+                    var toUpdateDataSubject = new ProducerConsumerQueue<Dictionary<string, object>>(100);
+                    var toDeleteDataSubject = new ProducerConsumerQueue<string>(100);
+
+                    var toUpdateQueueNameLocal = toUpdateQueueName;
+                    var toDeleteQueueNameLocal = toDeleteQueuName;
+
+
+                   //initialise submit changes method work.
+
+                    //collect changed records
+                    if (toUpdateQueueNameLocal != null)
+                    {
+                        var con = new QueueingBasicConsumer(_commandChannel);
+                        _commandChannel.BasicConsume(toUpdateQueueNameLocal, false, con);
+
+                        Task.Factory.StartNew(() => ConsumerDataToSubject(con, toUpdateDataSubject), _cts.Token)
+                            .ContinueWith(t => toUpdateDataSubject.OnCompleted());
+                    }
+
+                    //collect record keys to delete
+                    if (toDeleteQueueNameLocal != null)
+                    {
+                        var con = new QueueingBasicConsumer(_commandChannel);
+                        _commandChannel.BasicConsume(toDeleteQueueNameLocal, false, con);
+
+                        Task.Factory.StartNew(() => ConsumerDataToSubject(con, toDeleteDataSubject), _cts.Token)
+                            .ContinueWith(t => toDeleteDataSubject.OnCompleted());
+                    }
+
                     var replyTo = basicProperties.ReplyTo;
                     var corelationId = basicProperties.CorrelationId;
                     var userTokenLocal = userToken;
                     var dataSourcePathLocal = dataSourcePath;
 
-                    var changedRecords = task1.Result;
-                    var deleted = task2.Result;
-
-                    _logger.Debug(string.Format("{2} Command Broker. SubmitChanges, data to change count : {0}; data to delete count : {1}", changedRecords != null ? changedRecords.Count() : 0, deleted != null ? deleted.Count() : 0, DateTime.Now));
-
-                    _commandFacade.SubmitChanges(dataSourcePathLocal, userTokenLocal, changedRecords, deleted, ri =>
+                    _commandFacade.SubmitChanges(dataSourcePathLocal, userTokenLocal,toUpdateQueueNameLocal!=null? toUpdateDataSubject : null,
+                        toDeleteQueueNameLocal != null ? toDeleteDataSubject : null, ri =>
                     {
+                        toUpdateDataSubject.Dispose();
+                        toDeleteDataSubject.Dispose();
                         var props = _commandChannel.CreateBasicProperties();
                         props.CorrelationId = corelationId;
                         _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(ri));
                     }, ex =>
                     {
-                    
+                        toUpdateDataSubject.Dispose();
+                        toDeleteDataSubject.Dispose();
                     });
+                    
                 }, _cts.Token);
-
-
-                //collect changed records
-                if (toUpdateQueueNameLocal != null)
-                {
-                    var con = new QueueingBasicConsumer(_commandChannel);
-                    _commandChannel.BasicConsume(toUpdateQueueNameLocal, false, con);
-
-                    Task.Factory.StartNew(() => ConsumerDataToSubject(con, toUpdateDataSubject), _cts.Token)
-                        .ContinueWith(t => toUpdateDataSubject.OnCompleted());
-                }
-
-                //collect record keys to delete
-                if (toDeleteQueueNameLocal != null)
-                {
-                    var con = new QueueingBasicConsumer(_commandChannel);
-                    _commandChannel.BasicConsume(toDeleteQueueNameLocal, false, con);
-
-                    Task.Factory.StartNew(() => ConsumerDataToSubject(con, toDeleteDataSubject), _cts.Token)
-                        .ContinueWith(t => toDeleteDataSubject.OnCompleted());
-                }
             }
             catch (Exception ex)
             {
@@ -200,7 +195,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             }
         }
 
-        private void ConsumerDataToSubject<T>(QueueingBasicConsumer consumer, Subject<T> subject)
+        private void ConsumerDataToSubject<T>(QueueingBasicConsumer consumer, IObserver<T> subject)
         {
             while (true)
             {

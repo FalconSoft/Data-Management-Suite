@@ -61,6 +61,7 @@
     <Compile Include="CommandBroker.cs" />
     <Compile Include="MetaDataBroker.cs" />
     <Compile Include="PermissionSecurityBroker.cs" />
+    <Compile Include="ProducerConsumerQueue.cs" />
     <Compile Include="ReactiveDataQueryBroker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SearchBroker.cs" />
