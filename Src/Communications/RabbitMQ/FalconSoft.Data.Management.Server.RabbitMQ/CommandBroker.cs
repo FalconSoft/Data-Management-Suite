@@ -98,7 +98,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     }
                 case "SubmitChanges":
                     {
-                        SubmitChanges(basicProperties, message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string, message.MethodsArgs[2] as string);
+                        SubmitChanges(basicProperties, message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string, message.MethodsArgs[2] as string, message.MethodsArgs[3] as string);
                         break;
                     }
             }
@@ -130,13 +130,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         }
 
         private void SubmitChanges(IBasicProperties basicProperties, string userToken, string dataSourcePath,
-            string toUpdateQueueName, string toDeleteQueuName)
+            string toUpdateQueueName, string toDeleteQueuName, string errorNotificationQueueName)
         {
-            try
+            Task.Factory.StartNew(() =>
             {
-                Task.Factory.StartNew(() =>
+                try
                 {
-
                     _logger.Debug(DateTime.Now + " Command Broker. SubmitChanges starts");
 
                     var toUpdateDataSubject = new ProducerConsumerQueue<Dictionary<string, object>>(100);
@@ -146,7 +145,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     var toDeleteQueueNameLocal = toDeleteQueuName;
 
 
-                   //initialise submit changes method work.
+                    //initialise submit changes method work.
 
                     //collect changed records
                     if (toUpdateQueueNameLocal != null)
@@ -173,7 +172,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                     var userTokenLocal = userToken;
                     var dataSourcePathLocal = dataSourcePath;
 
-                    _commandFacade.SubmitChanges(dataSourcePathLocal, userTokenLocal,toUpdateQueueNameLocal!=null? toUpdateDataSubject : null,
+                    _commandFacade.SubmitChanges(dataSourcePathLocal, userTokenLocal, toUpdateQueueNameLocal != null ? toUpdateDataSubject : null,
                         toDeleteQueueNameLocal != null ? toDeleteDataSubject : null, ri =>
                     {
                         toUpdateDataSubject.Dispose();
@@ -183,16 +182,20 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         _commandChannel.BasicPublish("", replyTo, props, BinaryConverter.CastToBytes(ri));
                     }, ex =>
                     {
+                        _commandChannel.BasicPublish("", errorNotificationQueueName, null, BinaryConverter.CastToBytes(ex));
+
                         toUpdateDataSubject.Dispose();
                         toDeleteDataSubject.Dispose();
                     });
-                    
-                }, _cts.Token);
-            }
-            catch (Exception ex)
-            {
-                _logger.Debug(DateTime.Now + " SubmitChanges failed", ex);
-            }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug(DateTime.Now + " SubmitChanges failed", ex);
+                    if (_connection.IsOpen)
+                        _commandChannel.BasicPublish("", errorNotificationQueueName, null, BinaryConverter.CastToBytes(ex));
+                    throw;
+                }
+            }, _cts.Token);
         }
 
         private void ConsumerDataToSubject<T>(QueueingBasicConsumer consumer, IObserver<T> subject)

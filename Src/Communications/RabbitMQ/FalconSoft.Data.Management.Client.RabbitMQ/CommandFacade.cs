@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
@@ -49,11 +50,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     CommandChannel.QueueDeclare(toDeleteQueueName, false, false, false, null);
                 }
 
+                var errorNotificationQueueName = CommandChannel.QueueDeclare().QueueName;
+
                 var message = new MethodArgs
                 {
                     MethodName = "SubmitChanges",
                     UserToken = userToken,
-                    MethodsArgs = new object[] {dataSourcePath, toUpdateQueueName, toDeleteQueueName}
+                    MethodsArgs = new object[] {dataSourcePath, toUpdateQueueName, toDeleteQueueName, errorNotificationQueueName}
                 };
 
                 var replyTo = CommandChannel.QueueDeclare().QueueName;
@@ -64,6 +67,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 props.ReplyTo = replyTo;
                 props.CorrelationId = correlationId;
                 props.SetPersistent(true);
+
+                var onFailConsumer = new QueueingBasicConsumer(CommandChannel);
+                CommandChannel.BasicConsume(errorNotificationQueueName, false, onFailConsumer);
 
                 var consumer = new QueueingBasicConsumer(CommandChannel);
                 CommandChannel.BasicConsume(replyTo, false, consumer);
@@ -218,6 +224,46 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         if (onSuccess != null)
                             onSuccess(ri);
 
+                        break;
+                    }
+                });
+
+                var waitForResult = true;
+
+                Task.Factory.StartNew(() =>
+                {
+                    while (waitForResult)
+                    {
+                        BasicDeliverEventArgs ea;
+                        
+                        if(!consumer.Queue.Dequeue(6000, out ea))
+                            continue;
+                        
+                        var ri = BinaryConverter.CastTo<RevisionInfo>(ea.Body);
+
+                        if (onSuccess != null)
+                            onSuccess(ri);
+
+                        waitForResult = false;
+                        break;
+                    }
+                });
+
+                Task.Factory.StartNew(() =>
+                {
+                    while (waitForResult)
+                    {
+                        BasicDeliverEventArgs ea;
+                        
+                        if (!onFailConsumer.Queue.Dequeue(6000, out ea))
+                            continue;
+
+                        var ri = BinaryConverter.CastTo<Exception>(ea.Body);
+
+                        if (onFail != null)
+                            onFail(ri);
+
+                        waitForResult = false;
                         break;
                     }
                 });
