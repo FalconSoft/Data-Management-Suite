@@ -118,7 +118,8 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
                 {
                     var f = (FieldInfo)field.Clone();
                     f.IsParentField = true;
-                    childDs.Fields.Add(f.Name, f);
+                    //childDs.Fields.Add(f.Name, f);
+                    childDs.Fields[f.Name] = f;
                 }
                 collection.Save(childDs);
             }
