@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -106,7 +107,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 Task.Factory.StartNew(() => ConsumerDataToSubject(consumer, channel, subject, correlationId), _cts.Token)
                     .ContinueWith(t => subject.OnCompleted());
 
-                return subject.ToEnumerable();
+                return subject.ObserveOn(Scheduler.Default).ToEnumerable();
             }
             catch (Exception ex)
             {
