@@ -236,7 +236,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                             waitForResult = false;
                             break;
                         }
-                        catch (Exception)
+                        catch (EndOfStreamException)
                         {
                             break;
                         }
@@ -262,7 +262,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                             waitForResult = false;
                             break;
                         }
-                        catch (Exception)
+                        catch (EndOfStreamException)
                         {
                             break;
                         }

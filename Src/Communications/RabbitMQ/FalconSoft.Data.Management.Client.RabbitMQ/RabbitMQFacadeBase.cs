@@ -290,33 +290,40 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         {
             while (true)
             {
-                BasicDeliverEventArgs ea;
-                if (consumer.Queue.Dequeue(TimeOut, out ea))
+                try
                 {
-                    if (correlationId == ea.BasicProperties.CorrelationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(TimeOut, out ea))
                     {
-                        var responce = CastTo<RabbitMQResponce>(ea.Body);
+                        if (correlationId == ea.BasicProperties.CorrelationId)
+                        {
+                            var responce = CastTo<RabbitMQResponce>(ea.Body);
 
-                        if (responce.LastMessage)
+                            if (responce.LastMessage)
+                            {
+                                channel.Dispose();
+                                break;
+                            }
+
+                            var list = (List<T>) responce.Data;
+                            foreach (var dictionary in list)
+                            {
+                                subject.OnNext(dictionary);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (!HasConnection)
                         {
                             channel.Dispose();
                             break;
                         }
-
-                        var list = (List<T>)responce.Data;
-                        foreach (var dictionary in list)
-                        {
-                            subject.OnNext(dictionary);
-                        }
                     }
                 }
-                else
+                catch (EndOfStreamException)
                 {
-                    if (!HasConnection)
-                    {
-                        channel.Dispose();
-                        break;
-                    }
+                    break;
                 }
             }
         }
