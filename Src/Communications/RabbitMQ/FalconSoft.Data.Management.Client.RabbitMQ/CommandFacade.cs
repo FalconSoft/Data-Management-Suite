@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
@@ -15,11 +16,12 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private const int TimeOut = 2000;
         private const string CommandFacadeQueueName = "CommandFacadeRPC";
 
-        public CommandFacade(string hostName, string userName, string password):base(hostName,userName,password)
+        public CommandFacade(string hostName, string userName, string password)
+            : base(hostName, userName, password)
         {
-           InitializeConnection(CommandFacadeQueueName);
+            InitializeConnection(CommandFacadeQueueName);
 
-           KeepAliveAction = () => InitializeConnection(CommandFacadeQueueName);
+            KeepAliveAction = () => InitializeConnection(CommandFacadeQueueName);
         }
 
         public void SubmitChanges<T>(string dataSourcePath, string userToken, IEnumerable<T> changedRecords = null,
@@ -56,7 +58,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 {
                     MethodName = "SubmitChanges",
                     UserToken = userToken,
-                    MethodsArgs = new object[] {dataSourcePath, toUpdateQueueName, toDeleteQueueName, errorNotificationQueueName}
+                    MethodsArgs = new object[] { dataSourcePath, toUpdateQueueName, toDeleteQueueName, errorNotificationQueueName }
                 };
 
                 var replyTo = CommandChannel.QueueDeclare().QueueName;
@@ -213,39 +215,31 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     onNotifcation("Some text", "Transfer complete");
                 }
 
-                Task.Factory.StartNew(() =>
-                {
-                    while (true)
-                    {
-                        var ea = consumer.Queue.Dequeue();
-
-                        var ri = BinaryConverter.CastTo<RevisionInfo>(ea.Body);
-
-                        if (onSuccess != null)
-                            onSuccess(ri);
-
-                        break;
-                    }
-                });
-
                 var waitForResult = true;
 
                 Task.Factory.StartNew(() =>
                 {
                     while (waitForResult)
                     {
-                        BasicDeliverEventArgs ea;
-                        
-                        if(!consumer.Queue.Dequeue(6000, out ea))
-                            continue;
-                        
-                        var ri = BinaryConverter.CastTo<RevisionInfo>(ea.Body);
+                        try
+                        {
+                            BasicDeliverEventArgs ea;
 
-                        if (onSuccess != null)
-                            onSuccess(ri);
+                            if (!consumer.Queue.Dequeue(6000, out ea))
+                                if (!waitForResult) break; else continue;
 
-                        waitForResult = false;
-                        break;
+                            var ri = BinaryConverter.CastTo<RevisionInfo>(ea.Body);
+
+                            if (onSuccess != null)
+                                onSuccess(ri);
+
+                            waitForResult = false;
+                            break;
+                        }
+                        catch (Exception)
+                        {
+                            break;
+                        }
                     }
                 });
 
@@ -253,18 +247,25 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 {
                     while (waitForResult)
                     {
-                        BasicDeliverEventArgs ea;
-                        
-                        if (!onFailConsumer.Queue.Dequeue(6000, out ea))
-                            continue;
+                        try
+                        {
+                            BasicDeliverEventArgs ea;
 
-                        var ri = BinaryConverter.CastTo<Exception>(ea.Body);
+                            if (!onFailConsumer.Queue.Dequeue(6000, out ea))
+                                if (!waitForResult) break; else continue;
 
-                        if (onFail != null)
-                            onFail(ri);
+                            var ri = BinaryConverter.CastTo<Exception>(ea.Body);
 
-                        waitForResult = false;
-                        break;
+                            if (onFail != null)
+                                onFail(ri);
+
+                            waitForResult = false;
+                            break;
+                        }
+                        catch (Exception)
+                        {
+                            break;
+                        }
                     }
                 });
             }
@@ -277,7 +278,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public void Dispose()
         {
-            
+
         }
 
         public new void Close()

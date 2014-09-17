@@ -69,7 +69,10 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             while (true)
             {
                 while (!_isComplete && _queue.Count == 0)
+                {
                     _mutex.WaitOne();
+                    _mutex.Reset();
+                }
 
                 if (_isComplete)
                 {
