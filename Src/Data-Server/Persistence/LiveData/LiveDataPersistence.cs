@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -74,7 +73,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 cursor = _collection.FindAllAs<LiveDataObject>();
                 return cursor;
             }
-             catch (Exception ex)
+            catch (Exception ex)
             {
                 _logger.Debug("GetData() Error: " + ex.Message);
                 return new List<LiveDataObject>();
@@ -174,9 +173,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         {
             try
             {
-                if ((fields == null) || !fields.Any())
-                    return;
-
+                if (fields == null) return;
                 foreach (var field in fields)
                 {
                     _collection.CreateIndex(string.Format("RecordValues.{0}", field));
@@ -229,7 +226,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
         public bool CheckExistence(string fieldName, object value)
         {
-            var queryList =  Query.EQ(string.Format("RecordValues.{0}", fieldName), BsonValue.Create(value));
+            var queryList = Query.EQ(string.Format("RecordValues.{0}", fieldName), BsonValue.Create(value));
             var colecton = _collection.Find(queryList);
             var count = colecton.Count();
             if (count > 0)
