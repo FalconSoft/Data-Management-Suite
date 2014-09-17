@@ -50,18 +50,18 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 {
                     var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(query));
                     cursor = _collection.FindAs<LiveDataObject>(qwraper);
+                    if (fields != null) return cursor.Select(s =>
+                    {
+                        s.RecordValues =
+                               s.RecordValues.Join(fields, j1 => j1.Key, j2 => j2, (j1, j2) => j1)
+                                    .ToDictionary(k => k.Key, v => v.Value);
+                        return s;
+                    });
                     return cursor;
                 }
                 if (fields != null)
                 {
                     cursor = _collection.FindAllAs<LiveDataObject>();
-                    //foreach (var liveDataObject in cursor)
-                    //{
-                    //    liveDataObject.RecordValues =
-                    //           liveDataObject.RecordValues.Join(fields, j1 => j1.Key, j2 => j2, (j1, j2) => j1)
-                    //                .ToDictionary(k => k.Key, v => v.Value);
-                        
-                    //}
                     return cursor.Select(s =>
                     {
                         s.RecordValues =
