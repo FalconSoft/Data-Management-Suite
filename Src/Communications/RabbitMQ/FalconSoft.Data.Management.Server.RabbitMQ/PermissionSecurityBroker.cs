@@ -22,7 +22,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private volatile bool _keepAlive = true;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
-        private readonly List<string> _getPermissionChangesDisposables = new List<string>();
+        private readonly Dictionary<string, IDisposable> _getPermissionChangesDisposables = new Dictionary<string, IDisposable>();
         private readonly ConnectionFactory _factory;
 
         public PermissionSecurityBroker(string hostName, string userName, string password, IPermissionSecurityFacade permissionSecurityFacade, ILogger logger)
@@ -132,6 +132,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         GetPermissionChanged(message.UserToken);
                         break;
                     }
+                case "Dispoce":
+                    {
+                        Dispose(message.UserToken);
+                        break;
+                    }
             }
         }
 
@@ -226,9 +231,9 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
         private void GetPermissionChanged(string userToken)
         {
-            if (_getPermissionChangesDisposables.Contains(userToken)) return;
+            if (_getPermissionChangesDisposables.ContainsKey(userToken)) return;
 
-             _permissionSecurityFacade.GetPermissionChanged(userToken).Subscribe(data =>
+            var disposer = _permissionSecurityFacade.GetPermissionChanged(userToken).Subscribe(data =>
             {
                 lock (_establishConnectionLock)
                 {
@@ -251,9 +256,20 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         _commandChannel = _connection.CreateModel();
                     }
                 }
-            }, _cts.Token);
+            });
 
-            _getPermissionChangesDisposables.Add(userToken);
+            _getPermissionChangesDisposables.Add(userToken, disposer);
+        }
+
+        private void Dispose(string userToken)
+        {
+            var routingKey = userToken;
+
+            IDisposable disposable;
+            if (_getPermissionChangesDisposables.TryGetValue(routingKey, out disposable))
+            {
+                disposable.Dispose();
+            }
         }
 
         private void RPCSendTaskExecutionResults<T>(IBasicProperties basicProperties, T data)
@@ -271,6 +287,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         public void Dispose()
         {
             _keepAlive = false;
+
+            foreach (var permissionChangesDisposable in _getPermissionChangesDisposables)
+            {
+                permissionChangesDisposable.Value.Dispose();
+            }
 
             _cts.Cancel();
             _cts.Dispose();

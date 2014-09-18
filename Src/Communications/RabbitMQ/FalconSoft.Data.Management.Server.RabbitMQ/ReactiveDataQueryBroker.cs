@@ -36,7 +36,13 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             connectionFactory = new ConnectionFactory
             {
-                HostName = hostName, UserName = username, Password = pass, VirtualHost = "/", Protocol = Protocols.FromEnvironment(), Port = AmqpTcpEndpoint.UseDefaultPort, RequestedHeartbeat = 30
+                HostName = hostName,
+                UserName = username,
+                Password = pass,
+                VirtualHost = "/",
+                Protocol = Protocols.FromEnvironment(),
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                RequestedHeartbeat = 30
             };
 
             _connection = connectionFactory.CreateConnection();
@@ -157,11 +163,29 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         break;
                     }
                 case "GetDataByKey":
-                {
-                    GetDataByKey(basicProperties, message.UserToken, message.MethodsArgs[0] as string,
-                        message.MethodsArgs[1] as string[]);
-                    break;
-                }
+                    {
+                        GetDataByKey(basicProperties, message.UserToken, message.MethodsArgs[0] as string,
+                            message.MethodsArgs[1] as string[]);
+                        break;
+                    }
+                case "Dispoce":
+                    {
+                        Dispose(message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string[]);
+                        break;
+                    }
+            }
+        }
+
+        private void Dispose(string userToken, string dataSourcePath, string[] fields = null)
+        {
+            var routingKey = fields != null
+                ? fields.Aggregate(string.Format("{0}.{1}", dataSourcePath, userToken),
+                (cur, next) => string.Format("{0}.{1}", cur, next)) : string.Format("{0}.{1}", dataSourcePath, userToken);
+
+            IDisposable disposer;
+            if (_getDataChangesDispocebles.TryGetValue(routingKey, out disposer))
+            {
+                disposer.Dispose();
             }
         }
 
@@ -318,14 +342,14 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         // TODO: filter rules do not catche by thread and coud be changed while thread is running
         private void GetData(IBasicProperties basicProperties, string userToken, string dataSourcePath, string[] fields, FilterRule[] filterRules = null)
         {
-            Task.Factory.StartNew(() => GetDataPrivate(basicProperties, userToken, dataSourcePath,fields, filterRules), _cts.Token);
+            Task.Factory.StartNew(() => GetDataPrivate(basicProperties, userToken, dataSourcePath, fields, filterRules), _cts.Token);
         }
 
         private void GetDataPrivate(IBasicProperties basicProperties, string userToken, string dataSourcePath, string[] fields, FilterRule[] filterRules)
         {
             try
             {
-                var replyTo =basicProperties.ReplyTo;
+                var replyTo = basicProperties.ReplyTo;
 
                 var correlationId = basicProperties.CorrelationId;
 
@@ -333,7 +357,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                 var dataSourcePathLocal = dataSourcePath;
 
-                var data = _reactiveDataQueryFacade.GetData(userTokenLocal, dataSourcePathLocal,fields, filterRules: filterRules);
+                var data = _reactiveDataQueryFacade.GetData(userTokenLocal, dataSourcePathLocal, fields, filterRules: filterRules);
 
                 var list = new List<Dictionary<string, object>>();
 
@@ -384,19 +408,20 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             try
             {
-                var routingKey = string.Format("{0}.{1}", dataSourcePath, userToken);
+                var routingKey = fields != null ? fields.Aggregate(string.Format("{0}.{1}", dataSourcePath, userToken),
+               (cur, next) => string.Format("{0}.{1}", cur, next)) : string.Format("{0}.{1}", dataSourcePath, userToken);
 
                 if (_getDataChangesDispocebles.ContainsKey(routingKey)) return;
 
                 _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
 
-                
-                var disposer = _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath,fields).Subscribe(
+
+                var disposer = _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath, fields).Subscribe(
                     rcpArgs =>
                     {
                         lock (_establishConnectionLock)
                         {
-                            var message = new RabbitMQResponce {Data = rcpArgs};
+                            var message = new RabbitMQResponce { Data = rcpArgs };
 
                             try
                             {
@@ -502,12 +527,12 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         public void Dispose()
         {
             _keepAlive = false;
-            
+
             foreach (var dispoceble in _getDataChangesDispocebles.Values)
             {
                 dispoceble.Dispose();
             }
-            
+
             _cts.Cancel();
             _cts.Dispose();
             _commandChannel.Close();

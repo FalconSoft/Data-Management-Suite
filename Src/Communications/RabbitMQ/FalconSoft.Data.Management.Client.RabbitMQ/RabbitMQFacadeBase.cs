@@ -278,6 +278,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 return Disposable.Create(() =>
                 {
                     ServerReconnectedEvent -= keepAlive;
+                    RPCServerTaskExecuteAsync(Connection, commandQueue, "Dispose", userToken, methodArgs);
                     dispoce.Dispose();
                 });
             });
@@ -374,6 +375,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 return Disposable.Create(() =>
                 {
+
                     CommandChannel.QueueUnbind(queueName, exchangeName, routingKey, null);
                     con.OnCancel();
                     dispoce.Dispose();

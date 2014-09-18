@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reactive.Disposables;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
@@ -9,7 +9,6 @@ using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Observable = System.Reactive.Linq.Observable;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
@@ -54,7 +53,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, string[] fields = null)
         {
-            var routingKey = dataSourcePath + "." + userToken;
+            var routingKey = fields != null ? fields.Aggregate(string.Format("{0}.{1}", dataSourcePath, userToken),
+                (cur, next) => string.Format("{0}.{1}", cur, next)) : string.Format("{0}.{1}", dataSourcePath, userToken);
 
             var observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
                 "topic", routingKey, RPCQueryName, "GetDataChanges", userToken, new object[] { dataSourcePath, fields });
