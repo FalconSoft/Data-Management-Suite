@@ -132,7 +132,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         GetPermissionChanged(message.UserToken);
                         break;
                     }
-                case "Dispoce":
+                case "Dispose":
                     {
                         Dispose(message.UserToken);
                         break;
@@ -269,6 +269,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             if (_getPermissionChangesDisposables.TryGetValue(routingKey, out disposable))
             {
                 disposable.Dispose();
+                _getPermissionChangesDisposables.Remove(routingKey);
             }
         }
 

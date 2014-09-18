@@ -24,7 +24,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private volatile bool _keepAlive = true;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private IConnection _connection;
-        private readonly Dictionary<string, IDisposable> _getDataChangesDispocebles = new Dictionary<string, IDisposable>();
+        private readonly Dictionary<string, DispoceItems> _getDataChangesDispocebles = new Dictionary<string, DispoceItems>();
         private ConnectionFactory connectionFactory;
 
         public ReactiveDataQueryBroker(string hostName, string username, string pass, IReactiveDataQueryFacade reactiveDataQueryFacade, IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
@@ -105,7 +105,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         {
                             foreach (string key in array)
                             {
-                                _getDataChangesDispocebles[key].Dispose();
+                                _getDataChangesDispocebles[key].Disposable.Dispose();
                                 _getDataChangesDispocebles.Remove(key);
                             }
                         }
@@ -168,7 +168,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                             message.MethodsArgs[1] as string[]);
                         break;
                     }
-                case "Dispoce":
+                case "Dispose":
                     {
                         Dispose(message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string[]);
                         break;
@@ -182,10 +182,15 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 ? fields.Aggregate(string.Format("{0}.{1}", dataSourcePath, userToken),
                 (cur, next) => string.Format("{0}.{1}", cur, next)) : string.Format("{0}.{1}", dataSourcePath, userToken);
 
-            IDisposable disposer;
+            DispoceItems disposer;
             if (_getDataChangesDispocebles.TryGetValue(routingKey, out disposer))
             {
-                disposer.Dispose();
+                disposer.Count --;
+                if (disposer.Count == 0)
+                {
+                    disposer.Disposable.Dispose();
+                    _getDataChangesDispocebles.Remove(routingKey);
+                }
             }
         }
 
@@ -411,7 +416,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 var routingKey = fields != null ? fields.Aggregate(string.Format("{0}.{1}", dataSourcePath, userToken),
                (cur, next) => string.Format("{0}.{1}", cur, next)) : string.Format("{0}.{1}", dataSourcePath, userToken);
 
-                if (_getDataChangesDispocebles.ContainsKey(routingKey)) return;
+                if (_getDataChangesDispocebles.ContainsKey(routingKey))
+                {
+                    _getDataChangesDispocebles[routingKey].Count++;
+                    return;
+                };
 
                 _commandChannel.ExchangeDeclare("GetDataChangesTopic", "topic");
 
@@ -445,7 +454,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         }
                     });
 
-                _getDataChangesDispocebles.Add(routingKey, disposer);
+                _getDataChangesDispocebles.Add(routingKey, new DispoceItems{Count = 1, Disposable = disposer});
             }
             catch (Exception ex)
             {
@@ -530,13 +539,20 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
             foreach (var dispoceble in _getDataChangesDispocebles.Values)
             {
-                dispoceble.Dispose();
+                dispoceble.Disposable.Dispose();
             }
 
             _cts.Cancel();
             _cts.Dispose();
             _commandChannel.Close();
             _connection.Close();
+        }
+
+        class DispoceItems
+        {
+            public int Count { get; set; }
+
+            public IDisposable Disposable { get; set; }
         }
     }
 }
