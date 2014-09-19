@@ -44,32 +44,21 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             {
                 var query = CreateFilterRuleQuery(filterRules);
                 MongoCursor<LiveDataObject> cursor;
-
                 if (!string.IsNullOrEmpty(query))
                 {
+                    if (fields != null)
+                        query += ", +" + CreateSelectedFieldsQuery(fields);
                     var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(query));
                     cursor = _collection.FindAs<LiveDataObject>(qwraper);
-                    if (fields != null) return cursor.Select(s =>
-                    {
-                        s.RecordValues =
-                               s.RecordValues.Join(fields, j1 => j1.Key, j2 => j2, (j1, j2) => j1)
-                                    .ToDictionary(k => k.Key, v => v.Value);
-                        return s;
-                    });
                     return cursor;
                 }
                 if (fields != null)
                 {
-                    cursor = _collection.FindAllAs<LiveDataObject>();
-                    return cursor.Select(s =>
-                    {
-                        s.RecordValues =
-                               s.RecordValues.Join(fields, j1 => j1.Key, j2 => j2, (j1, j2) => j1)
-                                    .ToDictionary(k => k.Key, v => v.Value);
-                        return s;
-                    });
+                    var mongoQuery = "{ }," + CreateSelectedFieldsQuery(fields);
+                    var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(mongoQuery));
+                    cursor = _collection.FindAs<LiveDataObject>(qwraper);
+                    return cursor;
                 }
-
                 cursor = _collection.FindAllAs<LiveDataObject>();
                 return cursor;
             }
@@ -369,6 +358,23 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             query += @"}";
             return query;
         }
+
+        private string CreateSelectedFieldsQuery(string[] fields)
+        {
+            var constStr = "{_id : 1, RecordKey : 1, UserToken : 1,";
+            var query = constStr;
+            foreach (var field in fields)
+            {
+                if (fields.Last() == field)
+                {
+                    query += string.Format(" RecordValues.{0} : 1",field) + "";
+                    break;
+                }
+                query += string.Format(" RecordValues.{0} : 1,",field);
+            }
+            return query;
+        }
     }
 
+    
 }
