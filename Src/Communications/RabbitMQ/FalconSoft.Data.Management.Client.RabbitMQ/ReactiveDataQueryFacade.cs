@@ -54,7 +54,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, string[] fields = null)
         {
             var routingKey = fields != null ? fields.Aggregate(string.Format("{0}.{1}", dataSourcePath, userToken),
-                (cur, next) => string.Format("{0}.{1}", cur, next)) : string.Format("{0}.{1}", dataSourcePath, userToken);
+                (cur, next) => string.Format("{0}.{1}", cur, next)).GetHashCode().ToString() : string.Format("{0}.{1}", dataSourcePath, userToken);
 
             var observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
                 "topic", routingKey, RPCQueryName, "GetDataChanges", userToken, new object[] { dataSourcePath, fields });

@@ -414,7 +414,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             try
             {
                 var routingKey = fields != null ? fields.Aggregate(string.Format("{0}.{1}", dataSourcePath, userToken),
-               (cur, next) => string.Format("{0}.{1}", cur, next)) : string.Format("{0}.{1}", dataSourcePath, userToken);
+               (cur, next) => string.Format("{0}.{1}", cur, next)).GetHashCode().ToString() : string.Format("{0}.{1}", dataSourcePath, userToken);
 
                 if (_getDataChangesDispocebles.ContainsKey(routingKey))
                 {
