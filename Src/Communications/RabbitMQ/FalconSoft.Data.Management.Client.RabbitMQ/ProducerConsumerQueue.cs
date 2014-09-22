@@ -3,16 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace FalconSoft.Data.Management.Server.RabbitMQ
+namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
-    internal class ProducerConsumerQueue<T> : IObserver<T>, IEnumerable<T>, IDisposable where T : class 
+    internal class ProducerConsumerQueue<T> : IObserver<T>, IEnumerable<T>, IDisposable where T : class
     {
         private readonly Queue<T> _queue;
         private readonly AutoResetEvent _mutex;
         private readonly object _lockThis;
 
-        private bool _isComplete;
-        private bool _isDispoced;
+        private volatile bool _isComplete;
+        private volatile bool _isDispoced;
 
         public ProducerConsumerQueue()
         {
