@@ -42,7 +42,13 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, string[] fields = null, FilterRule[] filterRules = null)
         {
             return RPCServerTaskExecuteEnumerable<Dictionary<string, object>>(Connection, RPCQueryName, "GetData", userToken,
-                new object[] { dataSourcePath,fields, filterRules });
+                new object[] { dataSourcePath, fields, filterRules });
+        }
+
+        public IEnumerable<string> GetFieldData(string userToken, string dataSourcePath, string field, string match, int elementsToReturn = 10)
+        {
+            return RPCServerTaskExecuteEnumerable<string>(Connection, RPCQueryName, "GetFieldData", userToken,
+                new object[] { dataSourcePath, field, match, elementsToReturn });
         }
 
         public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys)
@@ -120,7 +126,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         {
                             if (onFail != null)
                             {
-                                onFail("Connection to server is broken",  new TimeoutException("TimeOut for respoce elapsed!"));
+                                onFail("Connection to server is broken", new TimeoutException("TimeOut for respoce elapsed!"));
                             }
 
                             breakFlag = false;

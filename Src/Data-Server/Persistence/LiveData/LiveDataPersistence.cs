@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
 using MongoDB.Bson;
@@ -67,8 +68,6 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 _logger.Debug("GetData() Error: " + ex.Message);
                 return new List<LiveDataObject>();
             }
-
-
         }
 
         public IEnumerable<T> GetData<T>(string dataSourcePath, FilterRule[] filterRules = null)
@@ -85,6 +84,21 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
             cursor = _collection.FindAllAs<T>();
             return cursor;
+        }
+
+        public IEnumerable<string> GetFieldValues(string fieldName, string match, int elementsToReturn = 10)
+        {
+            try
+            {
+                var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(CreateSelectedFieldQuery(fieldName, match)));
+                var cursor = _collection.FindAs<LiveDataObject>(qwraper).SetLimit(elementsToReturn).Where(x=>x.RecordValues.ContainsKey(fieldName)).Select(x=>Convert.ToString(x.RecordValues[fieldName]));
+                return cursor;
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug("GetData() Error: " + ex.Message);
+                return new string[0];
+            }
         }
 
         /// <summary>
@@ -218,11 +232,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             var queryList = Query.EQ(string.Format("RecordValues.{0}", fieldName), BsonValue.Create(value));
             var colecton = _collection.Find(queryList);
             var count = colecton.Count();
-            if (count > 0)
-            {
-                return true;
-            }
-            return false;
+            return count > 0;
         }
 
         public void ClearCollection()
@@ -304,7 +314,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             _collection.Update(query, update);
         }
 
-        private string ConvertToMongoOperations(Operations operation, string value)
+        private static string ConvertToMongoOperations(Operations operation, string value)
         {
             if (!string.IsNullOrEmpty(value) && value.ToCharArray()[0] != Convert.ToChar("'"))
             {
@@ -333,7 +343,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             return "";
         }
 
-        private string CreateFilterRuleQuery(IList<FilterRule> whereCondition)
+        private static string CreateFilterRuleQuery(IList<FilterRule> whereCondition)
         {
             if (whereCondition == null || whereCondition.Count == 0) return string.Empty;
             var query = "{";
@@ -359,22 +369,27 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             return query;
         }
 
-        private string CreateSelectedFieldsQuery(string[] fields)
+        private static string CreateSelectedFieldsQuery(string[] fields)
         {
-            var constStr = "{_id : 1, RecordKey : 1, UserToken : 1,";
+            const string constStr = "{_id : 1, RecordKey : 1, UserToken : 1,";
             var query = constStr;
             foreach (var field in fields)
             {
                 if (fields.Last() == field)
                 {
-                    query += string.Format(" RecordValues.{0} : 1",field) + "";
+                    query += string.Format(" RecordValues.{0} : 1", field) + "";
                     break;
                 }
-                query += string.Format(" RecordValues.{0} : 1,",field);
+                query += string.Format(" RecordValues.{0} : 1,", field);
             }
             return query;
         }
-    }
 
-    
+        private static string CreateSelectedFieldQuery(string field, string match)
+        {
+            var query = new StringBuilder(string.Format("{{'RecordValues.{0}' : /^{1}/}}", field, match));
+            //query.Append(string.Format("'RecordValues.{0}' : 1}}", field));
+            return query.ToString();
+        }
+    }
 }
