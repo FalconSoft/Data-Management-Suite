@@ -87,7 +87,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly ConnectionFactory _factory;
 
         protected IEnumerable<T> RPCServerTaskExecuteEnumerable<T>(IConnection connection,
-          string commandQueueName, string methodName, string userToken, object[] methodArgs)
+          string commandQueueName, string methodName, string userToken, object[] methodArgs) where  T : class 
         {
             try
             {
@@ -102,12 +102,16 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 var consumer = SendMessage(channel, commandQueueName, methodName, userToken, methodArgs, correlationId);
 
-                var subject = new Subject<T>();
+                var subject = new ProducerConsumerQueue<T>();
 
                 Task.Factory.StartNew(() => ConsumerDataToSubject(consumer, channel, subject, correlationId), _cts.Token)
-                    .ContinueWith(t => subject.OnCompleted());
+                    .ContinueWith(t =>
+                    {
+                        subject.OnCompleted();
+                        subject.Dispose();
+                    });
 
-                return subject.ObserveOn(Scheduler.Default).ToEnumerable();
+                return subject;
             }
             catch (Exception ex)
             {
@@ -288,7 +292,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             return Observable.Create(func);
         }
 
-        private void ConsumerDataToSubject<T>(QueueingBasicConsumer consumer, IModel channel, Subject<T> subject, string correlationId)
+        private void ConsumerDataToSubject<T>(QueueingBasicConsumer consumer, IModel channel, IObserver<T> subject, string correlationId)
         {
             while (true)
             {

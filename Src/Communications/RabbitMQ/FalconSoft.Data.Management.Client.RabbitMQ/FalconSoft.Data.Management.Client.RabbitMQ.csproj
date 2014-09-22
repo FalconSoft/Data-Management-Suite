@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BinaryConverter.cs" />
+    <Compile Include="ProducerConsumerQueue.cs" />
     <Compile Include="CommandFacade.cs" />
     <Compile Include="FacadeFactory.cs" />
     <Compile Include="MetaDataFacade.cs" />
