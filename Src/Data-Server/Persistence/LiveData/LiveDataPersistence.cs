@@ -366,16 +366,16 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
         private string CreateSelectedFieldsQuery(string[] fields)
         {
-            var constStr = "{_id : 1, RecordKey : 1, UserToken : 1,";
+            var constStr = "{\"_id\" : 1, \"RecordKey\" : 1, \"UserToken\" : 1,";
             var query = constStr;
             foreach (var field in fields)
             {
                 if (fields.Last() == field)
                 {
-                    query += string.Format(" RecordValues.{0} : 1",field) + "}";
+                    query += string.Format(" \"RecordValues.{0}\" : 1", field) + "}";
                     break;
                 }
-                query += string.Format(" RecordValues.{0} : 1,",field);
+                query += string.Format(" \"RecordValues.{0}\" : 1,", field);
             }
             return query;
         }
