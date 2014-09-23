@@ -92,11 +92,16 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         /// </summary>
         /// <param name="rekordKey">Array of data record keys what we are looking for</param>
         /// <returns>All matched data</returns>
-        public IEnumerable<LiveDataObject> GetDataByKey(string[] rekordKey)
+        public IEnumerable<LiveDataObject> GetDataByKey(string[] rekordKey, string[] fields = null)
         {
             try
             {
-                return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
+                if (fields == null)
+                    return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
+                var data = _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
+                foreach (var liveDataObject in data)
+                    liveDataObject.RecordValues = liveDataObject.RecordValues.Join(fields, j1 => j1.Key, j2 => j2, (j1, j2) => j1).ToDictionary(k => k.Key, v => v.Value);
+                return data;
             }
             catch (Exception ex)
             {
@@ -367,7 +372,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             {
                 if (fields.Last() == field)
                 {
-                    query += string.Format(" RecordValues.{0} : 1",field) + "";
+                    query += string.Format(" RecordValues.{0} : 1",field) + "}";
                     break;
                 }
                 query += string.Format(" RecordValues.{0} : 1,",field);

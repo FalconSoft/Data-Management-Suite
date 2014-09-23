@@ -45,10 +45,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 new object[] { dataSourcePath,fields, filterRules });
         }
 
-        public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys)
+        public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys, string[] fields = null)
         {
             return RPCServerTaskExecuteEnumerable<Dictionary<string, object>>(Connection, RPCQueryName, "GetDataByKey", userToken,
-               new object[] { dataSourcePath, recordKeys });
+               new object[] { dataSourcePath, recordKeys,fields });
         }
 
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, string[] fields = null)

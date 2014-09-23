@@ -51,24 +51,31 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
 
         }
 
+        public void RegisterSubject(string dataSourceUrn, string primaryKey, string fieldName, ExcelPoint excelPoint)
+        {
+            throw new NotImplementedException();
+        }
+
+
         public IExcelObservable RegisterSubject(string dataSourceUrn, string primaryKey, string fieldName)
         {
-            return ExcelMessanger.RegisterSubject(dataSourceUrn, "|" + primaryKey, fieldName, OnSubscribed);
+           // return ExcelMessanger.RegisterSubject(dataSourceUrn, "|" + primaryKey, fieldName, OnSubscribed); todo
+            return null;
         }
 
         public void RegisterSource(ExcelPoint point)
         {
-            if (!LocalDb.ContainsKey(point.DataSourceUrn)) ExcelMessanger.SendData(point, "Invalid DataSourcePath"); 
-            var sub = _serverObs.Subscribe(s =>
-            {
-                UpdateDb(s);
-                foreach (var recordChangedParam in s.Where(w => w.ChangedAction == RecordChangedAction.AddedOrUpdated))
-                    foreach (var changedPropertyName in recordChangedParam.ChangedPropertyNames)
-                        ExcelMessanger.SendData(recordChangedParam.ProviderString, recordChangedParam.RecordKey,
-                            changedPropertyName, recordChangedParam.RecordValues[changedPropertyName]);
-            });
-            Subcribers.Add(point.DataSourceUrn,sub);
-        }
+            //if (!LocalDb.ContainsKey(point.DataSourceUrn)) ExcelMessanger.SendData(point, "Invalid DataSourcePath"); 
+            //var sub = _serverObs.Subscribe(s =>
+            //{
+            //    UpdateDb(s);
+            //    foreach (var recordChangedParam in s.Where(w => w.ChangedAction == RecordChangedAction.AddedOrUpdated))
+            //        foreach (var changedPropertyName in recordChangedParam.ChangedPropertyNames)
+            //            ExcelMessanger.SendData(recordChangedParam.ProviderString, recordChangedParam.RecordKey,
+            //                changedPropertyName, recordChangedParam.RecordValues[changedPropertyName]);
+            //});
+            //Subcribers.Add(point.DataSourceUrn,sub); todo
+        } 
 
         private void UpdateDb(IEnumerable<RecordChangedParam> recordChangedParams)
         {
@@ -97,9 +104,9 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
 
         private void PullData(ExcelPoint excelPoint)
         {
-            if (!LocalDb.ContainsKey(excelPoint.DataSourceUrn)) return;
-            if (!LocalDb[excelPoint.DataSourceUrn].ContainsKey(excelPoint.PrimaryKeyValue)) return;
-            ExcelMessanger.SendData(excelPoint.DataSourceUrn, excelPoint.PrimaryKeyValue, excelPoint.FieldName, LocalDb[excelPoint.DataSourceUrn][excelPoint.PrimaryKeyValue][excelPoint.FieldName]);
+            //if (!LocalDb.ContainsKey(excelPoint.DataSourceUrn)) return;
+            //if (!LocalDb[excelPoint.DataSourceUrn].ContainsKey(excelPoint.PrimaryKeyValue)) return;
+            //ExcelMessanger.SendData(excelPoint.DataSourceUrn, excelPoint.PrimaryKeyValue, excelPoint.FieldName, LocalDb[excelPoint.DataSourceUrn][excelPoint.PrimaryKeyValue][excelPoint.FieldName]); todo
         }
 
         private void OnSubscribed(ExcelPoint excelPoint)

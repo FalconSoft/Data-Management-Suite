@@ -165,7 +165,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 case "GetDataByKey":
                     {
                         GetDataByKey(basicProperties, message.UserToken, message.MethodsArgs[0] as string,
-                            message.MethodsArgs[1] as string[]);
+                            message.MethodsArgs[1] as string[], message.MethodsArgs[2] as string[]);
                         break;
                     }
                 case "Dispose":
@@ -194,7 +194,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             }
         }
 
-        private void GetDataByKey(IBasicProperties basicProperties, string userToken, string dataSourcePath, string[] recordKeys)
+        private void GetDataByKey(IBasicProperties basicProperties, string userToken, string dataSourcePath, string[] recordKeys, string[] fields = null)
         {
             Task.Factory.StartNew(() =>
             {
@@ -208,7 +208,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                     var dataSourcePathLocal = string.Copy(dataSourcePath);
 
-                    var data = _reactiveDataQueryFacade.GetDataByKey(userTokenLocal, dataSourcePathLocal, recordKeys);
+                    var data = _reactiveDataQueryFacade.GetDataByKey(userTokenLocal, dataSourcePathLocal, recordKeys, fields);
 
                     var list = new List<Dictionary<string, object>>();
 
@@ -251,7 +251,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    _logger.Debug("GetAggregatedData failed", ex);
+                    _logger.Debug("GetDataByKeys failed", ex);
                     throw;
                 }
             }, _cts.Token);
