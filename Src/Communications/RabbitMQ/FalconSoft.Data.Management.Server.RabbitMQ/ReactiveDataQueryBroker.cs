@@ -149,6 +149,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         GetDataChanges(message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string[]);
                         break;
                     }
+                case "GetFieldData":
+                    {
+                        GetFieldData(basicProperties, message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string, message.MethodsArgs[2] as string, (int)message.MethodsArgs[3]);
+                        break;
+                    }
                 case "ResolveRecordbyForeignKey":
                     {
                         ResolveRecordbyForeignKey(basicProperties, message.UserToken,
@@ -174,6 +179,40 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         break;
                     }
             }
+        }
+
+        private void GetFieldData(IBasicProperties basicProperties, string userToken, string dataSourceUrn, string fieldName, string match, int take)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var enumerator = _reactiveDataQueryFacade.GetFieldData(userToken, dataSourceUrn, fieldName, match,
+                        take);
+
+                    var list = new List<string>(enumerator);
+
+                    var responce = new RabbitMQResponce();
+                    var replyTo = basicProperties.ReplyTo;
+                    var correlationId = basicProperties.CorrelationId;
+
+                    responce.Data = list;
+
+                    RPCSendTaskExecutionResults(replyTo, correlationId, responce);
+
+                    list.Clear();
+
+
+                    RPCSendTaskExecutionResults(replyTo, correlationId,
+                        new RabbitMQResponce {Id = responce.Id++, LastMessage = true});
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error("Error", ex);
+                    throw;
+                }
+            });
         }
 
         private void Dispose(string userToken, string dataSourcePath, string[] fields = null)
@@ -414,7 +453,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             try
             {
                 var routingKey = fields != null ? fields.Aggregate(string.Format("{0}.{1}", dataSourcePath, userToken),
-               (cur, next) => string.Format("{0}.{1}", cur, next)) : string.Format("{0}.{1}", dataSourcePath, userToken);
+               (cur, next) => string.Format("{0}.{1}", cur, next)).GetHashCode().ToString() : string.Format("{0}.{1}", dataSourcePath, userToken);
 
                 if (_getDataChangesDispocebles.ContainsKey(routingKey))
                 {
