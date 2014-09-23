@@ -367,7 +367,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             {
                 if (fields.Last() == field)
                 {
-                    query += string.Format(" RecordValues.{0} : 1",field) + "";
+                    query += string.Format(" RecordValues.{0} : 1",field) + "}";
                     break;
                 }
                 query += string.Format(" RecordValues.{0} : 1,",field);
