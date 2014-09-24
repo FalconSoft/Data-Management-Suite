@@ -55,9 +55,9 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 }
                 if (fields != null)
                 {
-                    var mongoQuery = "{ }," + CreateSelectedFieldsQuery(fields);
+                    var mongoQuery = "{ }, " + CreateSelectedFieldsQuery(fields);
                     var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(mongoQuery));
-                    cursor = _collection.FindAs<LiveDataObject>(qwraper);
+                    cursor = _collection.FindAs<LiveDataObject>(qwraper).SetFields(Fields.Include(fields.Select(f=>string.Format("RecordValues.{0}", f)).ToArray()));
                     return cursor;
                 }
                 cursor = _collection.FindAllAs<LiveDataObject>();
@@ -377,10 +377,10 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             {
                 if (fields.Last() == field)
                 {
-                    query += string.Format(" RecordValues.{0} : 1", field) + "";
+                    query += string.Format(" \"RecordValues.{0}\" : 1", field) + "}";
                     break;
                 }
-                query += string.Format(" RecordValues.{0} : 1,", field);
+                query += string.Format(" \"RecordValues.{0}\" : 0,", field);
             }
             return query;
         }
