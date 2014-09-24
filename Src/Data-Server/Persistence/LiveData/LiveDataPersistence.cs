@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
 using MongoDB.Bson;
@@ -151,7 +150,6 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 _logger.Debug("GetAggregatedData() Error:" + ex.Message);
                 return new List<LiveDataObject>();
             }
-
         }
 
         public IEnumerable<LiveDataObject> GetDataByForeignKey(Dictionary<string, object> record)
@@ -387,9 +385,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
         private static string CreateSelectedFieldQuery(string field, string match)
         {
-            var query = new StringBuilder(string.Format("{{'RecordValues.{0}' : /^{1}/}}", field, match));
-            //query.Append(string.Format("'RecordValues.{0}' : 1}}", field));
-            return query.ToString();
+            return string.Format("{{'RecordValues.{0}' : /^{1}/}}", field, match);
         }
     }
 }
