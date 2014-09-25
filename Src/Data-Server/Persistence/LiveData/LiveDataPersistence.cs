@@ -56,7 +56,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 {
                     var mongoQuery = "{ }, " + CreateSelectedFieldsQuery(fields);
                     var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(mongoQuery));
-                    cursor = _collection.FindAs<LiveDataObject>(qwraper).SetFields(Fields.Include(fields.Select(f=>string.Format("RecordValues.{0}", f)).ToArray()));
+                    cursor = _collection.FindAs<LiveDataObject>(qwraper).SetFields(Fields.Include(fields.Select(f => string.Format("RecordValues.{0}", f)).ToArray()));
                     return cursor;
                 }
                 cursor = _collection.FindAllAs<LiveDataObject>();
@@ -90,7 +90,14 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             try
             {
                 var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(CreateSelectedFieldQuery(fieldName, match)));
-                var cursor = _collection.FindAs<LiveDataObject>(qwraper).SetLimit(elementsToReturn).Where(x=>x.RecordValues.ContainsKey(fieldName)).Select(x=>Convert.ToString(x.RecordValues[fieldName]));
+                //var cursor = _collection.FindAs<LiveDataObject>(qwraper).SetLimit(elementsToReturn).Where(x => x.RecordValues.ContainsKey(fieldName)).DistinctBy(y => y.RecordValues[fieldName]).Select(x => Convert.ToString(x.RecordValues[fieldName]));
+                var cursor = _collection.FindAs<LiveDataObject>(qwraper).Where(x => x.RecordValues.ContainsKey(fieldName)).DistinctBy(x => x.RecordValues[fieldName]).Take(elementsToReturn).Select(x => Convert.ToString(x.RecordValues[fieldName]));
+                //var cursor = _collection.AsQueryable<LiveDataObject>()
+                //    .Where(x => x.RecordValues.ContainsKey(fieldName))
+                //    .Where(x => Convert.ToString(x.RecordValues[fieldName]).StartsWith(match))
+                //    .DistinctBy(y => y.RecordValues[fieldName])
+                //    .Take(elementsToReturn)
+                //    .Select(x => Convert.ToString(x.RecordValues[fieldName]));
                 return cursor;
             }
             catch (Exception ex)
