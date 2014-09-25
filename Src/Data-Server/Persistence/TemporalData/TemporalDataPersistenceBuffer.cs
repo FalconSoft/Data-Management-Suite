@@ -7,6 +7,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
+using MongoDB.Driver.Linq;
 
 namespace FalconSoft.Data.Server.Persistence.TemporalData
 {
@@ -167,6 +168,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         {
             var query = Query.EQ("Urn", _dataSourceInfo.DataSourcePath);
             var collectionRevision = _mongoDatabase.GetCollection("Revisions");
+            collectionRevision.CreateIndex(new[] { "RevisionId" });
             var revisions = collectionRevision.FindAs<BsonDocument>(query).SetFields(Fields.Exclude("_id", "Urn")); //, "RevisionId"
             return revisions.Select(revision => revision.ToDictionary(k => k.Name, v => (object) v.Value.ToString())).ToList();
         }
@@ -204,8 +206,8 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                 switch (recordChangedParam.ChangedAction)
                 {
                     case RecordChangedAction.AddedOrUpdated:
-                        {
-                            var bsDoc = new Dictionary<string, object>(recordChangedParam.RecordValues);
+                    {
+                            var bsDoc = GetDataForHistory(recordChangedParam);
                             AddStructureFields(ref bsDoc, recordChangedParam, (Guid)revisionId);
                             var query = Query.EQ("RecordKey", recordChangedParam.RecordKey);
                             //if current == buffer then create new doc
@@ -213,16 +215,19 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                             {
                                 var doc = cursor["Data"].AsBsonArray.Last();
                                 doc["TimeStamp"] = DateTime.Now;
+                                RemoveRevision(query,cursor["Current"].AsInt32, _collection);
                                 _collection.Update(query, Update.Set(string.Format("Data.{0}", cursor["Current"].AsInt32), doc));
                                 CreateNewDoucument(_collection, recordChangedParam, (Guid)revisionId);
                                 break;
                             }
                             if (cursor["Current"].AsInt32 == _buffer && _rollover == false)//ROLLOVER OFF
                             {
+                                RemoveRevision(query, _buffer, _collection);
                                 _collection.Update(query, Update.Set(string.Format("Data.{0}", _buffer), bsDoc.ToBsonDocument()).Set("Current", 0));
                                 break;
                             }
                             var currentNum = cursor["Current"].AsInt32 + 1;
+                            RemoveRevision(query,currentNum, _collection);
                             var update = Update.Set(string.Format("Data.{0}", currentNum), bsDoc.ToBsonDocument()).Set("Current", currentNum);
                             _collection.Update(query, update);
                             break;
@@ -285,6 +290,23 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             bsonDocument.Add("UserId", string.IsNullOrEmpty(recordChangedParam.UserToken) ? string.Empty : recordChangedParam.UserToken);
         }
 
+        private Dictionary<string, object> GetDataForHistory(RecordChangedParam recordChangedParam)
+        {
+            if(recordChangedParam.ChangedPropertyNames == null)
+                return new Dictionary<string, object>(recordChangedParam.RecordValues);
+            return recordChangedParam.ChangedPropertyNames.ToDictionary(changedPropertyName => changedPropertyName, changedPropertyName => recordChangedParam.RecordValues[changedPropertyName]);
+        }
+
+
+        private void RemoveRevision(IMongoQuery query,int index,MongoCollection<BsonDocument> historyCollection)
+        {
+            //var obj = historyCollection.FindAs<BsonDocument>(query);
+            //if(obj == null) return;
+            //var revisionId = obj.First()["Data"].AsBsonArray[index]["RevisionId"].ToString();
+            //var queryRev = Query.EQ("RevisionId", Guid.Parse(revisionId));
+            //var collectionRevision = _mongoDatabase.GetCollection("Revisions");
+            //collectionRevision.Remove(queryRev);
+        }
 
 
         private object ToStrongTypedObject(BsonValue bsonValue, string fieldName)
