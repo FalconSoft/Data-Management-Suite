@@ -91,7 +91,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             {
                 var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(CreateSelectedFieldQuery(fieldName, match)));
                 //var cursor = _collection.FindAs<LiveDataObject>(qwraper).SetLimit(elementsToReturn).Where(x => x.RecordValues.ContainsKey(fieldName)).DistinctBy(y => y.RecordValues[fieldName]).Select(x => Convert.ToString(x.RecordValues[fieldName]));
-                var cursor = _collection.FindAs<LiveDataObject>(qwraper).Where(x => x.RecordValues.ContainsKey(fieldName)).DistinctBy(x => x.RecordValues[fieldName]).Take(elementsToReturn).Select(x => Convert.ToString(x.RecordValues[fieldName]));
+                var cursor = _collection.FindAs<LiveDataObject>(qwraper).Where(x => x.RecordValues.ContainsKey(fieldName)).DistinctBy(x => x.RecordValues[fieldName]).Take(elementsToReturn).Select(x => Convert.ToString(x.RecordValues[fieldName])).OrderBy(x => x);
                 //var cursor = _collection.AsQueryable<LiveDataObject>()
                 //    .Where(x => x.RecordValues.ContainsKey(fieldName))
                 //    .Where(x => Convert.ToString(x.RecordValues[fieldName]).StartsWith(match))
