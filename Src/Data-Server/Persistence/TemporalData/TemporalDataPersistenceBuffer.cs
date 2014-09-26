@@ -51,6 +51,8 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                 _mongoDatabase.CreateCollection(_dataSourceProviderString.ToValidDbString() + "_History");
                 _collection = _mongoDatabase.GetCollection(_dataSourceProviderString.ToValidDbString() + "_History");
                 _collection.CreateIndex("RecordKey", "Current");
+                var collectionRevision = _mongoDatabase.GetCollection("Revisions");
+                collectionRevision.CreateIndex(new[] { "RevisionId" });
             }
         }
 
@@ -128,7 +130,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                 if(!relatedDataHistory.Any()) continue;
                 foreach (var mappedField in relationshipInfo.MappedFields)
                 {
-                    mainDataHistory.Join(relatedDataHistory, j1 => j1[mappedField.Key].ToString(), j2 => j2[mappedField.Value].ToString(),
+                    mainDataHistory.Where(w => w.ContainsKey(mappedField.Key)).Join(relatedDataHistory.Where(w => w.ContainsKey(mappedField.Key)), j1 => j1[mappedField.Key].ToString(), j2 => j2[mappedField.Value].ToString(),
                         (j1, j2) =>
                         {
                             foreach (var field in _dataSourceInfo.Fields.Where(w => w.Value.RelationUrn == relationshipInfo.Name))
@@ -168,7 +170,6 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         {
             var query = Query.EQ("Urn", _dataSourceInfo.DataSourcePath);
             var collectionRevision = _mongoDatabase.GetCollection("Revisions");
-            collectionRevision.CreateIndex(new[] { "RevisionId" });
             var revisions = collectionRevision.FindAs<BsonDocument>(query).SetFields(Fields.Exclude("_id", "Urn")); //, "RevisionId"
             return revisions.Select(revision => revision.ToDictionary(k => k.Name, v => (object) v.Value.ToString())).ToList();
         }
@@ -215,19 +216,19 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                             {
                                 var doc = cursor["Data"].AsBsonArray.Last();
                                 doc["TimeStamp"] = DateTime.Now;
-                                RemoveRevision(query,cursor["Current"].AsInt32, _collection);
+                                //RemoveRevision(query,cursor["Current"].AsInt32, _collection);
                                 _collection.Update(query, Update.Set(string.Format("Data.{0}", cursor["Current"].AsInt32), doc));
                                 CreateNewDoucument(_collection, recordChangedParam, (Guid)revisionId);
                                 break;
                             }
                             if (cursor["Current"].AsInt32 == _buffer && _rollover == false)//ROLLOVER OFF
                             {
-                                RemoveRevision(query, _buffer, _collection);
+                                //RemoveRevision(query, _buffer, _collection);
                                 _collection.Update(query, Update.Set(string.Format("Data.{0}", _buffer), bsDoc.ToBsonDocument()).Set("Current", 0));
                                 break;
                             }
                             var currentNum = cursor["Current"].AsInt32 + 1;
-                            RemoveRevision(query,currentNum, _collection);
+                            //RemoveRevision(query, cursor["Current"].AsInt32, _collection);
                             var update = Update.Set(string.Format("Data.{0}", currentNum), bsDoc.ToBsonDocument()).Set("Current", currentNum);
                             _collection.Update(query, update);
                             break;
@@ -300,12 +301,18 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         private void RemoveRevision(IMongoQuery query,int index,MongoCollection<BsonDocument> historyCollection)
         {
-            //var obj = historyCollection.FindAs<BsonDocument>(query);
-            //if(obj == null) return;
-            //var revisionId = obj.First()["Data"].AsBsonArray[index]["RevisionId"].ToString();
-            //var queryRev = Query.EQ("RevisionId", Guid.Parse(revisionId));
-            //var collectionRevision = _mongoDatabase.GetCollection("Revisions");
-            //collectionRevision.Remove(queryRev);
+            var obj = historyCollection.FindAs<BsonDocument>(query);
+            if (obj == null) return;
+            try
+            {
+                var revisionId = obj.First()["Data"].AsBsonArray[index]["RevisionId"].AsGuid.ToString();
+                var queryRev = Query.EQ("RevisionId", Guid.Parse(revisionId));
+                var collectionRevision = _mongoDatabase.GetCollection("Revisions");
+                collectionRevision.Remove(queryRev);
+            }
+            catch (Exception)
+            {}
+           
         }
 
 
