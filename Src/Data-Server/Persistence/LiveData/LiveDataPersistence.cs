@@ -42,7 +42,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         {
             try
             {
-                var query = CreateFilterRuleQuery(filterRules);
+                var query =  CreateFilterRuleQuery(filterRules!=null?filterRules.ToList(): null);
                 MongoCursor<LiveDataObject> cursor;
                 if (!string.IsNullOrEmpty(query))
                 {
@@ -350,27 +350,53 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
 
         private static string CreateFilterRuleQuery(IList<FilterRule> whereCondition)
         {
-            if (whereCondition == null || whereCondition.Count == 0) return string.Empty;
+            if (whereCondition == null || !whereCondition.Any()) return string.Empty;
+
+            var index = whereCondition.Count - 1;
+            var filetrRule = whereCondition[index];
+            whereCondition.Remove(filetrRule);
+
             var query = "{";
-            foreach (var condition in whereCondition)
+
+            if (index == 0)
             {
-                switch (condition.Combine)
-                {
-                    case CombineState.And:
-                        query += " $and : [{ \"RecordValues." + condition.FieldName + "\" : " +
-                                 ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
-                        break;
-                    case CombineState.Or:
-                        query += " $or : [{ \"RecordValues." + condition.FieldName + "\" : " +
-                                 ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
-                        break;
-                    default:
-                        query += condition.Combine + " \"RecordValues." + condition.FieldName + "\" : " + ConvertToMongoOperations(condition.Operation, condition.Value) + ",";
-                        break;
-                }
+                query += " \"RecordValues." + filetrRule.FieldName + "\" : " + ConvertToMongoOperations(filetrRule.Operation, filetrRule.Value) + "}";
+                return query;
             }
-            query = query.Remove(query.Count() - 1);
-            query += @"}";
+
+            switch (filetrRule.Combine)
+            {
+                case CombineState.And:
+                    query += " $and :" + " [{\"RecordValues." + filetrRule.FieldName + "\" : " +
+                             ConvertToMongoOperations(filetrRule.Operation, filetrRule.Value) + "}, " +
+                             CreateFilterRuleQuery(whereCondition) + "]}";
+                    break;
+                case CombineState.Or:
+                    query += " $or :" + " [{\"RecordValues." + filetrRule.FieldName + "\" : " +
+                             ConvertToMongoOperations(filetrRule.Operation, filetrRule.Value) + "}, " +
+                             CreateFilterRuleQuery(whereCondition) + "]}";
+                    break;
+            } //if (whereCondition == null || whereCondition.Count == 0) return string.Empty;
+            //var query = "{";
+            //foreach (var condition in whereCondition)
+            //{
+            //    switch (condition.Combine)
+            //    {
+            //        case CombineState.And:
+            //            query += " $and : [{ \"RecordValues." + condition.FieldName + "\" : " +
+            //                     ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
+            //            break;
+            //        case CombineState.Or:
+            //            query += " $or : [{ \"RecordValues." + condition.FieldName + "\" : " +
+            //                     ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
+            //            break;
+            //        default:
+            //            query += condition.Combine + " \"RecordValues." + condition.FieldName + "\" : " + ConvertToMongoOperations(condition.Operation, condition.Value) + ",";
+            //            break;
+            //    }
+            //}
+            //query = query.Remove(query.Count() - 1);
+            //query += @"}";
             return query;
         }
 
