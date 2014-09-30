@@ -7,7 +7,6 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
-using MongoDB.Driver.Linq;
 
 namespace FalconSoft.Data.Server.Persistence.TemporalData
 {
@@ -135,6 +134,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                         {
                             foreach (var field in _dataSourceInfo.Fields.Where(w => w.Value.RelationUrn == relationshipInfo.Name))
                             {
+                                if (!j1.ContainsKey(field.Key) || !j2.ContainsKey(field.Value.RelatedFieldName)) continue;
                                 j1[field.Key] = j2[field.Value.RelatedFieldName];
                             }
                             resultData.Add(j1);
@@ -209,6 +209,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                     case RecordChangedAction.AddedOrUpdated:
                     {
                             var bsDoc = GetDataForHistory(recordChangedParam);
+                            bsDoc = MergeHistory(bsDoc,cursor);
                             AddStructureFields(ref bsDoc, recordChangedParam, (Guid)revisionId);
                             var query = Query.EQ("RecordKey", recordChangedParam.RecordKey);
                             //if current == buffer then create new doc
@@ -296,6 +297,19 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             if(recordChangedParam.ChangedPropertyNames == null)
                 return new Dictionary<string, object>(recordChangedParam.RecordValues);
             return recordChangedParam.ChangedPropertyNames.ToDictionary(changedPropertyName => changedPropertyName, changedPropertyName => recordChangedParam.RecordValues[changedPropertyName]);
+        }
+
+        private Dictionary<string, object> MergeHistory(Dictionary<string, object> dataForMerge, BsonDocument cursor)
+        {
+           var historyData = cursor["Data"].AsBsonArray[cursor["Current"].AsInt32].AsBsonDocument.ToDictionary(k => k.Name, v => v.Value);
+           var prevData = historyData.Where(bsonValue => _dbfields.All(a => a != bsonValue.Key)).ToDictionary(bsonValue => bsonValue.Key, bsonValue => ToStrongTypedObject(bsonValue.Value, bsonValue.Key));
+            foreach (var record in dataForMerge)
+            {
+                if (prevData.ContainsKey(record.Key))
+                    prevData[record.Key] = record.Value;
+                else prevData.Add(record.Key,record.Value);
+            }
+            return prevData;
         }
 
 
