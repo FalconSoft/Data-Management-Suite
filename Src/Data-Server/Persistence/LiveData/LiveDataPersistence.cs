@@ -112,11 +112,14 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         /// </summary>
         /// <param name="rekordKey">Array of data record keys what we are looking for</param>
         /// <returns>All matched data</returns>
-        public IEnumerable<LiveDataObject> GetDataByKey(string[] rekordKey)
+        public IEnumerable<LiveDataObject> GetDataByKey(string[] rekordKey, string[] fields = null)
         {
             try
             {
-                return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
+                if (fields == null)
+                    return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
+                var result = _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey)).Select(s=>MergeFields(s,fields));
+                return result;
             }
             catch (Exception ex)
             {
@@ -124,6 +127,13 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 _logger.Debug("GetDataByKey() Error:" + "Keys : " + primaryKeys + " Error:" + ex.Message);
                 return new List<LiveDataObject>();
             }
+        }
+
+        private LiveDataObject MergeFields(LiveDataObject liveDataObject, string[] fields)
+        {
+             liveDataObject.RecordValues = liveDataObject.RecordValues.Join(fields, j1 => j1.Key, j2 => j2, (j1, j2) => j1)
+                                        .ToDictionary(k => k.Key, v => v.Value);
+            return liveDataObject;
         }
 
         public IEnumerable<LiveDataObject> GetAggregatedData(AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)
