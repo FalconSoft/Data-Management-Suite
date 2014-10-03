@@ -110,7 +110,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
             {
                 try
                 {
-                    _logger.Debug(DateTime.Now + " Command Broker. InitializeConnection starts");
+                    //_logger.Debug(DateTime.Now + " Command Broker. InitializeConnection starts");
 
                     var replyTo = string.Copy(basicProperties.ReplyTo);
 
