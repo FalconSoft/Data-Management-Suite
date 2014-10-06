@@ -85,6 +85,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         protected Action KeepAliveAction;
         private readonly object _restoreConnectionLock = new object();
         private readonly ConnectionFactory _factory;
+        private readonly object _lockThis = new object();
 
         protected IEnumerable<T> RPCServerTaskExecuteEnumerable<T>(IConnection connection,
           string commandQueueName, string methodName, string userToken, object[] methodArgs) where  T : class 
@@ -338,14 +339,19 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             string exchangeType, string routingKey)
         {
             var subjects = new Subject<T>();
+            string queueName;
+            QueueingBasicConsumer con;
 
-            channel.ExchangeDeclare(exchangeName, exchangeType);
+            lock (_lockThis)
+            {
+                channel.ExchangeDeclare(exchangeName, exchangeType);
 
-            var queueName = CommandChannel.QueueDeclare().QueueName;
-            channel.QueueBind(queueName, exchangeName, routingKey);
+                queueName = CommandChannel.QueueDeclare().QueueName;
+                channel.QueueBind(queueName, exchangeName, routingKey);
 
-            var con = new QueueingBasicConsumer(CommandChannel);
-            channel.BasicConsume(queueName, true, con);
+                con = new QueueingBasicConsumer(CommandChannel);
+                channel.BasicConsume(queueName, true, con);
+            }
 
             var taskComplete = true;
 
