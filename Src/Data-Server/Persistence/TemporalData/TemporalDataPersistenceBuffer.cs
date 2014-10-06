@@ -209,7 +209,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                     case RecordChangedAction.AddedOrUpdated:
                     {
                             var bsDoc = GetDataForHistory(recordChangedParam);
-                            bsDoc = MergeHistory(bsDoc,cursor);
+                           // bsDoc = MergeHistory(bsDoc,cursor);
                             AddStructureFields(ref bsDoc, recordChangedParam, (Guid)revisionId);
                             var query = Query.EQ("RecordKey", recordChangedParam.RecordKey);
                             //if current == buffer then create new doc
@@ -243,6 +243,34 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                         break;
                 }
             }
+        }
+
+        public void UpdateTemporalData(RecordChangedParam recordChangedParam)
+        {
+            //if (recordChangedParam.ChangedAction == RecordChangedAction.Removed) return;
+            if (!string.IsNullOrEmpty(recordChangedParam.OriginalRecordKey) &&
+                (recordChangedParam.OriginalRecordKey != recordChangedParam.RecordKey))
+            {
+                var query = Query.EQ("RecordKey", recordChangedParam.OriginalRecordKey);
+                var update = Update.Set("RecordKey", recordChangedParam.RecordKey);
+                _collection.Update(query, update, UpdateFlags.Multi);
+            }
+            var cursor = _collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LTE("Current", _buffer)));
+            if (cursor == null) return;
+            var bsDoc = GetDataForHistory(recordChangedParam);
+            //bsDoc.Add("RevisionId", cursor["RevisionId"].AsGuid);
+            //bsDoc.Add("_id", cursor["_id"].AsObjectId);
+            //bsDoc.Add("TimeStamp", cursor["TimeStamp"].AsDateTime);
+            //bsDoc.Add("UserId",  cursor["UserId"].AsString);
+            var index = cursor["Current"].AsInt32;
+            var updateQ = new  UpdateBuilder();
+            foreach (var record in recordChangedParam.RecordValues)
+            {
+                updateQ.Set(string.Format("Data.{0}.{1}",index, record.Key),record.Value == null? BsonNull.Value : BsonValue.Create(record.Value));
+            }
+            var queryq = Query.EQ("RecordKey", recordChangedParam.RecordKey);
+            //var updateQuery = Update.Set(string.Format("Data.{0}", cursor["Current"].AsInt32), bsDoc.ToBsonDocument());
+            _collection.Update(queryq, updateQ);
         }
 
         public void SaveTagInfo(TagInfo tagInfo)
@@ -294,9 +322,10 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         private Dictionary<string, object> GetDataForHistory(RecordChangedParam recordChangedParam)
         {
-            if(recordChangedParam.ChangedPropertyNames == null)
-                return new Dictionary<string, object>(recordChangedParam.RecordValues);
-            return recordChangedParam.ChangedPropertyNames.ToDictionary(changedPropertyName => changedPropertyName, changedPropertyName => recordChangedParam.RecordValues[changedPropertyName]);
+            //if(recordChangedParam.ChangedPropertyNames == null)
+            //    return new Dictionary<string, object>(recordChangedParam.RecordValues);
+            //return recordChangedParam.ChangedPropertyNames.ToDictionary(changedPropertyName => changedPropertyName, changedPropertyName => recordChangedParam.RecordValues[changedPropertyName]);
+            return new Dictionary<string, object>(recordChangedParam.RecordValues);
         }
 
         private Dictionary<string, object> MergeHistory(Dictionary<string, object> dataForMerge, BsonDocument cursor)

@@ -164,6 +164,11 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             }
         }
 
+        public void UpdateTemporalData(RecordChangedParam recordChangedParam)
+        {
+            throw new NotImplementedException();
+        }
+
         public void SaveTagInfo(TagInfo tagInfo)
         {
             ConnectToDb();
