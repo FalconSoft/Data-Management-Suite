@@ -116,10 +116,10 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         {
             try
             {
-                if (fields == null)
+                //if (fields == null)
                     return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
-                var result = _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey)).Select(s=>MergeFields(s,fields));
-                return result;
+               // var result = _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey)).Select(s=>MergeFields(s,fields));
+               // return result;
             }
             catch (Exception ex)
             {
