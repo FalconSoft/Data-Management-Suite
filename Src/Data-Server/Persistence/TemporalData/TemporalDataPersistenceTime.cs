@@ -138,7 +138,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             return null;
         }
 
-        public Guid AddRevision(string urn, string userId)
+        public object AddRevision(string urn, string userId)
         {
             return new Guid();
         }

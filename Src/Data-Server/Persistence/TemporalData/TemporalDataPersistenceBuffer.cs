@@ -24,8 +24,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         private readonly int _buffer = 100 - 1;
         //ROLLOVER
         private readonly bool _rollover = false;
-        //flag fo starting clean revision
-        private bool _startCleaningRevisions = false;
+
 
 
         public TemporalDataPersistenceBuffer(string connectionString, DataSourceInfo dataSourceInfo, string userId, int buffer, bool rollover = false)
@@ -34,7 +33,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             _dataSourceProviderString = dataSourceInfo.DataSourcePath;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
-            _buffer = buffer - 1;
+            _buffer = buffer - 1; 
             _rollover = rollover;
             ConnectToDb();
         }
@@ -48,6 +47,8 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             if (_mongoDatabase.CollectionExists(_dataSourceProviderString.ToValidDbString() + "_History"))
             {
                 _collection = _mongoDatabase.GetCollection(_dataSourceProviderString.ToValidDbString() + "_History");
+                _collectionRevision = _mongoDatabase.GetCollection("Revisions"); 
+                _collectionRevision.CreateIndex(new[] { "_id" });
             }
             else
             {
@@ -55,7 +56,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                 _collection = _mongoDatabase.GetCollection(_dataSourceProviderString.ToValidDbString() + "_History");
                 _collection.CreateIndex("RecordKey", "Current");
                 _collectionRevision = _mongoDatabase.GetCollection("Revisions");
-                _collectionRevision.CreateIndex(new[] { "RevisionId" });
+                _collectionRevision.CreateIndex(new[] { "_id" });
             }
         }
 
@@ -175,17 +176,17 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         {
             var query = Query.EQ("Urn", _dataSourceInfo.DataSourcePath);
             var collectionRevision = _mongoDatabase.GetCollection("Revisions");
-            var revisions = collectionRevision.FindAs<BsonDocument>(query).SetFields(Fields.Exclude("_id", "Urn")); //, "RevisionId"
+            var revisions = collectionRevision.FindAs<BsonDocument>(query).SetFields(Fields.Exclude("Urn")); //"_id", "RevisionId" 
             return revisions.Select(revision => revision.ToDictionary(k => k.Name, v => (object) v.Value.ToString())).ToList();
         }
 
-        public Guid AddRevision(string urn,string userId)
+        public object AddRevision(string urn,string userId)
         {
             var revisions = _mongoDatabase.GetCollection("Revisions");
-            var revisionId = Guid.NewGuid();
+            var revisionId = ObjectId.GenerateNewId();
             var bson = new BsonDocument
             {
-                {"RevisionId", revisionId},
+                {"_id", revisionId},
                 {"LoginName", string.IsNullOrEmpty(userId) ? urn : userId},
                 {"TimeStamp", DateTime.Now},
                 {"Urn",urn}
@@ -196,6 +197,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public void SaveTempotalData(RecordChangedParam recordChangedParam, object revisionId)
         {
+           // var revisionsId = AddRevision(recordChangedParam.ProviderString, recordChangedParam.UserToken);
             if(recordChangedParam.ChangedAction == RecordChangedAction.Removed) return;
             if (!string.IsNullOrEmpty(recordChangedParam.OriginalRecordKey) &&
                 (recordChangedParam.OriginalRecordKey != recordChangedParam.RecordKey))
@@ -206,7 +208,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             }
             var cursor = _collection.FindOne(Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey), Query.LTE("Current", _buffer)));
             if (cursor == null)
-                CreateNewDoucument(_collection, recordChangedParam, (Guid)revisionId);
+                CreateNewDoucument(_collection, recordChangedParam, (ObjectId)revisionId);
             else
             {
                 switch (recordChangedParam.ChangedAction)
@@ -215,7 +217,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                     {
                             var bsDoc = GetDataForHistory(recordChangedParam);
                             bsDoc = MergeHistory(bsDoc,cursor);
-                            AddStructureFields(ref bsDoc, recordChangedParam, (Guid)revisionId);
+                            AddStructureFields(ref bsDoc, recordChangedParam, (ObjectId)revisionId);
                             var query = Query.EQ("RecordKey", recordChangedParam.RecordKey);
                             //if current == buffer then create new doc
                             if (cursor["Current"].AsInt32 == _buffer && _rollover == true)//ROLLOVER ON
@@ -223,19 +225,17 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                                 var doc = cursor["Data"].AsBsonArray.Last();
                                 doc["TimeStamp"] = DateTime.Now;
                                 _collection.Update(query, Update.Set(string.Format("Data.{0}", cursor["Current"].AsInt32), doc));
-                                _startCleaningRevisions = true;
-                                RemoveRevision(query, 0, _collection);
-                                CreateNewDoucument(_collection, recordChangedParam, (Guid)revisionId);
+                                CreateNewDoucument(_collection, recordChangedParam, (ObjectId)revisionId);
                                 break;
                             }
                             if (cursor["Current"].AsInt32 == _buffer && _rollover == false)//ROLLOVER OFF
                             {
-                                //RemoveRevision(query, _buffer, _collection);
-                                _collection.Update(query, Update.Set(string.Format("Data.{0}", _buffer), bsDoc.ToBsonDocument()).Set("Current", 0));
+                                RemoveRevision(query, 0, _collection, true);
+                               _collection.Update(query, Update.Set(string.Format("Data.{0}", 0), bsDoc.ToBsonDocument()).Set("Current", 0).Set("OverBuffer",true));
                                 break;
                             }
                             var currentNum = cursor["Current"].AsInt32 + 1;
-                            RemoveRevision(query, cursor["Current"].AsInt32, _collection);
+                            RemoveRevision(query, currentNum, _collection, cursor["OverBuffer"].AsBoolean);
                             var update = Update.Set(string.Format("Data.{0}", currentNum), bsDoc.ToBsonDocument()).Set("Current", currentNum);
                             _collection.Update(query, update);
                             break;
@@ -282,13 +282,14 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             return collection.FindAll().SetFields(Fields.Exclude("_id")).ToList();
         }
 
-        private void CreateNewDoucument(MongoCollection<BsonDocument> collection, RecordChangedParam recordChangedParam, Guid revisionId)
+        private void CreateNewDoucument(MongoCollection<BsonDocument> collection, RecordChangedParam recordChangedParam, ObjectId revisionId)
         {
             var bsDoc = new TempDataObject
             {
                 RecordKey = recordChangedParam.RecordKey,
                 Current = 0,
-                Total = _buffer + 1
+                Total = _buffer + 1,
+                OverBuffer = false
             };
             var bsItem = new Dictionary<string, object>(recordChangedParam.RecordValues);
             AddStructureFields(ref bsItem, recordChangedParam, revisionId);
@@ -302,7 +303,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         }
 
 
-        void AddStructureFields(ref Dictionary<string, object> bsonDocument, RecordChangedParam recordChangedParam, Guid revisionId)
+        void AddStructureFields(ref Dictionary<string, object> bsonDocument, RecordChangedParam recordChangedParam, ObjectId revisionId)
         {
             bsonDocument.Add("RevisionId", revisionId);
             bsonDocument.Add("_id", ObjectId.GenerateNewId());
@@ -332,15 +333,15 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         }
 
 
-        private void RemoveRevision(IMongoQuery query,int index,MongoCollection<BsonDocument> historyCollection)
+        private void RemoveRevision(IMongoQuery query,int index,MongoCollection<BsonDocument> historyCollection, bool overBuffer)
         {
-            if(_startCleaningRevisions == false) return;
+            if (overBuffer == false) return;
             var obj = historyCollection.FindAs<BsonDocument>(query);
             if (obj == null) return;
             try
             {
-                var revisionId = obj.First()["Data"].AsBsonArray[index]["RevisionId"].AsGuid.ToString();
-                var queryRev = Query.EQ("RevisionId", Guid.Parse(revisionId));
+                var revisionId = obj.First()["Data"].AsBsonArray[index]["RevisionId"].AsObjectId;
+                var queryRev = Query.EQ("_id", revisionId);
                 _collectionRevision.Remove(queryRev);
             }
             catch (Exception)
@@ -380,6 +381,8 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         public int Current { get; set; }
 
         public int Total { get; set; }
+
+        public bool OverBuffer { get; set; }
 
         public Dictionary<string, object>[] Data { get; set; }
     }
