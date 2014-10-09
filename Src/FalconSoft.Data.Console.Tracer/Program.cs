@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Web.Script.Serialization;
 using FalconSoft.Data.Management.Client.RabbitMQ;
 using FalconSoft.Data.Management.Common;
@@ -37,6 +38,7 @@ namespace FalconSoft.Data.Console.Tracer
             {
                 SC.WriteLine("User is not loged in!"+ Environment.NewLine +" Pres <Any key> to exit console");
                 SC.ReadKey(true);
+                facadeFactory.Dispose();
                 return;
             }
 
@@ -161,14 +163,27 @@ namespace FalconSoft.Data.Console.Tracer
                             string recordsSb;
                             if (changedParam.ChangedAction == RecordChangedAction.AddedOrUpdated)
                             {
-                                var anonItem = new
+                                if (changedParam.ChangedPropertyNames != null)
                                 {
-                                    DateTime = DateTime.Now.ToString("G"),
-                                    changedParam.RecordKey,
-                                    changedParam.RecordValues
-                                };
-
-                                recordsSb = _scriptSerializer.Serialize(anonItem) + Environment.NewLine;
+                                    var anonItem = new
+                                    {
+                                        DateTime = DateTime.Now.ToString("G"),
+                                        changedParam.RecordKey,
+                                        RecordValues = changedParam.RecordValues.Where(r=>changedParam.ChangedPropertyNames.Contains(r.Key)).ToDictionary(r=>r.Key,r=>r.Value)
+                                    };
+                                    recordsSb = _scriptSerializer.Serialize(anonItem) + Environment.NewLine;
+                                }
+                                else
+                                {
+                                    var anonItem = new
+                                    {
+                                        DateTime = DateTime.Now.ToString("G"),
+                                        changedParam.RecordKey,
+                                        changedParam.RecordValues
+                                    };
+                                    recordsSb = _scriptSerializer.Serialize(anonItem) + Environment.NewLine;
+                                }
+                               
                             }
                             else
                             {
@@ -181,8 +196,7 @@ namespace FalconSoft.Data.Console.Tracer
 
                                 recordsSb = _scriptSerializer.Serialize(anonItem) + Environment.NewLine;
                             }
-
-
+                            
                             streamWriter.Write(recordsSb);
                         }
                     }
