@@ -386,27 +386,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                              ConvertToMongoOperations(filetrRule.Operation, filetrRule.Value) + "}, " +
                              CreateFilterRuleQuery(whereCondition) + "]}";
                     break;
-            } //if (whereCondition == null || whereCondition.Count == 0) return string.Empty;
-            //var query = "{";
-            //foreach (var condition in whereCondition)
-            //{
-            //    switch (condition.Combine)
-            //    {
-            //        case CombineState.And:
-            //            query += " $and : [{ \"RecordValues." + condition.FieldName + "\" : " +
-            //                     ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
-            //            break;
-            //        case CombineState.Or:
-            //            query += " $or : [{ \"RecordValues." + condition.FieldName + "\" : " +
-            //                     ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
-            //            break;
-            //        default:
-            //            query += condition.Combine + " \"RecordValues." + condition.FieldName + "\" : " + ConvertToMongoOperations(condition.Operation, condition.Value) + ",";
-            //            break;
-            //    }
-            //}
-            //query = query.Remove(query.Count() - 1);
-            //query += @"}";
+            } 
             return query;
         }
 
