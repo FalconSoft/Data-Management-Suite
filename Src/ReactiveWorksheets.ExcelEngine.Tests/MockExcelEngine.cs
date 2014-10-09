@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Text;
 using System.Threading.Tasks;
 using ExcelDna.Integration;
@@ -11,6 +12,33 @@ using ReactiveWorksheets.Server.Tests;
 
 namespace ReactiveWorksheets.ExcelEngine.Tests
 {
+    public class MockLiteSubject:IExcelObservable,IExcelObserver
+    {
+        public object Result { get; set; }
+
+        public IDisposable Subscribe(IExcelObserver observer)
+        {
+            return Disposable.Empty;
+        }
+
+        public void OnCompleted()
+        {
+            
+        }
+
+        public void OnError(Exception exception)
+        {
+            
+        }
+
+        public void OnNext(object value)
+        {
+            Result = value;
+        }
+    }
+
+
+
     class MockExcelEngine : IReactiveExcelEngine
     {
         public readonly ReactiveExcelMessanger ExcelMessanger;
@@ -54,6 +82,11 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         public IExcelObservable RegisterSubject(string dataSourceUrn, string primaryKey, string fieldName)
         {
             return ExcelMessanger.RegisterSubject(dataSourceUrn, "|" + primaryKey, fieldName, OnSubscribed);
+        }
+
+        public LiteSubject RegisterSubjects(string dataSourceUrn, string primaryKey, string fieldName)
+        {
+            return ExcelMessanger.RegisterSubject(dataSourceUrn, "|" + primaryKey, fieldName, OnSubscribed) as LiteSubject;
         }
 
         public void RegisterSource(ExcelPoint point)
