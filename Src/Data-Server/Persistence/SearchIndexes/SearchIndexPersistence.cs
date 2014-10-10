@@ -80,7 +80,7 @@ namespace FalconSoft.Data.Server.Persistence.SearchIndexes
 
         private static IMongoUpdate GenerateUpdate(SearchData searchData)
         {
-            return Update<SearchData>.Combine(searchData.GetType().GetProperties().Select(x => Update.Set(x.Name, x.GetValue(searchData, null).ToString())));
+            return Update<SearchData>.Combine(searchData.GetType().GetProperties().Select(x => Update.Set(x.Name, x.GetValue(searchData, null) == null ? string.Empty : x.GetValue(searchData, null).ToString())));
         }
     }
 }
