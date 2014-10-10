@@ -33,8 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FalconSoft.Data.Management.Common">
-      <HintPath>..\..\..\packages\FalconSoft.Data.Management.Common.1.0.6\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+    <Reference Include="FalconSoft.Data.Management.Common, Version=1.0.8.33132, Culture=neutral, PublicKeyToken=2f05f4cae3a73241, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\packages\FalconSoft.Data.Management.Common.1.0.8\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
     </Reference>
     <Reference Include="HtmlAgilityPack, Version=1.4.7.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

@@ -35,9 +35,8 @@
     <Reference Include="ExcelDna.Integration">
       <HintPath>..\..\..\Data-Management-Suite-Private\Src\Clients\DesktopUI\.ThirdParty\ExcelDna\ExcelDna.Integration.dll</HintPath>
     </Reference>
-    <Reference Include="FalconSoft.Data.Management.Common, Version=1.0.6.19938, Culture=neutral, PublicKeyToken=2f05f4cae3a73241, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\FalconSoft.Data.Management.Common.1.0.6\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
+    <Reference Include="FalconSoft.Data.Management.Common">
+      <HintPath>..\packages\FalconSoft.Data.Management.Common.1.0.8\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
