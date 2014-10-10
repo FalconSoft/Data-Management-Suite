@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reactive.Disposables;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common;
@@ -9,7 +9,6 @@ using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Observable = System.Reactive.Linq.Observable;
 
 namespace FalconSoft.Data.Management.Client.RabbitMQ
 {
@@ -40,24 +39,31 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             throw new NotImplementedException();
         }
 
-        public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
+        public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, string[] fields = null, FilterRule[] filterRules = null)
         {
             return RPCServerTaskExecuteEnumerable<Dictionary<string, object>>(Connection, RPCQueryName, "GetData", userToken,
-                new object[] { dataSourcePath, filterRules });
+                new object[] { dataSourcePath, fields, filterRules });
         }
 
-        public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys)
+        public IEnumerable<string> GetFieldData(string userToken, string dataSourcePath, string field, string match, int elementsToReturn = 10)
+        {
+            return RPCServerTaskExecuteEnumerable<string>(Connection, RPCQueryName, "GetFieldData", userToken,
+                new object[] { dataSourcePath, field, match, elementsToReturn });
+        }
+
+        public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys,string[] fields = null)
         {
             return RPCServerTaskExecuteEnumerable<Dictionary<string, object>>(Connection, RPCQueryName, "GetDataByKey", userToken,
-               new object[] { dataSourcePath, recordKeys });
+               new object[] { dataSourcePath, recordKeys,fields });
         }
 
-        public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
+        public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, string[] fields = null)
         {
-            var routingKey = dataSourcePath + "." + userToken;
+            var routingKey = fields != null ? string.Format("{0}.{1}.", dataSourcePath, userToken) + fields.Aggregate("", (cur, next) => string.Format("{0}.{1}", cur, next)).GetHashCode()
+                : string.Format("{0}.{1}", dataSourcePath, userToken);
 
             var observable = CreateExchngeObservable<RecordChangedParam[]>(CommandChannel, GetDataChangesTopic,
-                "topic", routingKey, RPCQueryName, "GetDataChanges", userToken, new object[] { dataSourcePath, filterRules });
+                "topic", routingKey, RPCQueryName, "GetDataChanges", userToken, new object[] { dataSourcePath, fields });
 
             return observable;
         }
@@ -120,7 +126,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                         {
                             if (onFail != null)
                             {
-                                onFail("Connection to server is broken",  new TimeoutException("TimeOut for respoce elapsed!"));
+                                onFail("Connection to server is broken", new TimeoutException("TimeOut for respoce elapsed!"));
                             }
 
                             breakFlag = false;

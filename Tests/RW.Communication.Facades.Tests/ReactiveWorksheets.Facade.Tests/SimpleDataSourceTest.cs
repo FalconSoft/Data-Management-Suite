@@ -65,7 +65,7 @@ namespace ReactiveWorksheets.Facade.Tests
 
         public IObservable<RecordChangedParam[]> GetDataChanges(FilterRule[] filterRules = null)
         {
-            return _reactiveDataQueryFacade.GetDataChanges(_userToken, _dataSourceInfo.DataSourcePath, filterRules: filterRules);
+            return _reactiveDataQueryFacade.GetDataChanges(_userToken, _dataSourceInfo.DataSourcePath, null);
         }
 
         public IEnumerable<Dictionary<string,object>> GetHistory(string recordKey)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -84,9 +85,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         protected Action KeepAliveAction;
         private readonly object _restoreConnectionLock = new object();
         private readonly ConnectionFactory _factory;
+        private readonly object _lockThis = new object();
 
         protected IEnumerable<T> RPCServerTaskExecuteEnumerable<T>(IConnection connection,
-          string commandQueueName, string methodName, string userToken, object[] methodArgs)
+          string commandQueueName, string methodName, string userToken, object[] methodArgs) where  T : class 
         {
             try
             {
@@ -101,12 +103,16 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 var consumer = SendMessage(channel, commandQueueName, methodName, userToken, methodArgs, correlationId);
 
-                var subject = new Subject<T>();
+                var subject = new ProducerConsumerQueue<T>();
 
                 Task.Factory.StartNew(() => ConsumerDataToSubject(consumer, channel, subject, correlationId), _cts.Token)
-                    .ContinueWith(t => subject.OnCompleted());
+                    .ContinueWith(t =>
+                    {
+                        subject.OnCompleted();
+                        subject.Dispose();
+                    });
 
-                return subject.ToEnumerable();
+                return subject;
             }
             catch (Exception ex)
             {
@@ -277,6 +283,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 return Disposable.Create(() =>
                 {
                     ServerReconnectedEvent -= keepAlive;
+                    RPCServerTaskExecuteAsync(Connection, commandQueue, "Dispose", userToken, methodArgs);
                     dispoce.Dispose();
                 });
             });
@@ -286,37 +293,44 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             return Observable.Create(func);
         }
 
-        private void ConsumerDataToSubject<T>(QueueingBasicConsumer consumer, IModel channel, Subject<T> subject, string correlationId)
+        private void ConsumerDataToSubject<T>(QueueingBasicConsumer consumer, IModel channel, IObserver<T> subject, string correlationId)
         {
             while (true)
             {
-                BasicDeliverEventArgs ea;
-                if (consumer.Queue.Dequeue(TimeOut, out ea))
+                try
                 {
-                    if (correlationId == ea.BasicProperties.CorrelationId)
+                    BasicDeliverEventArgs ea;
+                    if (consumer.Queue.Dequeue(TimeOut, out ea))
                     {
-                        var responce = CastTo<RabbitMQResponce>(ea.Body);
+                        if (correlationId == ea.BasicProperties.CorrelationId)
+                        {
+                            var responce = CastTo<RabbitMQResponce>(ea.Body);
 
-                        if (responce.LastMessage)
+                            if (responce.LastMessage)
+                            {
+                                channel.Dispose();
+                                break;
+                            }
+
+                            var list = (List<T>) responce.Data;
+                            foreach (var dictionary in list)
+                            {
+                                subject.OnNext(dictionary);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (!HasConnection)
                         {
                             channel.Dispose();
                             break;
                         }
-
-                        var list = (List<T>)responce.Data;
-                        foreach (var dictionary in list)
-                        {
-                            subject.OnNext(dictionary);
-                        }
                     }
                 }
-                else
+                catch (EndOfStreamException)
                 {
-                    if (!HasConnection)
-                    {
-                        channel.Dispose();
-                        break;
-                    }
+                    break;
                 }
             }
         }
@@ -325,14 +339,19 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             string exchangeType, string routingKey)
         {
             var subjects = new Subject<T>();
+            string queueName;
+            QueueingBasicConsumer con;
 
-            channel.ExchangeDeclare(exchangeName, exchangeType);
+            lock (_lockThis)
+            {
+                channel.ExchangeDeclare(exchangeName, exchangeType);
 
-            var queueName = CommandChannel.QueueDeclare().QueueName;
-            channel.QueueBind(queueName, exchangeName, routingKey);
+                queueName = CommandChannel.QueueDeclare().QueueName;
+                channel.QueueBind(queueName, exchangeName, routingKey);
 
-            var con = new QueueingBasicConsumer(CommandChannel);
-            channel.BasicConsume(queueName, true, con);
+                con = new QueueingBasicConsumer(CommandChannel);
+                channel.BasicConsume(queueName, true, con);
+            }
 
             var taskComplete = true;
 
@@ -366,6 +385,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 return Disposable.Create(() =>
                 {
+
                     CommandChannel.QueueUnbind(queueName, exchangeName, routingKey, null);
                     con.OnCancel();
                     dispoce.Dispose();

@@ -2,7 +2,6 @@
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
-using FalconSoft.Data.Management.Common.Security;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -118,7 +117,8 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
                 {
                     var f = (FieldInfo)field.Clone();
                     f.IsParentField = true;
-                    childDs.Fields.Add(f.Name, f);
+                    //childDs.Fields.Add(f.Name, f);
+                    childDs.Fields[f.Name] = f;
                 }
                 collection.Save(childDs);
             }
