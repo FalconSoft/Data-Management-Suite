@@ -47,7 +47,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 if (!string.IsNullOrEmpty(query))
                 {
                     if (fields != null)
-                        query += ", +" + CreateSelectedFieldsQuery(fields);
+                        query += ", " + CreateSelectedFieldsQuery(fields);
                     var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(query));
                     cursor = _collection.FindAs<LiveDataObject>(qwraper);
                     return cursor;
@@ -350,7 +350,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                         var query = "{ $in :" +
                                     value.Replace("'(", "[")
                                         .Replace(")'", "]")
-                                        .Replace(Convert.ToChar("'"), Convert.ToChar("\"")) + " }";
+                                        .Replace("'", "\"") + " }";
                         return query;
                     }
                 case Operations.Like: return "/" + value.Replace("'", "") + "/";
