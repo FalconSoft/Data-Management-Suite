@@ -353,6 +353,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         private object ToStrongTypedObject(BsonValue bsonValue, string fieldName)
         {
             if (fieldName == "RecordKey") return bsonValue.ToString();
+            if(!_dataSourceInfo.Fields.ContainsKey(fieldName)) return null;
             var dataType = _dataSourceInfo.Fields.First(f => f.Key == fieldName).Value.DataType;
             if (string.IsNullOrEmpty(bsonValue.ToString()) || bsonValue.ToString() == "BsonNull") return null;
             switch (dataType)
