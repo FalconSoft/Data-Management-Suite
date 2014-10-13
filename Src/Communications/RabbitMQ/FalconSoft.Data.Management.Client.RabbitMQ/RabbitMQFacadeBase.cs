@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -262,19 +261,19 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                     catch (Exception ex)
                     {
-                        if (ex is AlreadyClosedException || ex is NotSupportedException)
-                            RestoreConnection();
+                        //if (ex is AlreadyClosedException || ex is NotSupportedException)
+                        //    RestoreConnection();
 
-                        if (ex is NullReferenceException || ex is TimeoutException || ex is AlreadyClosedException || ex is NotSupportedException)
-                        {
+                        //if (ex is NullReferenceException || ex is TimeoutException || ex is AlreadyClosedException || ex is NotSupportedException)
+                        //{
                             ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
-                        }
-                        else
-                        {
-                            dispoce.Dispose();
+                        //}
+                        //else
+                        //{
+                        //    dispoce.Dispose();
 
-                            throw;
-                        }
+                        //    throw;
+                        //}
                     }
                 });
 
@@ -385,8 +384,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 return Disposable.Create(() =>
                 {
-
-                    CommandChannel.QueueUnbind(queueName, exchangeName, routingKey, null);
+                    if (CommandChannel.IsOpen)
+                        CommandChannel.QueueUnbind(queueName, exchangeName, routingKey, null);
                     con.OnCancel();
                     dispoce.Dispose();
                     taskComplete = false;
@@ -452,6 +451,11 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             IModel channel = null;
             try
             {
+                if (!_connection.IsOpen)
+                {
+                    RestoreConnection();
+                }
+
                 channel = _connection.CreateModel();
                 if (channel != null)
                 {
