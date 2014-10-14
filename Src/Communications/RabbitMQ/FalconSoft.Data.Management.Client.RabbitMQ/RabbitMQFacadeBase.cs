@@ -261,7 +261,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                     catch (Exception ex)
                     {
-                        ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
+                        if (ServerErrorHandler != null)
+                         ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
                     }
                 });
 
