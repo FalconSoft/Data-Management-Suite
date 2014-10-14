@@ -42,21 +42,21 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         {
             try
             {
-                var query = CreateFilterRuleQuery(filterRules);
+                var query =  CreateFilterRuleQuery(filterRules!=null?filterRules.ToList(): null);
                 MongoCursor<LiveDataObject> cursor;
                 if (!string.IsNullOrEmpty(query))
                 {
                     if (fields != null)
-                        query += ", +" + CreateSelectedFieldsQuery(fields);
+                        query += ", " + CreateSelectedFieldsQuery(fields);
                     var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(query));
                     cursor = _collection.FindAs<LiveDataObject>(qwraper);
                     return cursor;
                 }
                 if (fields != null)
                 {
-                    var mongoQuery = "{ }," + CreateSelectedFieldsQuery(fields);
+                    var mongoQuery = "{ }, " + CreateSelectedFieldsQuery(fields);
                     var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(mongoQuery));
-                    cursor = _collection.FindAs<LiveDataObject>(qwraper);
+                    cursor = _collection.FindAs<LiveDataObject>(qwraper).SetFields(Fields.Include(fields.Select(f => string.Format("RecordValues.{0}", f)).ToArray()));
                     return cursor;
                 }
                 cursor = _collection.FindAllAs<LiveDataObject>();
@@ -67,8 +67,6 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 _logger.Debug("GetData() Error: " + ex.Message);
                 return new List<LiveDataObject>();
             }
-
-
         }
 
         public IEnumerable<T> GetData<T>(string dataSourcePath, FilterRule[] filterRules = null)
@@ -87,6 +85,28 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             return cursor;
         }
 
+        public IEnumerable<string> GetFieldValues(string fieldName, string match, int elementsToReturn = 10)
+        {
+            try
+            {
+                var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(CreateSelectedFieldQuery(fieldName, match)));
+                //var cursor = _collection.FindAs<LiveDataObject>(qwraper).SetLimit(elementsToReturn).Where(x => x.RecordValues.ContainsKey(fieldName)).DistinctBy(y => y.RecordValues[fieldName]).Select(x => Convert.ToString(x.RecordValues[fieldName]));
+                var cursor = _collection.FindAs<LiveDataObject>(qwraper).Where(x => x.RecordValues.ContainsKey(fieldName)).DistinctBy(x => x.RecordValues[fieldName]).Take(elementsToReturn).Select(x => Convert.ToString(x.RecordValues[fieldName])).OrderBy(x => x);
+                //var cursor = _collection.AsQueryable<LiveDataObject>()
+                //    .Where(x => x.RecordValues.ContainsKey(fieldName))
+                //    .Where(x => Convert.ToString(x.RecordValues[fieldName]).StartsWith(match))
+                //    .DistinctBy(y => y.RecordValues[fieldName])
+                //    .Take(elementsToReturn)
+                //    .Select(x => Convert.ToString(x.RecordValues[fieldName]));
+                return cursor;
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug("GetData() Error: " + ex.Message);
+                return new string[0];
+            }
+        }
+
         /// <summary>
         /// Find all data by record key
         /// </summary>
@@ -96,12 +116,10 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         {
             try
             {
-                if (fields == null)
+                //if (fields == null)
                     return _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
-                var data = _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey));
-                foreach (var liveDataObject in data)
-                    liveDataObject.RecordValues = liveDataObject.RecordValues.Join(fields, j1 => j1.Key, j2 => j2, (j1, j2) => j1).ToDictionary(k => k.Key, v => v.Value);
-                return data;
+               // var result = _collection.AsQueryable<LiveDataObject>().Where(w => rekordKey.Contains(w.RecordKey)).Select(s=>MergeFields(s,fields));
+               // return result;
             }
             catch (Exception ex)
             {
@@ -109,6 +127,13 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 _logger.Debug("GetDataByKey() Error:" + "Keys : " + primaryKeys + " Error:" + ex.Message);
                 return new List<LiveDataObject>();
             }
+        }
+
+        private LiveDataObject MergeFields(LiveDataObject liveDataObject, string[] fields)
+        {
+             liveDataObject.RecordValues = liveDataObject.RecordValues.Join(fields, j1 => j1.Key, j2 => j2, (j1, j2) => j1)
+                                        .ToDictionary(k => k.Key, v => v.Value);
+            return liveDataObject;
         }
 
         public IEnumerable<LiveDataObject> GetAggregatedData(AggregatedWorksheetInfo aggregatedWorksheet, FilterRule[] filterRules = null)
@@ -142,7 +167,6 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 _logger.Debug("GetAggregatedData() Error:" + ex.Message);
                 return new List<LiveDataObject>();
             }
-
         }
 
         public IEnumerable<LiveDataObject> GetDataByForeignKey(Dictionary<string, object> record)
@@ -223,11 +247,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             var queryList = Query.EQ(string.Format("RecordValues.{0}", fieldName), BsonValue.Create(value));
             var colecton = _collection.Find(queryList);
             var count = colecton.Count();
-            if (count > 0)
-            {
-                return true;
-            }
-            return false;
+            return count > 0;
         }
 
         public void ClearCollection()
@@ -309,7 +329,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             _collection.Update(query, update);
         }
 
-        private string ConvertToMongoOperations(Operations operation, string value)
+        private static string ConvertToMongoOperations(Operations operation, string value)
         {
             if (!string.IsNullOrEmpty(value) && value.ToCharArray()[0] != Convert.ToChar("'"))
             {
@@ -330,7 +350,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                         var query = "{ $in :" +
                                     value.Replace("'(", "[")
                                         .Replace(")'", "]")
-                                        .Replace(Convert.ToChar("'"), Convert.ToChar("\"")) + " }";
+                                        .Replace("'", "\"") + " }";
                         return query;
                     }
                 case Operations.Like: return "/" + value.Replace("'", "") + "/";
@@ -338,35 +358,41 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             return "";
         }
 
-        private string CreateFilterRuleQuery(IList<FilterRule> whereCondition)
+        private static string CreateFilterRuleQuery(IList<FilterRule> whereCondition)
         {
-            if (whereCondition == null || whereCondition.Count == 0) return string.Empty;
+            if (whereCondition == null || !whereCondition.Any()) return string.Empty;
+
+            var index = whereCondition.Count - 1;
+            var filetrRule = whereCondition[index];
+            whereCondition.Remove(filetrRule);
+
             var query = "{";
-            foreach (var condition in whereCondition)
+
+            if (index == 0)
             {
-                switch (condition.Combine)
-                {
-                    case CombineState.And:
-                        query += " $and : [{ \"RecordValues." + condition.FieldName + "\" : " +
-                                 ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
-                        break;
-                    case CombineState.Or:
-                        query += " $or : [{ \"RecordValues." + condition.FieldName + "\" : " +
-                                 ConvertToMongoOperations(condition.Operation, condition.Value) + " } ],";
-                        break;
-                    default:
-                        query += condition.Combine + " \"RecordValues." + condition.FieldName + "\" : " + ConvertToMongoOperations(condition.Operation, condition.Value) + ",";
-                        break;
-                }
+                query += " \"RecordValues." + filetrRule.FieldName + "\" : " + ConvertToMongoOperations(filetrRule.Operation, filetrRule.Value) + "}";
+                return query;
             }
-            query = query.Remove(query.Count() - 1);
-            query += @"}";
+
+            switch (filetrRule.Combine)
+            {
+                case CombineState.And:
+                    query += " $and :" + " [{\"RecordValues." + filetrRule.FieldName + "\" : " +
+                             ConvertToMongoOperations(filetrRule.Operation, filetrRule.Value) + "}, " +
+                             CreateFilterRuleQuery(whereCondition) + "]}";
+                    break;
+                case CombineState.Or:
+                    query += " $or :" + " [{\"RecordValues." + filetrRule.FieldName + "\" : " +
+                             ConvertToMongoOperations(filetrRule.Operation, filetrRule.Value) + "}, " +
+                             CreateFilterRuleQuery(whereCondition) + "]}";
+                    break;
+            } 
             return query;
         }
 
-        private string CreateSelectedFieldsQuery(string[] fields)
+        private static string CreateSelectedFieldsQuery(string[] fields)
         {
-            var constStr = "{\"_id\" : 1, \"RecordKey\" : 1, \"UserToken\" : 1,";
+            const string constStr = "{_id : 1, RecordKey : 1, UserToken : 1,";
             var query = constStr;
             foreach (var field in fields)
             {
@@ -375,11 +401,14 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                     query += string.Format(" \"RecordValues.{0}\" : 1", field) + "}";
                     break;
                 }
-                query += string.Format(" \"RecordValues.{0}\" : 1,", field);
+                query += string.Format(" \"RecordValues.{0}\" : 0,", field);
             }
             return query;
         }
-    }
 
-    
+        private static string CreateSelectedFieldQuery(string field, string match)
+        {
+            return string.Format("{{'RecordValues.{0}' : /^{1}/}}", field, match);
+        }
+    }
 }

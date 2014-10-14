@@ -117,14 +117,16 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         private void ExecuteMethodSwitch(MethodArgs message, IBasicProperties basicProperties)
         {
             if (!_keepAlive) return;
-
-            _logger.Debug(string.Format(DateTime.Now + " ReactiveDataQueryBroker. Method Name {0}; User Token {1}; Params {2}",
-               message.MethodName,
-               message.UserToken ?? string.Empty,
-               message.MethodsArgs != null
-                   ? message.MethodsArgs.Aggregate("",
-                       (cur, next) => cur + " | " + (next != null ? next.ToString() : string.Empty))
-                   : string.Empty));
+            if (message.MethodName != "InitializeConnection")
+                _logger.Debug(
+                    string.Format(
+                        DateTime.Now + " ReactiveDataQueryBroker. Method Name {0}; User Token {1}; Params {2}",
+                        message.MethodName,
+                        message.UserToken ?? string.Empty,
+                        message.MethodsArgs != null
+                            ? message.MethodsArgs.Aggregate("",
+                                (cur, next) => cur + " | " + (next != null ? next.ToString() : string.Empty))
+                            : string.Empty));
 
             switch (message.MethodName)
             {
@@ -147,6 +149,11 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 case "GetDataChanges":
                     {
                         GetDataChanges(message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string[]);
+                        break;
+                    }
+                case "GetFieldData":
+                    {
+                        GetFieldData(basicProperties, message.UserToken, message.MethodsArgs[0] as string, message.MethodsArgs[1] as string, message.MethodsArgs[2] as string, (int)message.MethodsArgs[3]);
                         break;
                     }
                 case "ResolveRecordbyForeignKey":
@@ -174,6 +181,40 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                         break;
                     }
             }
+        }
+
+        private void GetFieldData(IBasicProperties basicProperties, string userToken, string dataSourceUrn, string fieldName, string match, int take)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var enumerator = _reactiveDataQueryFacade.GetFieldData(userToken, dataSourceUrn, fieldName, match,
+                        take);
+
+                    var list = new List<string>(enumerator);
+
+                    var responce = new RabbitMQResponce();
+                    var replyTo = basicProperties.ReplyTo;
+                    var correlationId = basicProperties.CorrelationId;
+
+                    responce.Data = list;
+
+                    RPCSendTaskExecutionResults(replyTo, correlationId, responce);
+
+                    list.Clear();
+
+
+                    RPCSendTaskExecutionResults(replyTo, correlationId,
+                        new RabbitMQResponce {Id = responce.Id++, LastMessage = true});
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error("Error", ex);
+                    throw;
+                }
+            });
         }
 
         private void Dispose(string userToken, string dataSourcePath, string[] fields = null)
@@ -208,7 +249,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
 
                     var dataSourcePathLocal = string.Copy(dataSourcePath);
 
-                    var data = _reactiveDataQueryFacade.GetDataByKey(userTokenLocal, dataSourcePathLocal, recordKeys, fields);
+                    var data = _reactiveDataQueryFacade.GetDataByKey(userTokenLocal, dataSourcePathLocal, recordKeys,fields);
 
                     var list = new List<Dictionary<string, object>>();
 
@@ -251,7 +292,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    _logger.Debug("GetDataByKeys failed", ex);
+                    _logger.Debug("GetDataByKey failed", ex);
                     throw;
                 }
             }, _cts.Token);
@@ -413,8 +454,8 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             try
             {
-                var routingKey = fields != null ? fields.Aggregate(string.Format("{0}.{1}", dataSourcePath, userToken),
-               (cur, next) => string.Format("{0}.{1}", cur, next)) : string.Format("{0}.{1}", dataSourcePath, userToken);
+                var routingKey = fields != null ? string.Format("{0}.{1}.", dataSourcePath, userToken) + fields.Aggregate("",
+               (cur, next) => string.Format("{0}.{1}", cur, next)).GetHashCode() : string.Format("{0}.{1}", dataSourcePath, userToken);
 
                 if (_getDataChangesDispocebles.ContainsKey(routingKey))
                 {

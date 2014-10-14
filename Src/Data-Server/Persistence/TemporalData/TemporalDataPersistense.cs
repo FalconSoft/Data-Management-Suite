@@ -122,7 +122,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             return null;
         }
 
-        public Guid AddRevision(string urn, string userId)
+        public object AddRevision(string urn, string userId)
         {
             return new Guid();
         }
@@ -162,6 +162,11 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                     }
                     break;
             }
+        }
+
+        public void UpdateTemporalData(RecordChangedParam recordChangedParam)
+        {
+            throw new NotImplementedException();
         }
 
         public void SaveTagInfo(TagInfo tagInfo)

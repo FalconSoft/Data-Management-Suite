@@ -96,13 +96,16 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
         {
             if (!_keepAlive) return;
 
-            _logger.Debug(string.Format(DateTime.Now + " PermissionSecurityBroker. Method Name {0}; User Token {1}; Params {2}",
-               message.MethodName,
-               message.UserToken ?? string.Empty,
-               message.MethodsArgs != null
-                   ? message.MethodsArgs.Aggregate("",
-                       (cur, next) => cur + " | " + (next != null ? next.ToString() : string.Empty))
-                   : string.Empty));
+            if (message.MethodName != "InitializeConnection")
+                _logger.Debug(
+                    string.Format(
+                        DateTime.Now + " PermissionSecurityBroker. Method Name {0}; User Token {1}; Params {2}",
+                        message.MethodName,
+                        message.UserToken ?? string.Empty,
+                        message.MethodsArgs != null
+                            ? message.MethodsArgs.Aggregate("",
+                                (cur, next) => cur + " | " + (next != null ? next.ToString() : string.Empty))
+                            : string.Empty));
 
             switch (message.MethodName)
             {
