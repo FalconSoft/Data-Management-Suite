@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ExcelDna.Integration;
+using ExcelDna.Integration.Rtd;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.ExcelAddIn.ReactiveExcel;
@@ -12,40 +14,16 @@ using ReactiveWorksheets.Server.Tests;
 
 namespace ReactiveWorksheets.ExcelEngine.Tests
 {
-    public class MockLiteSubject:IExcelObservable,IExcelObserver
-    {
-        public object Result { get; set; }
-
-        public IDisposable Subscribe(IExcelObserver observer)
-        {
-            return Disposable.Empty;
-        }
-
-        public void OnCompleted()
-        {
-            
-        }
-
-        public void OnError(Exception exception)
-        {
-            
-        }
-
-        public void OnNext(object value)
-        {
-            Result = value;
-        }
-    }
-
-
 
     class MockExcelEngine : IReactiveExcelEngine
     {
         public readonly ReactiveExcelMessanger ExcelMessanger;
+        public readonly MockUpdateEvent MockUpdateEvent;
 
-        public MockExcelEngine(IObservable<RecordChangedParam[]> serverObservable)
+        public MockExcelEngine(IObservable<RecordChangedParam[]> serverObservable, AutoResetEvent autoResetEvent)
         {
-            ExcelMessanger = new ReactiveExcelMessanger();
+            MockUpdateEvent = new MockUpdateEvent(autoResetEvent);
+            ExcelMessanger = new ReactiveExcelMessanger(MockUpdateEvent);
             Subcribers = new Dictionary<string, IDisposable>();
             _serverObs = serverObservable;
             DataSourceInfos = new List<DataSourceInfo>();
@@ -54,44 +32,24 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
 
         public Dictionary<string, Dictionary<string, Dictionary<string, object>>> LocalDb { get; set; }
 
-
-        public void SubmitData(string urn, Dictionary<string, object>[] data, string[] dataToRemove)
+        public Array GetRtdData()
         {
-            if (!LocalDb.Any()) return;
-            var ds = DataSourceInfos.FirstOrDefault(f=>f.DataSourcePath == urn);
-            if (ds == null) return;
-         
-                var keyFieldName = ds.GetKeyFieldsName().First();
-                var resolvedData = new List<Dictionary<string, object>>();
-                foreach (var record in data)
-                {
-                    var keyValue = "|" + record[keyFieldName];
-                    var row = new Dictionary<string, Dictionary<string, object>>() { { keyValue, new Dictionary<string, object>(LocalDb[urn][keyValue]) } };
-                    LocalDb[urn][keyValue].Join(record, j1 => j1.Key.ToLower(), j2 => j2.Key.ToLower(), (j1, j2) =>
-                    {
-                        row[keyValue][j1.Key] = j2.Value;
-                        return j1;
-                    }).Count();
-                    resolvedData.Add(row[keyValue]);
-                    LocalDb[urn][keyValue] = row[keyValue];
-                }
-            SubmitedData = resolvedData.ToArray();
-
+            return ExcelMessanger.RtdData ;
         }
 
-        public IExcelObservable RegisterSubject(string dataSourceUrn, string primaryKey, string fieldName)
+        public void RegisterSubject(int topicId, string dataSourceUrn, string primaryKey, string fieldName)
         {
-            return ExcelMessanger.RegisterSubject(dataSourceUrn, "|" + primaryKey, fieldName, OnSubscribed);
+            ExcelMessanger.RegisterSubject(topicId, dataSourceUrn, primaryKey.ToRecordKey(), fieldName);
+            RegisterSource(dataSourceUrn);
+            var point = new ExcelPoint(dataSourceUrn, primaryKey.ToRecordKey(), fieldName);
+            if (!LocalDb.ContainsKey(point.DataSourceUrn))
+                ExcelMessanger.SendData(new[] {point}, "Invalid DataSourcePath");
+            PullData(point);
         }
 
-        public LiteSubject RegisterSubjects(string dataSourceUrn, string primaryKey, string fieldName)
+        public void RegisterSource(string dataSourceUrn)
         {
-            return ExcelMessanger.RegisterSubject(dataSourceUrn, "|" + primaryKey, fieldName, OnSubscribed) as LiteSubject;
-        }
-
-        public void RegisterSource(ExcelPoint point)
-        {
-            if (!LocalDb.ContainsKey(point.DataSourceUrn)) ExcelMessanger.SendData(point, "Invalid DataSourcePath"); 
+            if(Subcribers.ContainsKey(dataSourceUrn)) return;
             var sub = _serverObs.Subscribe(s =>
             {
                 UpdateDb(s);
@@ -100,7 +58,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
                         ExcelMessanger.SendData(recordChangedParam.ProviderString, recordChangedParam.RecordKey,
                             changedPropertyName, recordChangedParam.RecordValues[changedPropertyName]);
             });
-            Subcribers.Add(point.DataSourceUrn,sub);
+            Subcribers.Add(dataSourceUrn, sub);
         }
 
         private void UpdateDb(IEnumerable<RecordChangedParam> recordChangedParams)
@@ -123,11 +81,6 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
             }
         }
 
-        public ServerInfo GetServerInfo()
-        {
-            throw new NotImplementedException();
-        }
-
         private void PullData(ExcelPoint excelPoint)
         {
             if (!LocalDb.ContainsKey(excelPoint.DataSourceUrn)) return;
@@ -135,13 +88,6 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
             ExcelMessanger.SendData(excelPoint.DataSourceUrn, excelPoint.PrimaryKeyValue, excelPoint.FieldName, LocalDb[excelPoint.DataSourceUrn][excelPoint.PrimaryKeyValue][excelPoint.FieldName]);
         }
 
-        private void OnSubscribed(ExcelPoint excelPoint)
-        {
-            if(IsRdpSubcribed) return;
-            PullData(excelPoint);
-            RegisterSource(excelPoint);
-            IsRdpSubcribed = true;
-        }
 
         #region for test
         private IObservable<RecordChangedParam[]> _serverObs; 
@@ -167,4 +113,26 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
 
         #endregion for test
     }
+
+    public class MockUpdateEvent :IRTDUpdateEvent
+    {
+        private readonly AutoResetEvent _autoResetEvent;
+        public MockUpdateEvent(AutoResetEvent autoResetEvent)
+        {
+            _autoResetEvent = autoResetEvent;
+        }
+
+        public void UpdateNotify()
+        {
+            _autoResetEvent.Set();
+        }
+
+        public void Disconnect()
+        {
+            
+        }
+
+        public int HeartbeatInterval { get; set; }
+    }
+
 }
