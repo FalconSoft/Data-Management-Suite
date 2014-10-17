@@ -85,8 +85,9 @@
   <ItemGroup>
     <Compile Include="Attributes\BindJsonAttribute.cs" />
     <Compile Include="Attributes\Class1.cs" />
-    <Compile Include="BinaryConverter.cs" />
+    <Compile Include="Controllers\PermissionApiController.cs" />
     <Compile Include="Controllers\SecurityApiController.cs" />
+    <Compile Include="Controllers\TemporalDataApiController.cs" />
     <Compile Include="IoC\NinjectDependencyScope.cs" />
     <Compile Include="Controllers\SearchApiController.cs" />
     <Compile Include="Controllers\MetaDataApiController.cs" />
