@@ -46,28 +46,13 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         public HttpResponseMessage GetFieldData(string userToken, string dataSourcePath, string field, string match, int elementsToReturn = 10)
         {
             return EnumeratorToStream(_reactiveDataQueryFacade.GetFieldData(userToken, dataSourcePath, field, match, elementsToReturn), "GetFieldData failed ");
-            //try
-            //{
-            //    return _reactiveDataQueryFacade.GetFieldData(userToken, dataSourcePath, field, match, elementsToReturn);
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.Error("GetFieldData failed ", ex);
-            //    return Enumerable.Empty<string>();
-            //}
         }
 
-        public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys, string[] fields = null)
+         [BindJson(typeof(string[]), "recordKeys")]
+         [BindJson(typeof(string[]), "fields")]
+        public HttpResponseMessage GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys, string[] fields = null)
         {
-            try
-            {
-                return _reactiveDataQueryFacade.GetDataByKey(userToken, dataSourcePath, recordKeys, fields);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("GetDataByKey failed ", ex);
-                return Enumerable.Empty<Dictionary<string, object>>();
-            }
+            return EnumeratorToStream(_reactiveDataQueryFacade.GetDataByKey(userToken, dataSourcePath, recordKeys, fields), "GetDataByKey failed ");
         }
 
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, string[] fields = null)

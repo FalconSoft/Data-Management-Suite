@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
+using FalconSoft.Data.Management.Common.Facades;
 
 namespace FalconSoft.Data.Management.Client.WebAPI
 {
@@ -38,13 +39,22 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             return response.Content.ReadAsAsync<T>().Result;
         }
 
-        protected void PostWebApiCall(string methodName, Dictionary<string, object> inputParams)
+        protected void PostWebApiCall(string methodName, string userToken, object[] methodsArgs)
         {
-            //var request = new StringBuilder(string.Format("api/{0}/{1}/", _apiControllerName, methodName));
+            var request = new StringBuilder(string.Format("api/{0}/{1}/", _apiControllerName, methodName));
+            var jsonSerializer = new JavaScriptSerializer();
 
-            //request.Append(ParametersToUriRequest(inputParams));
+            var json = jsonSerializer.Serialize(new MethodArgs
+            {
+                MethodName = methodName,
+                UserToken = userToken,
+                MethodsArgs = methodsArgs
+            });
 
-            //var response = _client.PostAsync(request.ToString()).Result;
+            HttpContent contentPost = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = _client.PostAsync(request.ToString(), contentPost);
+            response.Wait();
         }
 
         protected IEnumerable<T> GetStreamDataToEnumerable<T>(string methodName, Dictionary<string, object> inputParams, bool allowReadStreamBuffering = true)

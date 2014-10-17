@@ -45,12 +45,12 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
-        [BindJson(typeof(DataSourceInfo), "dataSource")]
-        public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userToken)
+        [HttpPost]
+        public void UpdateDataSourceInfo(MethodArgs method)
         {
             try
             {
-                _metaDataAdminFacade.UpdateDataSourceInfo(dataSource, oldDataSourceUrn, userToken);
+                _metaDataAdminFacade.UpdateDataSourceInfo(method.MethodsArgs[0] as DataSourceInfo, method.MethodsArgs[1] as string, method.UserToken);
             }
             catch (Exception ex)
             {
@@ -58,12 +58,12 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
-         [BindJson(typeof(DataSourceInfo), "dataSource")]
-        public void CreateDataSourceInfo(DataSourceInfo dataSource, string userToken)
+        [HttpPost]
+        public void CreateDataSourceInfo(MethodArgs method)
         {
             try
             {
-                _metaDataAdminFacade.CreateDataSourceInfo(dataSource, userToken);
+                _metaDataAdminFacade.CreateDataSourceInfo(method.MethodsArgs[0] as DataSourceInfo, method.UserToken);
             }
             catch (Exception ex)
             {
@@ -71,6 +71,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
+        [HttpPost]
         public void DeleteDataSourceInfo(string dataSourceUrn, string userToken)
         {
             try

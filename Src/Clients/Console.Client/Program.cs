@@ -175,8 +175,6 @@ namespace FalconSoft.Data.Console
 
         private static void Get(CommandLineParser.GetParams getArguments)
         {
-           
-
             var startTime = DateTime.Now;
 
             var dataSourceInfo = metaDataFacade.GetDataSourceInfo(getArguments.DataSourceUrn, ConsoleClientToken);
@@ -187,7 +185,7 @@ namespace FalconSoft.Data.Console
 
             var executionSpan = DateTime.Now - startTime;
 
-            System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds. Count : {3}", getArguments.DataSourceUrn, getArguments.FileName, executionSpan, data.Count());
+            System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds.", getArguments.DataSourceUrn, getArguments.FileName, executionSpan);
         }
 
         private static void Submit(CommandLineParser.SubmitParams submitParams)

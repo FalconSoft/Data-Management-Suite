@@ -18,6 +18,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
         public KeyValuePair<bool, string> Authenticate(string userName, string password)
         {
             try

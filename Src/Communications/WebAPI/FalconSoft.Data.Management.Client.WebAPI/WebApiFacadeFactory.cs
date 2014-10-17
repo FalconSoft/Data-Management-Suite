@@ -44,12 +44,12 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public ISecurityFacade CreateSecurityFacade()
         {
-            return new SecurityFacade();
+            return new SecurityFacade("http://localhost:8080");
         }
 
         public IPermissionSecurityFacade CreatePermissionSecurityFacade()
         {
-            return new PermissionSecurityFacade();
+            return new PermissionSecurityFacade("http://localhost:8080");
         }
 
         public ITestFacade CreateTestFacade()

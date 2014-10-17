@@ -48,7 +48,8 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
-
+        
+        [HttpGet]
         public AccessLevel CheckAccess(string userToken, string urn)
         {
             try
@@ -71,7 +72,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             catch (Exception ex)
             {
                 _logger.Error("GetUserPermissions failed ", ex);
-                return new AnonymousObservable<Dictionary<string, AccessLevel>>();
+                return null; //new AnonymousObservable<Dictionary<string, AccessLevel>>();
             }
         }
         

@@ -5,26 +5,41 @@ using FalconSoft.Data.Management.Common.Security;
 
 namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
-    internal sealed class SecurityFacade : ISecurityFacade
+    internal sealed class SecurityFacade :WebApiClientBase, ISecurityFacade
     {
+        public SecurityFacade(string url)
+            : base(url, "SecurityApi")
+        {
+            
+        }
         public void Dispose()
         {
-            throw new NotImplementedException();
+            
         }
 
         public KeyValuePair<bool, string> Authenticate(string userName, string password)
         {
-            throw new NotImplementedException();
+            return GetWebApiCall<KeyValuePair<bool, string>>("Authenticate", new Dictionary<string, object>
+            {
+                {"userName", userName},
+                {"password", password}
+            });
         }
 
         public List<User> GetUsers(string userToken)
         {
-            throw new NotImplementedException();
+            return GetWebApiCall<List<User>>("GetUsers", new Dictionary<string, object>
+            {
+                {"userToken", userToken}
+            });
         }
 
         public User GetUser(string userName)
         {
-            throw new NotImplementedException();
+            return GetWebApiCall<User>("GetUser", new Dictionary<string, object>
+            {
+                {"userName", userName}
+            });
         }
 
         public string SaveNewUser(User user, UserRole userRole, string userToken)

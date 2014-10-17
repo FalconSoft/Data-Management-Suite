@@ -22,7 +22,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            throw new NotImplementedException();
+            return GetWebApiCall<DataSourceInfo[]>("GetAvailableDataSources",
+                new Dictionary<string, object> { { "userToken", userToken }, { "minAccessLevel", minAccessLevel } });
         }
 
         public DataSourceInfo GetDataSourceInfo(string dataSourceUrn, string userToken)
@@ -34,12 +35,12 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
         public event EventHandler<SourceObjectChangedEventArgs> ObjectInfoChanged;
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceUrn, string userToken)
         {
-            throw new NotImplementedException();
+            PostWebApiCall("UpdateDataSourceInfo", userToken, new object[] { dataSource, oldDataSourceUrn });
         }
 
         public void CreateDataSourceInfo(DataSourceInfo dataSource, string userToken)
         {
-            throw new NotImplementedException();
+            PostWebApiCall("CreateDataSourceInfo", userToken, new object[]{ dataSource });
         }
 
         public void DeleteDataSourceInfo(string dataSourceUrn, string userToken)
@@ -49,12 +50,14 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public WorksheetInfo GetWorksheetInfo(string worksheetUrn, string userToken)
         {
-            throw new NotImplementedException();
+            return GetWebApiCall<WorksheetInfo>("GetWorksheetInfo",
+                new Dictionary<string, object> { { "worksheetUrn", worksheetUrn }, { "userToken", userToken } });
         }
 
         public WorksheetInfo[] GetAvailableWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            throw new NotImplementedException();
+            return GetWebApiCall<WorksheetInfo[]>("GetAvailableWorksheets",
+                new Dictionary<string, object> { { "userToken", userToken }, { "minAccessLevel", minAccessLevel } });
         }
 
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
@@ -74,7 +77,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            throw new NotImplementedException();
+            return GetWebApiCall<AggregatedWorksheetInfo[]>("GetAvailableAggregatedWorksheets",
+               new Dictionary<string, object> { { "userToken", userToken }, { "minAccessLevel", minAccessLevel } });
         }
 
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
@@ -94,7 +98,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userToken)
         {
-            throw new NotImplementedException();
+            return GetWebApiCall<AggregatedWorksheetInfo>("GetAggregatedWorksheetInfo",
+              new Dictionary<string, object> { { "worksheetUrn", worksheetUrn }, { "userToken", userToken } });
         }
 
         public ServerInfo GetServerInfo()

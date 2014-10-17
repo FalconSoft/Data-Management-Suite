@@ -57,7 +57,7 @@ namespace FalconSoft.Data.Server.Installers
             switch (ConfigurationManager.AppSettings["serverMessagingType"])
             {
                 case "RabbitMQ": RunRabbitMQServer(); break;
-                case "WebApiSelfHost": RunWebApiSelfHost(); break;
+                case "WebApi": RunWebApiSelfHost(); break;
             }
         }
 

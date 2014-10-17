@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Reactive.Subjects;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
 
@@ -12,7 +13,6 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
         public PermissionSecurityFacade(string url)
             : base(url, "PermissionApi")
         {
-            
         }
         
 
@@ -38,7 +38,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public IObservable<Dictionary<string, AccessLevel>> GetPermissionChanged(string userToken)
         {
-            return GetWebApiCall<IObservable<Dictionary<string, AccessLevel>>>("GetPermissionChanged", new Dictionary<string, object> { { "userToken", userToken } });
+            return new Subject<Dictionary<string, AccessLevel>>();
         }
     }
 }
