@@ -10,13 +10,9 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class MetaDataAdminFacade : WebApiClientBase, IMetaDataAdminFacade
     {
-        private HttpClient _client;
-
         public MetaDataAdminFacade(string url)
             : base(url, "MetaDataApi")
         {
-            _client = new HttpClient();
-            _client.BaseAddress = new Uri("http://localhost:8080");
         }
 
         public void Dispose()
