@@ -187,7 +187,7 @@ namespace FalconSoft.Data.Console
 
             var executionSpan = DateTime.Now - startTime;
 
-            System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds.", getArguments.DataSourceUrn, getArguments.FileName, executionSpan);
+            System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds. Count : {3}", getArguments.DataSourceUrn, getArguments.FileName, executionSpan, data.Count());
         }
 
         private static void Submit(CommandLineParser.SubmitParams submitParams)

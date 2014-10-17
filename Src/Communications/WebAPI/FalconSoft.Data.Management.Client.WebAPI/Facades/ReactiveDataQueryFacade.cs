@@ -38,26 +38,14 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, string[] fields = null, FilterRule[] filterRules = null)
         {
-             var array = GetStreamData<IEnumerable<Dictionary<string, object>>>("GetData",
+            return GetStreamDataToEnumerable<Dictionary<string, object>>("GetData",
                 new Dictionary<string, object>
                 {
                     {"userToken", userToken},
                     {"dataSourcePath", dataSourcePath},
                     {"fields", fields},
                     {"filterRules", filterRules}
-                }).ToArray();
-            return Enumerable.Empty<Dictionary<string, object>>();
-            //var javaSerializer = new JavaScriptSerializer();
-            //var stringBuilder = new StringBuilder();
-            //javaSerializer.Serialize(fields, stringBuilder);
-            //var filterRulesJson = javaSerializer.Serialize(filterRules);
-
-            //var requestUrl =
-            //    string.Format(
-            //        "api/ReactiveDataQueryApi/GetData/?userToken={0}&dataSourcePath={1}&fields={2}&filterRules={3}",
-            //        userToken, dataSourcePath, stringBuilder, filterRulesJson);
-            //var response = _client.GetAsync(requestUrl).Result;
-            //return response.Content.ReadAsAsync<Dictionary<string, object>[]>().Result;
+                });
         }
 
         public IEnumerable<string> GetFieldData(string userToken, string dataSourcePath, string field, string match, int elementsToReturn = 10)

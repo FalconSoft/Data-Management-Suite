@@ -1,11 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Script.Serialization;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Server.WebAPI.Attributes;
+using Newtonsoft.Json;
 
 namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 {
@@ -20,57 +27,34 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger = logger;
         }
 
-        public IEnumerable<Dictionary<string, object>> GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
+        [BindJson(typeof(AggregatedWorksheetInfo), "aggregatedWorksheet")]
+        [BindJson(typeof(FilterRule[]), "filterRules")]
+        public HttpResponseMessage GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
             FilterRule[] filterRules = null)
         {
-            try
-            {
-                return _reactiveDataQueryFacade.GetAggregatedData(userToken, dataSourcePath, aggregatedWorksheet,
-                    filterRules);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("GetAggregatedData failed ", ex);
-                return Enumerable.Empty<Dictionary<string, object>>();
-            }
+            return EnumeratorToStream(_reactiveDataQueryFacade.GetAggregatedData(userToken, dataSourcePath,
+                    aggregatedWorksheet, filterRules), "GetAggregatedData failed ");
         }
-        
+
         [BindJson(typeof(string[]), "fields")]
         [BindJson(typeof(FilterRule[]), "filterRules")]
-        public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, [FromUri]string[] fields, [FromUri]FilterRule[] filterRules)
+        public HttpResponseMessage GetData(string userToken, string dataSourcePath, [FromUri]string[] fields, [FromUri]FilterRule[] filterRules)
         {
-            IEnumerable<Dictionary<string, object>> enumerator;
-            try
-            {
-                 enumerator =  _reactiveDataQueryFacade.GetData(userToken, dataSourcePath, fields);
-
-                if (enumerator == null)
-                    throw new ArgumentException(" Bad argyments are in!");
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("GetData failed ", ex);
-                yield break;
-            }
-
-            foreach (var item in enumerator)
-            {
-                yield return item;
-            }
-            
+            return EnumeratorToStream(_reactiveDataQueryFacade.GetData(userToken, dataSourcePath, fields, filterRules), "GetData failed ");
         }
 
-        public IEnumerable<string> GetFieldData(string userToken, string dataSourcePath, string field, string match, int elementsToReturn = 10)
+        public HttpResponseMessage GetFieldData(string userToken, string dataSourcePath, string field, string match, int elementsToReturn = 10)
         {
-            try
-            {
-                return _reactiveDataQueryFacade.GetFieldData(userToken, dataSourcePath, field, match, elementsToReturn);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("GetFieldData failed ", ex);
-                return Enumerable.Empty<string>();
-            }
+            return EnumeratorToStream(_reactiveDataQueryFacade.GetFieldData(userToken, dataSourcePath, field, match, elementsToReturn), "GetFieldData failed ");
+            //try
+            //{
+            //    return _reactiveDataQueryFacade.GetFieldData(userToken, dataSourcePath, field, match, elementsToReturn);
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.Error("GetFieldData failed ", ex);
+            //    return Enumerable.Empty<string>();
+            //}
         }
 
         public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys, string[] fields = null)
@@ -115,6 +99,41 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
                 _logger.Error("GetAggregatedData failed ", ex);
                 return false;
             }
+        }
+
+        private HttpResponseMessage EnumeratorToStream<T>(IEnumerable<T> enumerable, string errorMessage)
+        {
+            HttpResponseMessage response = Request.CreateResponse();
+            response.Content = new PushStreamContent((outputStream, httpContent, transportContext) => new Task(() =>
+            {
+                try
+                {
+                    // Execute the command and get a reader
+                    var sw = new BinaryWriter(outputStream);
+                    var jsonConverter = new JavaScriptSerializer();
+                    foreach (var dictionary in enumerable)
+                    {
+                        var json = jsonConverter.Serialize(dictionary) + "[#]";
+
+                        var buffer = Encoding.UTF8.GetBytes(json);
+
+                        // Write out data to output stream
+                        sw.Write(buffer);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(errorMessage, ex);
+                    throw;
+                }
+                finally
+                {
+                    outputStream.Close();
+                }
+
+            }).Start());
+
+            return response;
         }
     }
 }

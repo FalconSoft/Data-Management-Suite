@@ -69,6 +69,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BinaryConverter.cs" />
     <Compile Include="Facades\CommandFacade.cs" />
     <Compile Include="Facades\MetaDataAdminFacade.cs" />
     <Compile Include="Facades\PermissionSecurityFacade.cs" />

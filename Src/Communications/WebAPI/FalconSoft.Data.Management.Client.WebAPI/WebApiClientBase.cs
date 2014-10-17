@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
-using Newtonsoft.Json;
 
 namespace FalconSoft.Data.Management.Client.WebAPI
 {
@@ -49,18 +47,36 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             //var response = _client.PostAsync(request.ToString()).Result;
         }
 
-        protected IEnumerable<string> GetStreamData<T>(string methodName, Dictionary<string, object> inputParams)
+        protected IEnumerable<T> GetStreamDataToEnumerable<T>(string methodName, Dictionary<string, object> inputParams, bool allowReadStreamBuffering = true)
         {
             var request = new StringBuilder(string.Format(@"api/{0}/{1}/", _apiControllerName, methodName));
-
+            var jsonSerializer = new JavaScriptSerializer();
             request.Append(ParametersToUriRequest(inputParams));
 
             var stream = _client.GetStreamAsync(request.ToString());
             var sr = new StreamReader(stream.Result);
+
+            var lastItem = string.Empty;
+
             while (!sr.EndOfStream)
             {
-                yield return sr.ReadLine();
+                var outPutString = lastItem + sr.ReadLine();
+                
+                if (string.IsNullOrEmpty(outPutString))
+                    continue;
+
+                var array = outPutString.Split(new[] {"[#]"}, StringSplitOptions.None);
+
+                var itemCount = array.Length;
+                lastItem = array[itemCount - 1];
+
+                for (int i = 0; i < itemCount-1; i++)
+                {
+                    yield return jsonSerializer.Deserialize<T>(array[i]);
+                }
             }
+            if (!string.IsNullOrEmpty(lastItem))
+                yield return jsonSerializer.Deserialize<T>(lastItem);
         }
 
         private string ParametersToUriRequest(Dictionary<string, object> inputParams)
