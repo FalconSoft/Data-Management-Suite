@@ -106,6 +106,10 @@
       <Project>{e5f3dec3-b616-4a4e-bfe4-266ea569291c}</Project>
       <Name>FalconSoft.Data.Management.Client.RabbitMQ</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Communications\WebAPI\FalconSoft.Data.Management.Client.WebAPI\FalconSoft.Data.Management.Client.WebAPI.csproj">
+      <Project>{aa726bdd-b9df-448b-ab9a-5d084704cfe9}</Project>
+      <Name>FalconSoft.Data.Management.Client.WebAPI</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">

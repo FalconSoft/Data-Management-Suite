@@ -5,6 +5,7 @@ using System.Web.Http;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Management.Server.WebAPI.Attributes;
 
 namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 {
@@ -33,31 +34,30 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
                 return Enumerable.Empty<Dictionary<string, object>>();
             }
         }
-
-        public IEnumerable<T> GetData<T>(string userToken, string dataSourcePath, FilterRule[] filterRules = null)
+        
+        [BindJson(typeof(string[]), "fields")]
+        [BindJson(typeof(FilterRule[]), "filterRules")]
+        public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, [FromUri]string[] fields, [FromUri]FilterRule[] filterRules)
         {
+            IEnumerable<Dictionary<string, object>> enumerator;
             try
             {
-                return _reactiveDataQueryFacade.GetData<T>(userToken, dataSourcePath, filterRules);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("GetData<T> failed ", ex);
-                return Enumerable.Empty<T>();
-            }
-        }
+                 enumerator =  _reactiveDataQueryFacade.GetData(userToken, dataSourcePath, fields);
 
-        public IEnumerable<Dictionary<string, object>> GetData(string userToken, string dataSourcePath, string[] fields = null, FilterRule[] filterRules = null)
-        {
-            try
-            {
-                return _reactiveDataQueryFacade.GetData(userToken, dataSourcePath, fields, filterRules);
+                if (enumerator == null)
+                    throw new ArgumentException(" Bad argyments are in!");
             }
             catch (Exception ex)
             {
                 _logger.Error("GetData failed ", ex);
-                return Enumerable.Empty<Dictionary<string, object>>();
+                yield break;
             }
+
+            foreach (var item in enumerator)
+            {
+                yield return item;
+            }
+            
         }
 
         public IEnumerable<string> GetFieldData(string userToken, string dataSourcePath, string field, string match, int elementsToReturn = 10)

@@ -19,7 +19,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public IReactiveDataQueryFacade CreateReactiveDataQueryFacade()
         {
-            return new ReactiveDataQueryFacade();
+            return new ReactiveDataQueryFacade("http://localhost:8080");
         }
 
         public ITemporalDataQueryFacade CreateTemporalDataQueryFacade()
@@ -29,12 +29,12 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public IMetaDataAdminFacade CreateMetaDataAdminFacade()
         {
-            return new MetaDataAdminFacade();
+            return new MetaDataAdminFacade("http://localhost:8080");
         }
 
         public IMetaDataFacade CreateMetaDataFacade()
         {
-            return new MetaDataAdminFacade();
+            return new MetaDataAdminFacade("http://localhost:8080");
         }
 
         public ISearchFacade CreateSearchFacade()

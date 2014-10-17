@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Net.Http;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -6,8 +8,17 @@ using FalconSoft.Data.Management.Common.Security;
 
 namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
-    internal sealed class MetaDataAdminFacade : IMetaDataAdminFacade
+    internal sealed class MetaDataAdminFacade : WebApiClientBase, IMetaDataAdminFacade
     {
+        private HttpClient _client;
+
+        public MetaDataAdminFacade(string url)
+            : base(url, "MetaDataApi")
+        {
+            _client = new HttpClient();
+            _client.BaseAddress = new Uri("http://localhost:8080");
+        }
+
         public void Dispose()
         {
             throw new NotImplementedException();
@@ -20,7 +31,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public DataSourceInfo GetDataSourceInfo(string dataSourceUrn, string userToken)
         {
-            throw new NotImplementedException();
+            return GetWebApiCall<DataSourceInfo>("GetDataSourceInfo",
+                new Dictionary<string, object> {{"dataSourceUrn", dataSourceUrn}, {"userToken", userToken}});
         }
 
         public event EventHandler<SourceObjectChangedEventArgs> ObjectInfoChanged;

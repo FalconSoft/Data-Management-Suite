@@ -7,6 +7,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FalconSoft.Data.Management.Client.RabbitMQ;
+using FalconSoft.Data.Management.Client.WebAPI;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -29,6 +30,10 @@ namespace FalconSoft.Data.Console
             if (facadeType.Equals("RabbitMQ", StringComparison.OrdinalIgnoreCase))
             {
                 return new RabbitMqFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RabbitMqAdminLogin"], ConfigurationManager.AppSettings["RabbitMqAdminPass"]);
+            }
+            if (facadeType.Equals("WebApi", StringComparison.OrdinalIgnoreCase))
+            {
+                return new WebApiFacadeFactory();
             }
             if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
             {
@@ -60,7 +65,10 @@ namespace FalconSoft.Data.Console
         {
             FacadesFactory = GetFacadesFactory(ConfigurationManager.AppSettings["FacadeType"]);
 
-            ConsoleClientToken = FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console").Value;
+            ConsoleClientToken = "543bd68975e00a257876ff76";//FacadesFactory.CreateSecurityFacade().Authenticate("consoleClient", "console").Value;
+
+            reactiveDataQueryFacade = FacadesFactory.CreateReactiveDataQueryFacade();
+            metaDataFacade = FacadesFactory.CreateMetaDataFacade();
 
             var commandLineParser = new CommandLineParser();
             var withArgs = false;
@@ -162,14 +170,23 @@ namespace FalconSoft.Data.Console
             System.Console.WriteLine("Listening updates to [{0}] and writing to [{1}]", subscribeArguments.DataSourceUrn, subscribeArguments.FileName);
         }
 
+        private static IReactiveDataQueryFacade reactiveDataQueryFacade;
+        private static IMetaDataFacade metaDataFacade;
 
         private static void Get(CommandLineParser.GetParams getArguments)
         {
-            var reactiveDataQueryFacade = FacadesFactory.CreateReactiveDataQueryFacade();
+           
+
             var startTime = DateTime.Now;
-            var data = reactiveDataQueryFacade.GetData(ConsoleClientToken, getArguments.DataSourceUrn);
+
+            var dataSourceInfo = metaDataFacade.GetDataSourceInfo(getArguments.DataSourceUrn, ConsoleClientToken);
+
+            var data = reactiveDataQueryFacade.GetData(ConsoleClientToken, getArguments.DataSourceUrn, dataSourceInfo.Fields.Keys.ToArray());
+
             CSVHelper.WriteRecords(data, getArguments.FileName, getArguments.Separator);
+
             var executionSpan = DateTime.Now - startTime;
+
             System.Console.WriteLine("Data loaded from [{0}] data source to [{1}] in {2} seconds.", getArguments.DataSourceUrn, getArguments.FileName, executionSpan);
         }
 

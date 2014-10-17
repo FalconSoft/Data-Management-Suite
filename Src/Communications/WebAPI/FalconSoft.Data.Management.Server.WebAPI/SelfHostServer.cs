@@ -3,6 +3,7 @@ using System.Web.Http;
 using System.Web.Http.SelfHost;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Server.WebAPI.Controllers;
 using FalconSoft.Data.Management.Server.WebAPI.IoC;
 using Ninject;
 using Ninject.Web.Common;
@@ -19,6 +20,8 @@ namespace FalconSoft.Data.Management.Server.WebAPI
         private readonly ITemporalDataQueryFacade _temporalDataQueryFacade;
         private readonly ILogger _logger;
         private HttpSelfHostServer _server;
+        private ReactiveDataQueryApiController _reactiveDataQueryWebApi;
+        private MetaDataApiController _metaDataWebApi;
 
         public SelfHostServer(IReactiveDataQueryFacade reactiveDataQueryFacade,
             IMetaDataAdminFacade metaDataAdminFacade,
