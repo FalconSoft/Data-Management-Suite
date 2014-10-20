@@ -4,15 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Formatting;
-using System.Net.Http.Headers;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using FalconSoft.Data.Management.Common;
-using FalconSoft.Data.Management.Common.Facades;
-using Newtonsoft.Json;
 
 namespace FalconSoft.Data.Management.Client.WebAPI
 {
@@ -24,8 +19,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         public WebApiClientBase(string url, string apiControllerName)
         {
             _apiControllerName = apiControllerName;
-            _client = new HttpClient();
-            _client.BaseAddress = new Uri(url);
+            _client = new HttpClient {BaseAddress = new Uri(url)};
         }
 
         protected T GetWebApiCall<T>(string methodName, Dictionary<string, object> inputParams)

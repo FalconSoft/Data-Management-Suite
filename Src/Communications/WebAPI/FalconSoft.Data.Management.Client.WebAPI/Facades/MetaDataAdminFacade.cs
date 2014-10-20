@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
