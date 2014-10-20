@@ -44,17 +44,28 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public string SaveNewUser(User user, UserRole userRole, string userToken)
         {
-            throw new NotImplementedException();
+            return PostWebApiCallMessage("SaveNewUser", user, new Dictionary<string, object>
+            {
+                {"userRole", userRole},
+                {"userToken", userToken}
+            }).Content.ReadAsStringAsync().Result;
         }
 
         public void UpdateUser(User user, UserRole userRole, string userToken)
         {
-            throw new NotImplementedException();
+            PostWebApiCall("UpdateUser", user, new Dictionary<string, object>
+            {
+                {"userRole", userRole},
+                {"userToken", userToken}
+            });
         }
 
         public void RemoveUser(User user, string userToken)
         {
-            throw new NotImplementedException();
+            PostWebApiCall("UpdateUser", user, new Dictionary<string, object>
+            {
+                {"userToken", userToken}
+            });
         }
 
         public Action<string, string> ErrorMessageHandledAction { get; set; }

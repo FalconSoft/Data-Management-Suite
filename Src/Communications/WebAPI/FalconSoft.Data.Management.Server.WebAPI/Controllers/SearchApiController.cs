@@ -7,7 +7,7 @@ using FalconSoft.Data.Management.Server.WebAPI.Attributes;
 
 namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 {
-    public class SearchApiController : ApiController
+    public sealed class SearchApiController : ApiController
     {
         private readonly ISearchFacade _searchFacade;
         private readonly ILogger _logger;

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
 using System.Web.Http;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -64,45 +66,53 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [HttpPost]
-        public string SaveNewUser([FromBody]User user, [FromUri]UserRole userRole, [FromUri]string userToken)
+        public HttpResponseMessage SaveNewUser([FromBody]User user, [FromUri]UserRole userRole, [FromUri]string userToken)
         {
             _logger.Debug("Call SecurityApiController SaveNewUser");
+            var responce = new HttpResponseMessage();
             try
             {
-                return _securityFacade.SaveNewUser(user, userRole, userToken);
+                var content = _securityFacade.SaveNewUser(user, userRole, userToken);
+                responce.StatusCode = HttpStatusCode.OK;
+                responce.Content = new StringContent(content);
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("SaveNewUser failed ", ex);
-                return null;
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
         [HttpPost]
-        public void UpdateUser([FromBody]User user, [FromUri]UserRole userRole, [FromUri]string userToken)
+        public HttpResponseMessage UpdateUser([FromBody]User user, [FromUri]UserRole userRole, [FromUri]string userToken)
         {
             _logger.Debug("Call SecurityApiController UpdateUser");
             try
             {
                 _securityFacade.UpdateUser(user, userRole, userToken);
+                return new HttpResponseMessage(HttpStatusCode.OK);
             }
             catch (Exception ex)
             {
                 _logger.Error("UpdateUser failed ", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
         [HttpPost]
-        public void RemoveUser([FromBody]User user, [FromUri]string userToken)
+        public HttpResponseMessage RemoveUser([FromBody]User user, [FromUri]string userToken)
         {
             _logger.Debug("Call SecurityApiController RemoveUser");
             try
             {
                 _securityFacade.RemoveUser(user,  userToken);
+                return new HttpResponseMessage(HttpStatusCode.OK);
             }
             catch (Exception ex)
             {
                 _logger.Error("RemoveUser failed ", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 

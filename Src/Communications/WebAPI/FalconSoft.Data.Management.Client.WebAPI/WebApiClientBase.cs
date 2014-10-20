@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
@@ -59,6 +60,25 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             var request = new StringBuilder(string.Format("api/{0}/{1}/", _apiControllerName, methodName));
 
             request.Append(ParametersToUriRequest(uriParams));
+
+            var response = _client.PostAsJsonAsync(request.ToString(), bodyElenment).Result;
+            response.EnsureSuccessStatusCode();
+        }
+
+        protected HttpResponseMessage PostWebApiCallMessage<T>(string methodName, T bodyElenment, Dictionary<string, object> uriParams)
+        {
+            var request = new StringBuilder(string.Format("api/{0}/{1}/", _apiControllerName, methodName));
+
+            request.Append(ParametersToUriRequest(uriParams));
+
+            var response = _client.PostAsJsonAsync(request.ToString(), bodyElenment).Result;
+            response.EnsureSuccessStatusCode();
+            return response;
+        }
+
+        protected void PostWebApiCall<T>(string methodName, T bodyElenment)
+        {
+            var request = new StringBuilder(string.Format("api/{0}/{1}/", _apiControllerName, methodName));
 
             var response = _client.PostAsJsonAsync(request.ToString(), bodyElenment).Result;
             response.EnsureSuccessStatusCode();
@@ -162,7 +182,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
                     // Execute the command and get a reader
                     var sw = new BinaryWriter(stream);
                     var jsonConverter = new JavaScriptSerializer();
-                    foreach (var dictionary in dataEnumerable)
+                    foreach (var dictionary in dataEnumerable??Enumerable.Empty<T>())
                     {
                         var json = jsonConverter.Serialize(dictionary) + "[#]";
 

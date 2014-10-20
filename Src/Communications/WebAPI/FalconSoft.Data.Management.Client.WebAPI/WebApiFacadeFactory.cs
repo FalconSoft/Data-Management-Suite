@@ -26,7 +26,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public ITemporalDataQueryFacade CreateTemporalDataQueryFacade()
         {
-            return new TemporalDataQueryFacade();
+            return new TemporalDataQueryFacade(url);
         }
 
         public IMetaDataAdminFacade CreateMetaDataAdminFacade()
@@ -41,7 +41,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public ISearchFacade CreateSearchFacade()
         {
-            return new SearchFacade();
+            return new SearchFacade(url);
         }
 
         public ISecurityFacade CreateSecurityFacade()

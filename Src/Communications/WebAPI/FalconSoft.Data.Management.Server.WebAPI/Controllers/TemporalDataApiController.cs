@@ -1,7 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Formatting;
+using System.Text;
+using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Script.Serialization;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -22,127 +29,127 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 
         [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
         [HttpGet]
-        public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)
+        public HttpResponseMessage GetRecordsHistory([FromUri]DataSourceInfo dataSourceInfo, [FromUri]string recordKey)
         {
-            try
-            {
-                return _temporalDataQueryFacade.GetRecordsHistory(dataSourceInfo, recordKey);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("GetRecordsHistory failed ", ex);
-                return new List<Dictionary<string, object>>();
-            }
+            return EnumeratorToStream(_temporalDataQueryFacade.GetRecordsHistory(dataSourceInfo, recordKey), "GetRecordsHistory failed ");
         }
 
         [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
         [BindJson(typeof(TagInfo), "tagInfo")]
         [HttpGet]
-        public IEnumerable<Dictionary<string, object>> GetDataHistoryByTag(DataSourceInfo dataSourceInfo, TagInfo tagInfo)
+        public HttpResponseMessage GetDataHistoryByTag([FromUri]DataSourceInfo dataSourceInfo, [FromUri]TagInfo tagInfo)
         {
-            try
-            {
-                return _temporalDataQueryFacade.GetDataHistoryByTag(dataSourceInfo, tagInfo);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("GetDataHistoryByTag failed ", ex);
-                return new List<Dictionary<string, object>>(); ;
-            }
+            return EnumeratorToStream(_temporalDataQueryFacade.GetDataHistoryByTag(dataSourceInfo, tagInfo), "GetDataHistoryByTag failed ");
         }
 
         [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
         [HttpGet]
-        public IEnumerable<Dictionary<string, object>> GetRecordsAsOf(DataSourceInfo dataSourceInfo, DateTime timeStamp)
+        public HttpResponseMessage GetRecordsAsOf([FromUri]DataSourceInfo dataSourceInfo, [FromUri]DateTime timeStamp)
         {
-            try
-            {
-                return _temporalDataQueryFacade.GetRecordsAsOf(dataSourceInfo, timeStamp);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("GetRecordsAsOf failed ", ex);
-                return new List<Dictionary<string, object>>();
-            }
+           return EnumeratorToStream(_temporalDataQueryFacade.GetRecordsAsOf(dataSourceInfo, timeStamp), "GetRecordsAsOf failed ");
         }
 
         [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
         [HttpGet]
-        public IEnumerable<Dictionary<string, object>> GetTemporalDataByRevisionId(DataSourceInfo dataSourceInfo,
-            object revisionId)
+        public HttpResponseMessage GetTemporalDataByRevisionId([FromUri]DataSourceInfo dataSourceInfo,
+            [FromUri]object revisionId)
         {
-            try
-            {
-                return _temporalDataQueryFacade.GetTemporalDataByRevisionId(dataSourceInfo, revisionId);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("GetTemporalDataByRevisionId failed ", ex);
-                return new List<Dictionary<string, object>>();
-            }
+            return EnumeratorToStream(_temporalDataQueryFacade.GetTemporalDataByRevisionId(dataSourceInfo, revisionId), "GetTemporalDataByRevisionId failed ");
         }
         
         [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
         [HttpGet]
-        public IEnumerable<Dictionary<string, object>> GetRevisions(DataSourceInfo dataSourceInfo)
+        public HttpResponseMessage GetRevisions([FromUri]DataSourceInfo dataSourceInfo)
         {
-            try
-            {
-                return _temporalDataQueryFacade.GetRevisions(dataSourceInfo);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("GetRevisions failed ", ex);
-                return new List<Dictionary<string, object>>();
-            }
+            return EnumeratorToStream(_temporalDataQueryFacade.GetRevisions(dataSourceInfo), "GetRevisions failed ");
         }
 
         [HttpGet]
-        public IEnumerable<TagInfo> GeTagInfos()
+        public HttpResponseMessage GeTagInfos()
         {
-            IEnumerable<TagInfo> enumerator = null;
+            var responce = new HttpResponseMessage();
+
             try
             {
-                enumerator = _temporalDataQueryFacade.GeTagInfos();
+                var content = _temporalDataQueryFacade.GeTagInfos().ToArray();
+                responce.StatusCode = HttpStatusCode.OK;
+                responce.Content = new ObjectContent(typeof(TagInfo[]), content, new JsonMediaTypeFormatter());
+                return responce;
             }
             
             catch (Exception ex)
             {
                 _logger.Error("GeTagInfos failed ", ex);
-            }
-            if (enumerator == null) yield break;
-            foreach (var tagInfo in enumerator)
-            {
-                yield return tagInfo;
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
-        [BindJson(typeof(TagInfo), "tagInfo")]
         [HttpPost]
-        public HttpResponseMessage SaveTagInfo(TagInfo tagInfo)
+        public HttpResponseMessage SaveTagInfo([FromBody]TagInfo tagInfo)
         {
+            var responce = new HttpResponseMessage();
             try
             {
                 _temporalDataQueryFacade.SaveTagInfo(tagInfo);
+                responce.StatusCode = HttpStatusCode.OK;
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("SaveTagInfo failed ", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
-        [BindJson(typeof(TagInfo), "tagInfo")]
         [HttpPost]
-        public HttpResponseMessage RemoveTagInfo(TagInfo tagInfo)
+        public HttpResponseMessage RemoveTagInfo([FromBody]TagInfo tagInfo)
         {
             try
             {
                 _temporalDataQueryFacade.RemoveTagInfo(tagInfo);
+                return new HttpResponseMessage(HttpStatusCode.OK);
             }
             catch (Exception ex)
             {
                 _logger.Error("RemoveTagInfo failed ", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
+        }
+
+        // helper method to enumerate data into stream
+        private HttpResponseMessage EnumeratorToStream<T>(IEnumerable<T> enumerable, string errorMessage)
+        {
+            HttpResponseMessage response = Request.CreateResponse();
+            response.Content = new PushStreamContent((outputStream, httpContent, transportContext) => new Task(() =>
+            {
+                try
+                {
+                    // Execute the command and get a reader
+                    var sw = new BinaryWriter(outputStream);
+                    var jsonConverter = new JavaScriptSerializer();
+                    foreach (var dictionary in enumerable)
+                    {
+                        var json = jsonConverter.Serialize(dictionary) + "[#]";
+
+                        var buffer = Encoding.UTF8.GetBytes(json);
+
+                        // Write out data to output stream
+                        sw.Write(buffer);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(errorMessage, ex);
+                    throw;
+                }
+                finally
+                {
+                    outputStream.Close();
+                }
+
+            }).Start());
+
+            return response;
         }
     }
 }
