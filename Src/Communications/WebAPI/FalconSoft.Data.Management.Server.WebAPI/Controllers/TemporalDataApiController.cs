@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Web.Http;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -20,6 +21,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
+        [HttpGet]
         public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)
         {
             try
@@ -35,6 +37,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 
         [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
         [BindJson(typeof(TagInfo), "tagInfo")]
+        [HttpGet]
         public IEnumerable<Dictionary<string, object>> GetDataHistoryByTag(DataSourceInfo dataSourceInfo, TagInfo tagInfo)
         {
             try
@@ -49,6 +52,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
+        [HttpGet]
         public IEnumerable<Dictionary<string, object>> GetRecordsAsOf(DataSourceInfo dataSourceInfo, DateTime timeStamp)
         {
             try
@@ -63,6 +67,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
+        [HttpGet]
         public IEnumerable<Dictionary<string, object>> GetTemporalDataByRevisionId(DataSourceInfo dataSourceInfo,
             object revisionId)
         {
@@ -78,6 +83,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
         
         [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
+        [HttpGet]
         public IEnumerable<Dictionary<string, object>> GetRevisions(DataSourceInfo dataSourceInfo)
         {
             try
@@ -91,21 +97,29 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
+        [HttpGet]
         public IEnumerable<TagInfo> GeTagInfos()
         {
+            IEnumerable<TagInfo> enumerator = null;
             try
             {
-                return _temporalDataQueryFacade.GeTagInfos();
+                enumerator = _temporalDataQueryFacade.GeTagInfos();
             }
+            
             catch (Exception ex)
             {
                 _logger.Error("GeTagInfos failed ", ex);
-                return new List<TagInfo>();
+            }
+            if (enumerator == null) yield break;
+            foreach (var tagInfo in enumerator)
+            {
+                yield return tagInfo;
             }
         }
 
         [BindJson(typeof(TagInfo), "tagInfo")]
-        public void SaveTagInfo(TagInfo tagInfo)
+        [HttpPost]
+        public HttpResponseMessage SaveTagInfo(TagInfo tagInfo)
         {
             try
             {
@@ -118,7 +132,8 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [BindJson(typeof(TagInfo), "tagInfo")]
-        public void RemoveTagInfo(TagInfo tagInfo)
+        [HttpPost]
+        public HttpResponseMessage RemoveTagInfo(TagInfo tagInfo)
         {
             try
             {

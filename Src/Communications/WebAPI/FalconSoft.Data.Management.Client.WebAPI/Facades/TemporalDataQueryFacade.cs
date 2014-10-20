@@ -9,7 +9,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
     {
         public void Dispose()
         {
-            throw new NotImplementedException();
+            
         }
 
         public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)

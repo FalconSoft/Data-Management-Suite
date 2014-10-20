@@ -102,6 +102,7 @@ namespace FalconSoft.Data.Server.Installers
                 ServerApp.SecurityFacade,
                 ServerApp.PermissionSecurityFacade,
                 ServerApp.TemporalQueryFacade,
+                ServerApp.CommandFacade,
                 ServerApp.Logger);
             
             SelfHostServer.Start(url);

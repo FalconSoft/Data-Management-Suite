@@ -6,11 +6,6 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class SearchFacade : ISearchFacade
     {
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
-
         public SearchData[] Search(string searchString)
         {
             throw new NotImplementedException();
@@ -19,6 +14,11 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
         public HeaderInfo[] GetSearchableWorksheets(SearchData searchData)
         {
             throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+
         }
     }
 }

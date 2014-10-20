@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ServiceModel;
 using System.Web.Http;
 using System.Web.Http.SelfHost;
 using FalconSoft.Data.Management.Common;
@@ -18,17 +19,17 @@ namespace FalconSoft.Data.Management.Server.WebAPI
         private readonly ISecurityFacade _securityFacade;
         private readonly IPermissionSecurityFacade _permissionSecurityFacade;
         private readonly ITemporalDataQueryFacade _temporalDataQueryFacade;
+        private readonly ICommandFacade _commandFacade;
         private readonly ILogger _logger;
         private HttpSelfHostServer _server;
-        private ReactiveDataQueryApiController _reactiveDataQueryWebApi;
-        private MetaDataApiController _metaDataWebApi;
-
+       
         public SelfHostServer(IReactiveDataQueryFacade reactiveDataQueryFacade,
-            IMetaDataAdminFacade metaDataAdminFacade,
-            ISearchFacade searchFacade,
-            ISecurityFacade securityFacade,
+            IMetaDataAdminFacade metaDataAdminFacade, 
+            ISearchFacade searchFacade, 
+            ISecurityFacade securityFacade, 
             IPermissionSecurityFacade permissionSecurityFacade,
             ITemporalDataQueryFacade temporalDataQueryFacade,
+            ICommandFacade commandFacade,
             ILogger logger)
         {
             _reactiveDataQueryFacade = reactiveDataQueryFacade;
@@ -37,12 +38,16 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             _securityFacade = securityFacade;
             _permissionSecurityFacade = permissionSecurityFacade;
             _temporalDataQueryFacade = temporalDataQueryFacade;
+            _commandFacade = commandFacade;
             _logger = logger;
         }
 
         public void Start(string url)
         {
             var config = new HttpSelfHostConfiguration(url);
+            config.TransferMode = TransferMode.StreamedRequest;
+            config.MaxBufferSize = Int32.MaxValue;
+            config.MaxReceivedMessageSize = Int32.MaxValue;
 
             var kernel = new StandardKernel();
             kernel.Bind<Func<IKernel>>().ToMethod(ctx => () => new Bootstrapper().Kernel);
@@ -79,6 +84,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             kernel.Bind<ISecurityFacade>().ToConstant(_securityFacade);
             kernel.Bind<IPermissionSecurityFacade>().ToConstant(_permissionSecurityFacade);
             kernel.Bind<ITemporalDataQueryFacade>().ToConstant(_temporalDataQueryFacade);
+            kernel.Bind<ICommandFacade>().ToConstant(_commandFacade);
             kernel.Bind<ILogger>().ToConstant(_logger);
         }
     }

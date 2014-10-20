@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Formatting;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,52 +31,79 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 
         [BindJson(typeof(AggregatedWorksheetInfo), "aggregatedWorksheet")]
         [BindJson(typeof(FilterRule[]), "filterRules")]
+        [HttpGet]
         public HttpResponseMessage GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
             FilterRule[] filterRules = null)
         {
+            _logger.Debug("Call ReactiveDataQueryApiController GetAggregatedData");
+            
             return EnumeratorToStream(_reactiveDataQueryFacade.GetAggregatedData(userToken, dataSourcePath,
                     aggregatedWorksheet, filterRules), "GetAggregatedData failed ");
         }
 
         [BindJson(typeof(string[]), "fields")]
         [BindJson(typeof(FilterRule[]), "filterRules")]
+        [HttpGet]
         public HttpResponseMessage GetData(string userToken, string dataSourcePath, [FromUri]string[] fields, [FromUri]FilterRule[] filterRules)
         {
+            _logger.Debug("Call ReactiveDataQueryApiController GetData");
+            
             return EnumeratorToStream(_reactiveDataQueryFacade.GetData(userToken, dataSourcePath, fields, filterRules), "GetData failed ");
         }
 
+        [HttpGet]
         public HttpResponseMessage GetFieldData(string userToken, string dataSourcePath, string field, string match, int elementsToReturn = 10)
         {
+            _logger.Debug("Call ReactiveDataQueryApiController GetFieldData");
+            
             return EnumeratorToStream(_reactiveDataQueryFacade.GetFieldData(userToken, dataSourcePath, field, match, elementsToReturn), "GetFieldData failed ");
         }
 
-         [BindJson(typeof(string[]), "recordKeys")]
-         [BindJson(typeof(string[]), "fields")]
+        [BindJson(typeof(string[]), "recordKeys")]
+        [BindJson(typeof(string[]), "fields")]
+        [HttpGet]
         public HttpResponseMessage GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys, string[] fields = null)
         {
+            _logger.Debug("Call ReactiveDataQueryApiController GetDataByKey");
+           
             return EnumeratorToStream(_reactiveDataQueryFacade.GetDataByKey(userToken, dataSourcePath, recordKeys, fields), "GetDataByKey failed ");
         }
 
-        public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, string[] fields = null)
+        [BindJson(typeof(RecordChangedParam[]), "changedRecord")]
+        [HttpGet]
+        public HttpResponseMessage ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken)
         {
-            return null;
-        }
-
-        public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken,
-            Action<string, RecordChangedParam[]> onSuccess, Action<string, Exception> onFail)
-        {
+            _logger.Debug("Call ReactiveDataQueryApiController ResolveRecordbyForeignKey");
+            
             try
             {
-                _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecord, dataSourceUrn, userToken, onSuccess, onFail);
+                var responce = new HttpResponseMessage();
+                _reactiveDataQueryFacade.ResolveRecordbyForeignKey(changedRecord, dataSourceUrn, userToken,
+                    (msg, rpcArray) =>
+                    {
+                        responce.ReasonPhrase = msg;
+                        responce.StatusCode = HttpStatusCode.OK;
+                        responce.Content = new ObjectContent(typeof(RecordChangedParam[]),rpcArray, new JsonMediaTypeFormatter());
+                    }, (msg, ex) =>
+                    {
+                        responce.ReasonPhrase = msg;
+                        responce.StatusCode = HttpStatusCode.InternalServerError;
+                        responce.Content = new ObjectContent(typeof(Exception), ex, new JsonMediaTypeFormatter());
+                    });
+
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("ResolveRecordbyForeignKey failed ", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
+        [HttpGet]
         public bool CheckExistence(string userToken, string dataSourceUrn, string fieldName, object value)
         {
+            _logger.Debug("Call ReactiveDataQueryApiController CheckExistence");
             try
             {
                 return _reactiveDataQueryFacade.CheckExistence(userToken, dataSourceUrn, fieldName, value);
@@ -86,6 +115,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
+        // helper method to enumerate data into stream
         private HttpResponseMessage EnumeratorToStream<T>(IEnumerable<T> enumerable, string errorMessage)
         {
             HttpResponseMessage response = Request.CreateResponse();

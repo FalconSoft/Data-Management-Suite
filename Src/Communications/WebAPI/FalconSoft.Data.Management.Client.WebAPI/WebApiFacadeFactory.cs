@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using FalconSoft.Data.Management.Client.WebAPI.Facades;
 using FalconSoft.Data.Management.Common.Facades;
@@ -8,13 +9,14 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 {
     public class WebApiFacadeFactory : IFacadesFactory
     {
+        private string url = "http://localhost:8080";
         public WebApiFacadeFactory()
         {
             
         }
         public ICommandFacade CreateCommandFacade()
         {
-            return new CommandFacade();
+            return new CommandFacade(url);
         }
 
         public IReactiveDataQueryFacade CreateReactiveDataQueryFacade()

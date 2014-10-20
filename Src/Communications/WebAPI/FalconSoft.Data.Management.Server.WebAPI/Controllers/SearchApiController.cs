@@ -3,6 +3,7 @@ using System.Web.Http;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Management.Server.WebAPI.Attributes;
 
 namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 {
@@ -17,8 +18,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger = logger;
         }
 
-        public SearchData[] Search(string searchString)
+        [HttpGet]
+        public SearchData[] Search([FromUri]string searchString)
         {
+            _logger.Debug("Call SearchApiController Search");
             try
             {
                 return _searchFacade.Search(searchString);
@@ -30,8 +33,11 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
+        [BindJson(typeof(SearchData), "searchData")]
+        [HttpGet]
         public HeaderInfo[] GetSearchableWorksheets(SearchData searchData)
         {
+            _logger.Debug("Call SearchApiController GetSearchableWorksheets");
             try
             {
                 return _searchFacade.GetSearchableWorksheets(searchData);

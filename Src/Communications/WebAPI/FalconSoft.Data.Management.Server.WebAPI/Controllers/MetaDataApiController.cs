@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Net;
+using System.Net.Http;
 using System.Web.Http;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
-using FalconSoft.Data.Management.Server.WebAPI.Attributes;
 
 namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 {
@@ -19,8 +20,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
+            _logger.Debug("Call MetaDataApiController GetAvailableDataSources");
             try
             {
                 return _metaDataAdminFacade.GetAvailableDataSources(userToken, minAccessLevel);
@@ -32,8 +35,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
+        [HttpGet]
         public DataSourceInfo GetDataSourceInfo(string dataSourceUrn, string userToken)
         {
+            _logger.Debug("Call MetaDataApiController GetDataSourceInfo");
             try
             {
                 return _metaDataAdminFacade.GetDataSourceInfo(dataSourceUrn, userToken);
@@ -46,46 +51,60 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [HttpPost]
-        public void UpdateDataSourceInfo(MethodArgs method)
+        public HttpResponseMessage UpdateDataSourceInfo([FromBody]DataSourceInfo dataSource, [FromUri]string oldDataSourceUrn, [FromUri]string userToken)
         {
+            _logger.Debug("Call MetaDataApiController UpdateDataSourceInfo");
             try
             {
-                _metaDataAdminFacade.UpdateDataSourceInfo(method.MethodsArgs[0] as DataSourceInfo, method.MethodsArgs[1] as string, method.UserToken);
+                _metaDataAdminFacade.UpdateDataSourceInfo(dataSource, oldDataSourceUrn, userToken);
+                var responce = new HttpResponseMessage(HttpStatusCode.OK);
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("UpdateDataSourceInfo failed", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
         [HttpPost]
-        public void CreateDataSourceInfo(MethodArgs method)
+        public HttpResponseMessage CreateDataSourceInfo([FromBody]DataSourceInfo dataSource, [FromUri]string userToken)
         {
+            _logger.Debug("Call MetaDataApiController CreateDataSourceInfo");
             try
             {
-                _metaDataAdminFacade.CreateDataSourceInfo(method.MethodsArgs[0] as DataSourceInfo, method.UserToken);
+                _metaDataAdminFacade.CreateDataSourceInfo(dataSource, userToken);
+                var responce = new HttpResponseMessage(HttpStatusCode.OK);
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("CreateDataSourceInfo failed", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
         [HttpPost]
-        public void DeleteDataSourceInfo(string dataSourceUrn, string userToken)
+        public HttpResponseMessage DeleteDataSourceInfo([FromUri]string dataSourceUrn, [FromUri]string userToken)
         {
+            _logger.Debug("Call MetaDataApiController DeleteDataSourceInfo");
             try
             {
-                _metaDataAdminFacade.DeleteDataSourceInfo(dataSourceUrn, userToken);
+                _metaDataAdminFacade.DeleteDataSourceInfo(dataSourceUrn, userToken); 
+                var responce = new HttpResponseMessage(HttpStatusCode.OK);
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("DeleteDataSourceInfo failed", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
+        [HttpGet]
         public WorksheetInfo GetWorksheetInfo(string worksheetUrn, string userToken)
         {
+            _logger.Debug("Call MetaDataApiController GetWorksheetInfo");
             try
             {
                 return _metaDataAdminFacade.GetWorksheetInfo(worksheetUrn, userToken);
@@ -97,8 +116,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
+        [HttpGet]
         public WorksheetInfo[] GetAvailableWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
+            _logger.Debug("Call MetaDataApiController GetAvailableWorksheets");
             try
             {
                 return _metaDataAdminFacade.GetAvailableWorksheets(userToken, minAccessLevel);
@@ -110,46 +131,61 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
-        [BindJson(typeof(WorksheetInfo), "wsInfo")]
-        public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
+        [HttpPost]
+        public HttpResponseMessage UpdateWorksheetInfo([FromBody]WorksheetInfo wsInfo, [FromUri]string oldWorksheetUrn, [FromUri]string userToken)
         {
+            _logger.Debug("Call MetaDataApiController UpdateWorksheetInfo");
             try
             {
                 _metaDataAdminFacade.UpdateWorksheetInfo(wsInfo, oldWorksheetUrn, userToken);
+                var responce = new HttpResponseMessage(HttpStatusCode.OK);
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("UpdateWorksheetInfo failed", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
-        [BindJson(typeof(WorksheetInfo), "wsInfo")]
-        public void CreateWorksheetInfo(WorksheetInfo wsInfo, string userToken)
+        [HttpPost]
+        public HttpResponseMessage CreateWorksheetInfo([FromBody]WorksheetInfo wsInfo, [FromUri]string userToken)
         {
+            _logger.Debug("Call MetaDataApiController CreateWorksheetInfo");
             try
             {
                 _metaDataAdminFacade.CreateWorksheetInfo(wsInfo, userToken);
+                var responce = new HttpResponseMessage(HttpStatusCode.OK);
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("CreateWorksheetInfo failed", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
-        public void DeleteWorksheetInfo(string worksheetUrn, string userToken)
+        [HttpPost]
+        public HttpResponseMessage DeleteWorksheetInfo([FromUri]string worksheetUrn, [FromUri]string userToken)
         {
+            _logger.Debug("Call MetaDataApiController DeleteWorksheetInfo");
             try
             {
                 _metaDataAdminFacade.DeleteWorksheetInfo(worksheetUrn, userToken);
+                var responce = new HttpResponseMessage(HttpStatusCode.OK);
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("DeleteWorksheetInfo failed", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
+        [HttpGet]
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
+            _logger.Debug("Call MetaDataApiController GetAvailableAggregatedWorksheets");
             try
             {
                 return _metaDataAdminFacade.GetAvailableAggregatedWorksheets(userToken, minAccessLevel);
@@ -161,46 +197,61 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
-        [BindJson(typeof(AggregatedWorksheetInfo), "wsInfo")]
-        public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string oldWorksheetUrn, string userToken)
+        [HttpPost]
+        public HttpResponseMessage UpdateAggregatedWorksheetInfo([FromBody]AggregatedWorksheetInfo wsInfo, [FromUri]string oldWorksheetUrn, [FromUri]string userToken)
         {
+            _logger.Debug("Call MetaDataApiController UpdateAggregatedWorksheetInfo");
             try
             {
                 _metaDataAdminFacade.UpdateAggregatedWorksheetInfo(wsInfo, oldWorksheetUrn, userToken);
+                var responce = new HttpResponseMessage(HttpStatusCode.OK);
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("UpdateAggregatedWorksheetInfo failed", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
-        [BindJson(typeof(AggregatedWorksheetInfo), "wsInfo")]
-        public void CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userToken)
+        [HttpPost]
+        public HttpResponseMessage CreateAggregatedWorksheetInfo([FromBody]AggregatedWorksheetInfo wsInfo, [FromUri]string userToken)
         {
+            _logger.Debug("Call MetaDataApiController CreateAggregatedWorksheetInfo");
             try
             {
                 _metaDataAdminFacade.CreateAggregatedWorksheetInfo(wsInfo, userToken);
+                var responce = new HttpResponseMessage(HttpStatusCode.OK);
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("CreateAggregatedWorksheetInfo failed", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
-        public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userToken)
+        [HttpPost]
+        public HttpResponseMessage DeleteAggregatedWorksheetInfo([FromUri]string worksheetUrn, [FromUri]string userToken)
         {
+            _logger.Debug("Call MetaDataApiController DeleteAggregatedWorksheetInfo");
             try
             {
                 _metaDataAdminFacade.DeleteAggregatedWorksheetInfo(worksheetUrn, userToken);
+                var responce = new HttpResponseMessage(HttpStatusCode.OK);
+                return responce;
             }
             catch (Exception ex)
             {
                 _logger.Error("DeleteAggregatedWorksheetInfo failed", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
-        public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userToken)
+        [HttpGet]
+        public AggregatedWorksheetInfo GetAggregatedWorksheetInfo([FromUri]string worksheetUrn, [FromUri]string userToken)
         {
+            _logger.Debug("Call MetaDataApiController GetAggregatedWorksheetInfo");
             try
             {
                 return _metaDataAdminFacade.GetAggregatedWorksheetInfo(worksheetUrn, userToken);
@@ -212,8 +263,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
+        [HttpGet]
         public ServerInfo GetServerInfo()
         {
+            _logger.Debug("Call MetaDataApiController GetServerInfo");
             try
             {
                 return _metaDataAdminFacade.GetServerInfo();
