@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using FalconSoft.Data.Management.Client.WebAPI.Facades;
 using FalconSoft.Data.Management.Common.Facades;
 
@@ -10,10 +7,21 @@ namespace FalconSoft.Data.Management.Client.WebAPI
     public class WebApiFacadeFactory : IFacadesFactory
     {
         private string url = "http://localhost:8080";
-        public WebApiFacadeFactory()
+        private RabbitMQClient _rabbitMQClient;
+
+        public WebApiFacadeFactory(string serverUrl, string userName, string password)
         {
-            
+            try
+            {
+                _rabbitMQClient = new RabbitMQClient(serverUrl, userName, password, "/");
+            }
+            catch (Exception)
+            {
+                _rabbitMQClient = null;
+
+            }
         }
+
         public ICommandFacade CreateCommandFacade()
         {
             return new CommandFacade(url);
@@ -21,7 +29,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public IReactiveDataQueryFacade CreateReactiveDataQueryFacade()
         {
-            return new ReactiveDataQueryFacade("http://localhost:8080");
+            return new ReactiveDataQueryFacade("http://localhost:8080", _rabbitMQClient);
         }
 
         public ITemporalDataQueryFacade CreateTemporalDataQueryFacade()
@@ -31,12 +39,12 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public IMetaDataAdminFacade CreateMetaDataAdminFacade()
         {
-            return new MetaDataAdminFacade("http://localhost:8080");
+            return new MetaDataAdminFacade("http://localhost:8080", _rabbitMQClient);
         }
 
         public IMetaDataFacade CreateMetaDataFacade()
         {
-            return new MetaDataAdminFacade("http://localhost:8080");
+            return new MetaDataAdminFacade("http://localhost:8080", _rabbitMQClient);
         }
 
         public ISearchFacade CreateSearchFacade()
@@ -46,12 +54,12 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public ISecurityFacade CreateSecurityFacade()
         {
-            return new SecurityFacade("http://localhost:8080");
+            return new SecurityFacade("http://localhost:8080", _rabbitMQClient);
         }
 
         public IPermissionSecurityFacade CreatePermissionSecurityFacade()
         {
-            return new PermissionSecurityFacade("http://localhost:8080");
+            return new PermissionSecurityFacade("http://localhost:8080", _rabbitMQClient);
         }
 
         public ITestFacade CreateTestFacade()
@@ -61,7 +69,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            //_rabbitMQClient.Close();
         }
     }
 }

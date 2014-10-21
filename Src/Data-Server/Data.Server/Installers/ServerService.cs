@@ -95,6 +95,10 @@ namespace FalconSoft.Data.Server.Installers
         private void RunWebApiSelfHost()
         {
             var url = ConfigurationManager.AppSettings["WebApiConnectionString"];
+            var hostName = ConfigurationManager.AppSettings["ConnectionString"];
+            var userName = ConfigurationManager.AppSettings["RabbitMqAdminLogin"];
+            var password = ConfigurationManager.AppSettings["RabbitMqAdminPass"];
+            var virtualHost = "/";
 
             SelfHostServer = new SelfHostServer(ServerApp.ReactiveDataQueryFacade,
                 ServerApp.MetaDataFacade,
@@ -103,7 +107,11 @@ namespace FalconSoft.Data.Server.Installers
                 ServerApp.PermissionSecurityFacade,
                 ServerApp.TemporalQueryFacade,
                 ServerApp.CommandFacade,
-                ServerApp.Logger);
+                ServerApp.Logger,
+                hostName,
+                userName,
+                password,
+                virtualHost);
             
             SelfHostServer.Start(url);
         }

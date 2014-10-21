@@ -21,11 +21,13 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
     public sealed class ReactiveDataQueryApiController : ApiController
     {
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
+        private readonly IFalconSoftBroker _falconSoftBroker;
         private readonly ILogger _logger;
 
-        public ReactiveDataQueryApiController(IReactiveDataQueryFacade reactiveDataQueryFacade, ILogger logger)
+        public ReactiveDataQueryApiController(IReactiveDataQueryFacade reactiveDataQueryFacade, IFalconSoftBroker falconSoftBroker, ILogger logger)
         {
             _reactiveDataQueryFacade = reactiveDataQueryFacade;
+            _falconSoftBroker = falconSoftBroker;
             _logger = logger;
         }
 
@@ -67,6 +69,23 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger.Debug("Call ReactiveDataQueryApiController GetDataByKey");
            
             return EnumeratorToStream(_reactiveDataQueryFacade.GetDataByKey(userToken, dataSourcePath, recordKeys, fields), "GetDataByKey failed ");
+        }
+
+        [BindJson(typeof(string[]), "fields")]
+        [HttpGet]
+        public HttpResponseMessage GetDataChanges([FromUri]string userToken, [FromUri]string dataSourcePath, [FromUri]string[] fields)
+        {
+            _logger.Debug("Call ReactiveDataQueryApiController GetDataChanges");
+            try
+            {
+                _falconSoftBroker.SubscribeOnGetDataChanges(userToken, dataSourcePath, fields);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("GetDataChanges failed ", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
+            }
         }
 
         [BindJson(typeof(RecordChangedParam[]), "changedRecord")]

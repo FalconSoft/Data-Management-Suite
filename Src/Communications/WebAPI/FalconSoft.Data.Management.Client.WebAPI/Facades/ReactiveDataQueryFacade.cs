@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reactive.Subjects;
@@ -11,8 +12,14 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class ReactiveDataQueryFacade : WebApiClientBase, IReactiveDataQueryFacade
     {
-        public ReactiveDataQueryFacade(string url)
-            : base(url, "ReactiveDataQueryApi") { }
+        private readonly IRabbitMQClient _rabbitMQClient;
+        private const string GetDataChangesTopic = "GetDataChangesTopic";
+
+        public ReactiveDataQueryFacade(string url, IRabbitMQClient rabbitMQClient)
+            : base(url, "ReactiveDataQueryApi")
+        {
+            _rabbitMQClient = rabbitMQClient;
+        }
 
         public IEnumerable<Dictionary<string, object>> GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
             FilterRule[] filterRules = null)
@@ -71,7 +78,19 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, string[] fields = null)
         {
-            return new Subject<RecordChangedParam[]>();
+            GetWebApiAsyncCall("GetDataChanges", new Dictionary<string, object>
+            {
+                {"userToken", userToken},
+                {"dataSourcePath", dataSourcePath},
+                {"fields", fields}
+            }).Wait();
+
+            var routingKey = fields != null ? string.Format("{0}.{1}.", dataSourcePath, userToken) + fields.Aggregate("", (cur, next) => string.Format("{0}.{1}", cur, next)).GetHashCode()
+               : string.Format("{0}.{1}", dataSourcePath, userToken);
+
+
+            return _rabbitMQClient.CreateExchngeObservable<RecordChangedParam[]>(
+                GetDataChangesTopic, "topic", routingKey);
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken,

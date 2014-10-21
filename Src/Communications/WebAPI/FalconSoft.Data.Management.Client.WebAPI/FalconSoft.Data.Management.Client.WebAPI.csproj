@@ -37,6 +37,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\packages\Newtonsoft.Json.6.0.5\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="RabbitMQ.Client">
+      <HintPath>..\..\..\packages\RabbitMQ.Client.3.3.5\lib\net30\RabbitMQ.Client.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -75,6 +78,7 @@
     <Compile Include="Facades\CommandFacade.cs" />
     <Compile Include="Facades\MetaDataAdminFacade.cs" />
     <Compile Include="Facades\PermissionSecurityFacade.cs" />
+    <Compile Include="RabbitMQClient.cs" />
     <Compile Include="Facades\ReactiveDataQueryFacade.cs" />
     <Compile Include="Facades\SearchFacade.cs" />
     <Compile Include="Facades\SecurityFacade.cs" />

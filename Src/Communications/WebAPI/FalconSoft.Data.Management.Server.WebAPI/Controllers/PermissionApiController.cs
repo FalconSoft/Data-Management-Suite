@@ -13,11 +13,13 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
     public class PermissionApiController : ApiController
     {
         private readonly IPermissionSecurityFacade _permissionFacade;
+        private readonly IFalconSoftBroker _falconSoftBroker;
         private readonly ILogger _logger;
 
-        public PermissionApiController(IPermissionSecurityFacade searchFacade, ILogger logger)
+        public PermissionApiController(IPermissionSecurityFacade searchFacade, IFalconSoftBroker falconSoftBroker, ILogger logger)
         {
             _permissionFacade = searchFacade;
+            _falconSoftBroker = falconSoftBroker;
             _logger = logger;
         }
 
@@ -36,19 +38,19 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
-
+        [HttpPost]
         public HttpResponseMessage SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken, string grantedByUserToken, Action<string> messageAction)
         {
             _logger.Debug("Call PermissionApiController SaveUserPermissions");
             try
             {
                 var responce = new HttpResponseMessage();
-                 _permissionFacade.SaveUserPermissions(permissions, targetUserToken, grantedByUserToken,
-                     msg =>
-                     {
-                         responce.StatusCode = HttpStatusCode.InternalServerError;
-                         responce.Content = new ObjectContent(typeof(string), msg, new JsonMediaTypeFormatter());
-                     });
+                _permissionFacade.SaveUserPermissions(permissions, targetUserToken, grantedByUserToken,
+                    msg =>
+                    {
+                        responce.StatusCode = HttpStatusCode.InternalServerError;
+                        responce.Content = new ObjectContent(typeof(string), msg, new JsonMediaTypeFormatter());
+                    });
                 return responce;
             }
             catch (Exception ex)
@@ -58,7 +60,22 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
-        
+        [HttpGet]
+        public HttpResponseMessage GetPermissionChanged(string userToken)
+        {
+            _logger.Debug("Call PermissionApiController GetPermissionChanged");
+            try
+            {
+                _falconSoftBroker.SubscribeOnGetPermissionChanges(userToken);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("GetPermissionChanged failed ", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
+            }
+        }
+
         [HttpGet]
         public AccessLevel CheckAccess(string userToken, string urn)
         {

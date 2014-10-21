@@ -44,6 +44,9 @@
       <HintPath>..\..\..\packages\Ninject.Web.Common.3.2.3.0\lib\net40-full\Ninject.Web.Common.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="RabbitMQ.Client">
+      <HintPath>..\..\..\packages\RabbitMQ.Client.3.3.5\lib\net30\RabbitMQ.Client.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -93,11 +96,13 @@
     <Compile Include="Controllers\PermissionApiController.cs" />
     <Compile Include="Controllers\SecurityApiController.cs" />
     <Compile Include="Controllers\TemporalDataApiController.cs" />
+    <Compile Include="GlobalBroker.cs" />
     <Compile Include="IoC\NinjectDependencyScope.cs" />
     <Compile Include="Controllers\SearchApiController.cs" />
     <Compile Include="Controllers\MetaDataApiController.cs" />
     <Compile Include="IoC\NinjectDependencyResolver.cs" />
     <Compile Include="Controllers\ReactiveDataQueryApiController.cs" />
+    <Compile Include="RabbitMQBroker.cs" />
     <Compile Include="SelfHostServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

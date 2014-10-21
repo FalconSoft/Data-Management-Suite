@@ -10,8 +10,15 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class PermissionSecurityFacade : WebApiClientBase, IPermissionSecurityFacade
     {
-        public PermissionSecurityFacade(string url)
-            : base(url, "PermissionApi") { }
+        private readonly IRabbitMQClient _rabbitMQClient;
+        private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
+
+        public PermissionSecurityFacade(string url, IRabbitMQClient rabbitMQClient)
+            : base(url, "PermissionApi")
+        {
+            _rabbitMQClient = rabbitMQClient;
+
+           }
 
         public void Dispose()
         {
@@ -59,7 +66,13 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public IObservable<Dictionary<string, AccessLevel>> GetPermissionChanged(string userToken)
         {
-            return new Subject<Dictionary<string, AccessLevel>>();
+            GetWebApiAsyncCall("GetPermissionChanged", new Dictionary<string, object>
+            {
+                {"userToken", userToken}
+            }).Wait();
+
+            return _rabbitMQClient.CreateExchngeObservable<Dictionary<string, AccessLevel>>(
+                PermissionSecurityFacadeExchangeName, "direct", userToken);
         }
     }
 }

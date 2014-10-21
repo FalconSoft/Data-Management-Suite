@@ -7,11 +7,16 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class SecurityFacade :WebApiClientBase, ISecurityFacade
     {
-        public SecurityFacade(string url)
+        private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
+
+        public SecurityFacade(string url, IRabbitMQClient rabbitMQClient)
             : base(url, "SecurityApi")
         {
+            if (rabbitMQClient!=null)
+                rabbitMQClient.SubscribeOnExchange(ExceptionsExchangeName, "fanout", "", ErrorMessageHandledAction);
             
         }
+
         public void Dispose()
         {
             

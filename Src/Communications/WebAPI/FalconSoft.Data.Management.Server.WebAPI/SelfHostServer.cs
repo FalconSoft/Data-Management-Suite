@@ -22,7 +22,8 @@ namespace FalconSoft.Data.Management.Server.WebAPI
         private readonly ICommandFacade _commandFacade;
         private readonly ILogger _logger;
         private HttpSelfHostServer _server;
-       
+        private GlobalBroker _globalBroker;
+
         public SelfHostServer(IReactiveDataQueryFacade reactiveDataQueryFacade,
             IMetaDataAdminFacade metaDataAdminFacade, 
             ISearchFacade searchFacade, 
@@ -30,7 +31,11 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             IPermissionSecurityFacade permissionSecurityFacade,
             ITemporalDataQueryFacade temporalDataQueryFacade,
             ICommandFacade commandFacade,
-            ILogger logger)
+            ILogger logger,
+            string hostName,
+            string userName,
+            string password,
+            string virtualHost)
         {
             _reactiveDataQueryFacade = reactiveDataQueryFacade;
             _metaDataAdminFacade = metaDataAdminFacade;
@@ -40,6 +45,14 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             _temporalDataQueryFacade = temporalDataQueryFacade;
             _commandFacade = commandFacade;
             _logger = logger;
+
+            var rabbitMq = new RabbitMQBroker(hostName, userName, password, virtualHost);
+
+            _globalBroker = new GlobalBroker(rabbitMq,
+                _reactiveDataQueryFacade,
+                _metaDataAdminFacade,
+                _permissionSecurityFacade,
+                _securityFacade);
         }
 
         public void Start(string url)
@@ -85,6 +98,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             kernel.Bind<IPermissionSecurityFacade>().ToConstant(_permissionSecurityFacade);
             kernel.Bind<ITemporalDataQueryFacade>().ToConstant(_temporalDataQueryFacade);
             kernel.Bind<ICommandFacade>().ToConstant(_commandFacade);
+            kernel.Bind<IFalconSoftBroker>().ToConstant(_globalBroker);
             kernel.Bind<ILogger>().ToConstant(_logger);
         }
     }

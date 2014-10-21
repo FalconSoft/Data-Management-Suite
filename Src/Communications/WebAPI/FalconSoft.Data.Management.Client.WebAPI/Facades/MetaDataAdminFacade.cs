@@ -9,8 +9,19 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class MetaDataAdminFacade : WebApiClientBase, IMetaDataAdminFacade
     {
-        public MetaDataAdminFacade(string url)
-            : base(url, "MetaDataApi") {}
+        private readonly IRabbitMQClient _rabbitMQClient;
+        private const string MetadataExchangeName = "MetaDataFacadeExchange";
+        private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
+
+        public MetaDataAdminFacade(string url, IRabbitMQClient rabbitMQClient)
+            : base(url, "MetaDataApi")
+        {
+            _rabbitMQClient = rabbitMQClient;
+
+            _rabbitMQClient.SubscribeOnExchange<SourceObjectChangedEventArgs>(MetadataExchangeName, "fanout", "", oic => ObjectInfoChanged(this, oic));
+
+            _rabbitMQClient.SubscribeOnExchange(ExceptionsExchangeName, "fanout", "", ErrorMessageHandledAction);
+        }
 
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
         {
