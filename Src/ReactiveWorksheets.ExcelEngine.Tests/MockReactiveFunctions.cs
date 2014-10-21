@@ -21,7 +21,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         {
             if (string.IsNullOrEmpty(dataSourceUrn) || string.IsNullOrEmpty(primaryKey) ||
                 string.IsNullOrEmpty(fieldName)) return "Invalid Input Parameters";
-            RExcelEngine.RegisterSubject(1,dataSourceUrn,primaryKey,fieldName);
+            RExcelEngine.RegisterSubject(null,dataSourceUrn,primaryKey,fieldName);
             return "#Loading!";
         }
     }

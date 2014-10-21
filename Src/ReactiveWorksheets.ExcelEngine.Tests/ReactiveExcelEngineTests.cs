@@ -21,8 +21,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         public void CorrectInputDataTest()
         {
             var serverMsg = new Subject<RecordChangedParam[]>();
-            var autoResetEvent = new AutoResetEvent(false);
-            var engine = new MockExcelEngine(serverMsg,autoResetEvent);
+            var engine = new MockExcelEngine(serverMsg);
             var rFunctions = new MockReactiveFunctions(engine);
             var result1 = (string)rFunctions.RDP(string.Empty, "10788", "CustomerID");
             Assert.AreEqual("Invalid Input Parameters",result1);
@@ -36,13 +35,11 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         public void RegisterSourceTest()
         {
             var serverMsg = new Subject<RecordChangedParam[]>();
-            var autoResetEvent = new AutoResetEvent(false);
-            var engine = new MockExcelEngine(serverMsg,autoResetEvent);
+            var engine = new MockExcelEngine(serverMsg);
             var rFunctions = new MockReactiveFunctions(engine);
             var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID");
             Assert.AreEqual("#Loading!", obs.ToString());
-            autoResetEvent.WaitOne();
-            Assert.AreEqual("Invalid DataSourcePath", ((object[,])engine.GetRtdData())[1,0]);
+            Assert.AreEqual("Invalid DataSourcePath", engine.ResultValue);
             engine.AddDsForRegister(OrdersDataSourceInfoJsonClean, @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
                                                             10788	TRAIH	1	22/12/1997	Trail's Head Gourmet Provisioners	Helvetius Nagy	Sales Associate");
             Assert.AreEqual(engine.LocalDb.Count,1);
@@ -56,15 +53,13 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         public void RegisterSubjectTest()
         {
             var serverMsg = new Subject<RecordChangedParam[]>();
-            var autoResetEvent = new AutoResetEvent(false);
-            var engine = new MockExcelEngine(serverMsg,autoResetEvent);
+            var engine = new MockExcelEngine(serverMsg);
             var rFunctions = new MockReactiveFunctions(engine);
             engine.AddDsForRegister(OrdersDataSourceInfoJsonClean, @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
                                                             10788	TRAIH	1	22/12/1997	Trail's Head Gourmet Provisioners	Helvetius Nagy	Sales Associate");
             var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID");
             Assert.AreEqual("#Loading!", obs.ToString());
-            autoResetEvent.WaitOne();
-            Assert.AreEqual("TRAIH", ((object[,])engine.GetRtdData())[1, 0]);
+            Assert.AreEqual("TRAIH", engine.ResultValue);
         }
 
 
@@ -72,15 +67,13 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         public void ExcelEngineFunctionalityTest()
         {
             var serverMsg = new Subject<RecordChangedParam[]>();
-            var autoResetEvent = new AutoResetEvent(false);
-            var engine = new MockExcelEngine(serverMsg,autoResetEvent);
+            var engine = new MockExcelEngine(serverMsg);
             var rFunctions = new MockReactiveFunctions(engine);
             engine.AddDsForRegister(OrdersDataSourceInfoJsonClean, @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
                                                             10788	TRAIH	1	22/12/1997	Trail's Head Gourmet Provisioners	Helvetius Nagy	Sales Associate");
             engine.IsRdpSubcribed = false;
             var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID");
-            autoResetEvent.WaitOne();
-            Assert.AreEqual("TRAIH", ((object[,])engine.GetRtdData())[1, 0]);
+            Assert.AreEqual("TRAIH", engine.ResultValue);
             var ds = MockRepository.GetDataSourceFromJSON(OrdersDataSourceInfoJsonClean);
             var data = RecordHelpers.TsvToDictionary(ds,
                 @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle

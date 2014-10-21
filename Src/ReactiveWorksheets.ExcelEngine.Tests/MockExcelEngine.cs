@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reactive.Disposables;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using ExcelDna.Integration;
 using ExcelDna.Integration.Rtd;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
@@ -18,12 +13,10 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
     class MockExcelEngine : IReactiveExcelEngine
     {
         public readonly ReactiveExcelMessanger ExcelMessanger;
-        public readonly MockUpdateEvent MockUpdateEvent;
 
-        public MockExcelEngine(IObservable<RecordChangedParam[]> serverObservable, AutoResetEvent autoResetEvent)
+        public MockExcelEngine(IObservable<RecordChangedParam[]> serverObservable)
         {
-            MockUpdateEvent = new MockUpdateEvent(autoResetEvent);
-            ExcelMessanger = new ReactiveExcelMessanger(MockUpdateEvent);
+            ExcelMessanger = new ReactiveExcelMessanger();
             Subcribers = new Dictionary<string, IDisposable>();
             _serverObs = serverObservable;
             DataSourceInfos = new List<DataSourceInfo>();
@@ -32,32 +25,20 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
 
         public Dictionary<string, Dictionary<string, Dictionary<string, object>>> LocalDb { get; set; }
 
-        public Array GetRtdData()
+        public object ResultValue { get; set; }
+
+        public void RegisterSubject(ExcelRtdServer.Topic topic, string dataSourceUrn, string primaryKey, string fieldName)
         {
-            return ExcelMessanger.RtdData ;
+            var point = new ExcelPoint(dataSourceUrn, primaryKey.ToRecordKey(), fieldName);
+            RegisterSource(dataSourceUrn);
+            ResultValue = !LocalDb.ContainsKey(point.DataSourceUrn) ? "Invalid DataSourcePath" : LocalDb[dataSourceUrn][primaryKey.ToRecordKey()][fieldName];
         }
 
-        public void RegisterSubject(int topicId, string dataSourceUrn, string primaryKey, string fieldName)
-        {
-            ExcelMessanger.RegisterSubject(topicId, dataSourceUrn, primaryKey.ToRecordKey(), fieldName);
-            RegisterSource(dataSourceUrn);
-            var point = new ExcelPoint(dataSourceUrn, primaryKey.ToRecordKey(), fieldName);
-            if (!LocalDb.ContainsKey(point.DataSourceUrn))
-                ExcelMessanger.SendData(new[] {point}, "Invalid DataSourcePath");
-            PullData(point);
-        }
 
         public void RegisterSource(string dataSourceUrn)
         {
             if(Subcribers.ContainsKey(dataSourceUrn)) return;
-            var sub = _serverObs.Subscribe(s =>
-            {
-                UpdateDb(s);
-                foreach (var recordChangedParam in s.Where(w => w.ChangedAction == RecordChangedAction.AddedOrUpdated))
-                    foreach (var changedPropertyName in recordChangedParam.ChangedPropertyNames)
-                        ExcelMessanger.SendData(recordChangedParam.ProviderString, recordChangedParam.RecordKey,
-                            changedPropertyName, recordChangedParam.RecordValues[changedPropertyName]);
-            });
+            var sub = _serverObs.Subscribe(UpdateDb);
             Subcribers.Add(dataSourceUrn, sub);
         }
 
@@ -68,7 +49,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
                 if (!LocalDb.ContainsKey(recordChangedParam.ProviderString)) continue;
                 if (!LocalDb[recordChangedParam.ProviderString].ContainsKey(recordChangedParam.RecordKey))
                 {
-                    LocalDb[recordChangedParam.ProviderString].Add(recordChangedParam.RecordKey, (Dictionary<string, object>)recordChangedParam.RecordValues);
+                    LocalDb[recordChangedParam.ProviderString].Add(recordChangedParam.RecordKey, recordChangedParam.RecordValues);
                     continue;
                 }
                 if (recordChangedParam.ChangedAction == RecordChangedAction.Removed)
@@ -77,20 +58,14 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
                     continue;
                 }
                 LocalDb[recordChangedParam.ProviderString][recordChangedParam.RecordKey] =
-                    (Dictionary<string, object>)recordChangedParam.RecordValues;
+                    recordChangedParam.RecordValues;
             }
         }
 
-        private void PullData(ExcelPoint excelPoint)
-        {
-            if (!LocalDb.ContainsKey(excelPoint.DataSourceUrn)) return;
-            if (!LocalDb[excelPoint.DataSourceUrn].ContainsKey(excelPoint.PrimaryKeyValue)) return;
-            ExcelMessanger.SendData(excelPoint.DataSourceUrn, excelPoint.PrimaryKeyValue, excelPoint.FieldName, LocalDb[excelPoint.DataSourceUrn][excelPoint.PrimaryKeyValue][excelPoint.FieldName]);
-        }
 
 
         #region for test
-        private IObservable<RecordChangedParam[]> _serverObs; 
+        private readonly IObservable<RecordChangedParam[]> _serverObs; 
 
         public List<DataSourceInfo> DataSourceInfos { get; set; }
         public Dictionary<string,IDisposable> Subcribers { get; set; }
