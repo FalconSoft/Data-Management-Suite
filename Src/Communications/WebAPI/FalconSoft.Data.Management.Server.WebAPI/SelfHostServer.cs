@@ -78,7 +78,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
 
             _server.OpenAsync().Wait();
 
-            _logger.Debug("Web Api server is running ");
+            _logger.Info("Web Api server is running ");
         }
 
         public void Dispose()
