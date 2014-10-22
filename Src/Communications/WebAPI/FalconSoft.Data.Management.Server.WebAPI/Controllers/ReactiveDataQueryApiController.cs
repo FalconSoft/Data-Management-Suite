@@ -31,11 +31,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger = logger;
         }
 
-        [BindJson(typeof(AggregatedWorksheetInfo), "aggregatedWorksheet")]
         [BindJson(typeof(FilterRule[]), "filterRules")]
-        [HttpGet]
-        public HttpResponseMessage GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
-            FilterRule[] filterRules = null)
+        [HttpPost]
+        public HttpResponseMessage GetAggregatedData([FromUri]string userToken, [FromUri]string dataSourcePath, [FromBody]AggregatedWorksheetInfo aggregatedWorksheet,
+            [FromUri]FilterRule[] filterRules)
         {
             _logger.Debug("Call ReactiveDataQueryApiController GetAggregatedData");
             
@@ -46,7 +45,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         [BindJson(typeof(string[]), "fields")]
         [BindJson(typeof(FilterRule[]), "filterRules")]
         [HttpGet]
-        public HttpResponseMessage GetData(string userToken, string dataSourcePath, [FromUri]string[] fields, [FromUri]FilterRule[] filterRules)
+        public HttpResponseMessage GetData([FromUri]string userToken, [FromUri]string dataSourcePath, [FromUri]string[] fields, [FromUri]FilterRule[] filterRules)
         {
             _logger.Debug("Call ReactiveDataQueryApiController GetData");
             
@@ -54,7 +53,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [HttpGet]
-        public HttpResponseMessage GetFieldData(string userToken, string dataSourcePath, string field, string match, int elementsToReturn = 10)
+        public HttpResponseMessage GetFieldData([FromUri]string userToken, [FromUri]string dataSourcePath, [FromUri] string field, [FromUri]string match, [FromUri] int elementsToReturn)
         {
             _logger.Debug("Call ReactiveDataQueryApiController GetFieldData");
             
@@ -64,7 +63,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         [BindJson(typeof(string[]), "recordKeys")]
         [BindJson(typeof(string[]), "fields")]
         [HttpGet]
-        public HttpResponseMessage GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys, string[] fields = null)
+        public HttpResponseMessage GetDataByKey([FromUri]string userToken, [FromUri] string dataSourcePath, [FromUri]string[] recordKeys, [FromUri]string[] fields)
         {
             _logger.Debug("Call ReactiveDataQueryApiController GetDataByKey");
            
@@ -90,7 +89,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 
         [BindJson(typeof(RecordChangedParam[]), "changedRecord")]
         [HttpGet]
-        public HttpResponseMessage ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken)
+        public HttpResponseMessage ResolveRecordbyForeignKey([FromUri]RecordChangedParam[] changedRecord, [FromUri]string dataSourceUrn, [FromUri]string userToken)
         {
             _logger.Debug("Call ReactiveDataQueryApiController ResolveRecordbyForeignKey");
             
@@ -120,7 +119,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [HttpGet]
-        public bool CheckExistence(string userToken, string dataSourceUrn, string fieldName, object value)
+        public bool CheckExistence([FromUri]string userToken, [FromUri]string dataSourceUrn, [FromUri]string fieldName, [FromUri]object value)
         {
             _logger.Debug("Call ReactiveDataQueryApiController CheckExistence");
             try

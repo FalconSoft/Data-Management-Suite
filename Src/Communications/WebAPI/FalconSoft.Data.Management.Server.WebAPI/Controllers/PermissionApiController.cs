@@ -39,7 +39,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [HttpPost]
-        public HttpResponseMessage SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken, string grantedByUserToken, Action<string> messageAction)
+        public HttpResponseMessage SaveUserPermissions([FromBody]Dictionary<string, AccessLevel> permissions, [FromUri]string targetUserToken, [FromUri]string grantedByUserToken)
         {
             _logger.Debug("Call PermissionApiController SaveUserPermissions");
             try

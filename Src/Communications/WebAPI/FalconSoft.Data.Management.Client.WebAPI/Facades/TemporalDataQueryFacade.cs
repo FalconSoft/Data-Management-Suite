@@ -7,8 +7,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class TemporalDataQueryFacade : WebApiClientBase, ITemporalDataQueryFacade
     {
-        public TemporalDataQueryFacade(string url)
-            : base(url, "TemporalDataApi") { }
+        public TemporalDataQueryFacade(string url, IRabbitMQClient client)
+            : base(url, "TemporalDataApi", client) { }
         
         public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)
         {

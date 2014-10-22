@@ -16,7 +16,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
         private const string GetDataChangesTopic = "GetDataChangesTopic";
 
         public ReactiveDataQueryFacade(string url, IRabbitMQClient rabbitMQClient)
-            : base(url, "ReactiveDataQueryApi")
+            : base(url, "ReactiveDataQueryApi", rabbitMQClient)
         {
             _rabbitMQClient = rabbitMQClient;
         }
@@ -24,12 +24,11 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
         public IEnumerable<Dictionary<string, object>> GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
             FilterRule[] filterRules = null)
         {
-            return GetStreamDataToEnumerable<Dictionary<string, object>>("GetAggregatedData",
+            return GetStreamDataToEnumerable<Dictionary<string, object>, AggregatedWorksheetInfo>("GetAggregatedData", aggregatedWorksheet,
                 new Dictionary<string, object>
                 {
                     {"userToken", userToken},
                     {"dataSourcePath", dataSourcePath},
-                    {"aggregatedWorksheet", aggregatedWorksheet},
                     {"filterRules", filterRules}
                 });
         }

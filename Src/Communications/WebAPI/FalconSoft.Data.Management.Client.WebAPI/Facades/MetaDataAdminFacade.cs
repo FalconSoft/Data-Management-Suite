@@ -14,7 +14,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
         private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
 
         public MetaDataAdminFacade(string url, IRabbitMQClient rabbitMQClient)
-            : base(url, "MetaDataApi")
+            : base(url, "MetaDataApi", rabbitMQClient)
         {
             _rabbitMQClient = rabbitMQClient;
 

@@ -132,7 +132,7 @@ namespace FalconSoft.Data.Server.Installers
                     TemporalDataQueryBroker.Dispose();
                     break;
                 }
-                case "WebApiSelfHost":
+                case "WebApi":
                 {
                     ServerApp.Logger.Info("Server stopped running...");
                     SelfHostServer.Dispose();

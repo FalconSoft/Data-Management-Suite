@@ -22,12 +22,13 @@ namespace FalconSoft.Data.Management.Server.WebAPI
         private readonly ICommandFacade _commandFacade;
         private readonly ILogger _logger;
         private HttpSelfHostServer _server;
-        private GlobalBroker _globalBroker;
+        private readonly GlobalBroker _globalBroker;
+        private StandardKernel _kernel;
 
         public SelfHostServer(IReactiveDataQueryFacade reactiveDataQueryFacade,
-            IMetaDataAdminFacade metaDataAdminFacade, 
-            ISearchFacade searchFacade, 
-            ISecurityFacade securityFacade, 
+            IMetaDataAdminFacade metaDataAdminFacade,
+            ISearchFacade searchFacade,
+            ISecurityFacade securityFacade,
             IPermissionSecurityFacade permissionSecurityFacade,
             ITemporalDataQueryFacade temporalDataQueryFacade,
             ICommandFacade commandFacade,
@@ -62,30 +63,30 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             config.MaxBufferSize = Int32.MaxValue;
             config.MaxReceivedMessageSize = Int32.MaxValue;
 
-            var kernel = new StandardKernel();
-            kernel.Bind<Func<IKernel>>().ToMethod(ctx => () => new Bootstrapper().Kernel);
-            
-            RegisterServices(kernel);
+            _kernel = new StandardKernel();
+            _kernel.Bind<Func<IKernel>>().ToMethod(ctx => () => new Bootstrapper().Kernel);
 
-            config.DependencyResolver = new NinjectDependencyResolver(kernel);
+            RegisterServices(_kernel);
+
+            config.DependencyResolver = new NinjectDependencyResolver(_kernel);
 
             config.Routes.MapHttpRoute(
                 "API Default", "api/{controller}/{action}/{id}",
                 new { id = RouteParameter.Optional });
 
-            using (_server = new HttpSelfHostServer(config))
-            {
-                _server.OpenAsync().Wait();
+            _server = new HttpSelfHostServer(config);
 
-                Console.WriteLine("Press Enter to quit.");
-                Console.ReadLine();
-            }
+            _server.OpenAsync().Wait();
 
+            _logger.Debug("Web Api server is running ");
         }
 
         public void Dispose()
         {
+            _server.CloseAsync().Wait();
             _server.Dispose();
+            _kernel.Dispose();
+            _globalBroker.Close();
         }
 
         private void RegisterServices(IKernel kernel)

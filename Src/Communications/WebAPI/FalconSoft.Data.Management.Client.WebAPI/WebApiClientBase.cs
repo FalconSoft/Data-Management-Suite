@@ -4,22 +4,30 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Formatting;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using FalconSoft.Data.Management.Common;
+using FalconSoft.Data.Management.Common.Facades;
 
 namespace FalconSoft.Data.Management.Client.WebAPI
 {
-    public class WebApiClientBase
+    public class WebApiClientBase : IServerNotification
     {
         private readonly string _apiControllerName;
         private readonly HttpClient _client;
 
-        public WebApiClientBase(string url, string apiControllerName)
+        public WebApiClientBase(string url, string apiControllerName, IRabbitMQClient rabbitMQClient)
         {
             _apiControllerName = apiControllerName;
             _client = new HttpClient {BaseAddress = new Uri(url)};
+
+            if (rabbitMQClient != null)
+            {
+                ((IServerNotification) rabbitMQClient).ServerErrorHandler += ServerErrorHandler;
+                ((IServerNotification) rabbitMQClient).ServerReconnectedEvent += ServerReconnectedEvent;
+            }
         }
 
         protected T GetWebApiCall<T>(string methodName, Dictionary<string, object> inputParams)
@@ -59,14 +67,14 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             response.EnsureSuccessStatusCode();
         }
 
-        protected HttpResponseMessage PostWebApiCallMessage<T>(string methodName, T bodyElenment, Dictionary<string, object> uriParams)
+        protected Task<HttpResponseMessage> PostWebApiCallMessage<T>(string methodName, T bodyElenment, Dictionary<string, object> uriParams)
         {
             var request = new StringBuilder(string.Format("api/{0}/{1}/", _apiControllerName, methodName));
 
             request.Append(ParametersToUriRequest(uriParams));
 
-            var response = _client.PostAsJsonAsync(request.ToString(), bodyElenment).Result;
-            response.EnsureSuccessStatusCode();
+            var response = _client.PostAsJsonAsync(request.ToString(), bodyElenment);
+           
             return response;
         }
 
@@ -128,6 +136,39 @@ namespace FalconSoft.Data.Management.Client.WebAPI
                 else responce.EnsureSuccessStatusCode();
             });
 
+        }
+
+        protected IEnumerable<T> GetStreamDataToEnumerable<T,TM>(string methodName, TM body, Dictionary<string, object> inputParams, bool allowReadStreamBuffering = true)
+        {
+            var requesturl = new StringBuilder(string.Format(@"api/{0}/{1}/", _apiControllerName, methodName));
+           
+            var jsonSerializer = new JavaScriptSerializer();
+            requesturl.Append(ParametersToUriRequest(inputParams));
+
+            var stream = _client.PostAsync(requesturl.ToString(), new ObjectContent(typeof(TM), body, new JsonMediaTypeFormatter()));
+            var sr = new StreamReader(stream.Result.Content.ReadAsStreamAsync().Result);
+
+            var lastItem = string.Empty;
+
+            while (!sr.EndOfStream)
+            {
+                var outPutString = lastItem + sr.ReadLine();
+
+                if (string.IsNullOrEmpty(outPutString))
+                    continue;
+
+                var array = outPutString.Split(new[] { "[#]" }, StringSplitOptions.None);
+
+                var itemCount = array.Length;
+                lastItem = array[itemCount - 1];
+
+                for (int i = 0; i < itemCount - 1; i++)
+                {
+                    yield return jsonSerializer.Deserialize<T>(array[i]);
+                }
+            }
+            if (!string.IsNullOrEmpty(lastItem))
+                yield return jsonSerializer.Deserialize<T>(lastItem);
         }
 
         protected IEnumerable<T> GetStreamDataToEnumerable<T>(string methodName, Dictionary<string, object> inputParams, bool allowReadStreamBuffering = true)
@@ -244,5 +285,10 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             }
             return request.ToString();
         }
+
+
+        public event EventHandler<ServerErrorEvArgs> ServerErrorHandler;
+
+        public event EventHandler<ServerReconnectionArgs> ServerReconnectedEvent;
     }
 }

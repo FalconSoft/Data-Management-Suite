@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading.Tasks;
 using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Server.WebAPI
@@ -10,6 +11,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
         private IConnection _connection;
         private IModel _commandChannel;
         private readonly ConnectionFactory _factory;
+        private const string CommandQueueName = "CommandQueue";
 
         public RabbitMQBroker(string hostName, string userName, string password, string virtualHost)
         {
@@ -25,6 +27,34 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             };
 
             CreateConnection();
+
+            _commandChannel.QueueDelete(CommandQueueName);
+
+            _commandChannel.QueueDeclare(CommandQueueName, true, false, false, null);
+
+            var consumer = new QueueingBasicConsumer(_commandChannel);
+            _commandChannel.BasicConsume(CommandQueueName, false, consumer);
+
+            new Task(() =>
+            {
+                while (true)
+                {
+                    try
+                    {
+                        var ea = consumer.Queue.Dequeue();
+
+                        var props = ea.BasicProperties;
+
+                        var replyTo = props.ReplyTo;
+
+                        _commandChannel.BasicPublish("", replyTo, null, null);
+                    }
+                    catch (Exception)
+                    {
+                        break;
+                    }
+                }
+            }).Start();
         }
 
         private void CreateConnection()

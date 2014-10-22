@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
+using RabbitMQ.Client;
 
 namespace FalconSoft.Data.Management.Server.WebAPI
 {
@@ -19,6 +22,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
         private const string ReactiveDataQueryTopic = "GetDataChangesTopic";
+       
 
         private readonly Dictionary<string, DispoceItems> _getDataChangesDispocebles = new Dictionary<string, DispoceItems>();
         private readonly Dictionary<string, IDisposable> _getPermissionChangesDisposables = new Dictionary<string, IDisposable>();
@@ -139,7 +143,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             public IDisposable Disposable { get; set; }
         }
 
-        public void Dispose()
+        public void Close()
         {
             _metaDataAdminFacade.ObjectInfoChanged -= MetaDataAdminFacadeOnObjectInfoChanged;
             _metaDataAdminFacade.ObjectInfoChanged -= DispoceSubscribitionOnObjectInfoChanged;
@@ -151,7 +155,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
         }
     }
 
-    public interface IFalconSoftBroker :IDisposable
+    public interface IFalconSoftBroker 
     {
         void SubscribeOnGetDataChanges(string userToken, string dataSourcePath, string[] fields = null);
 

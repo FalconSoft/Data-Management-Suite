@@ -6,7 +6,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 {
     public class WebApiFacadeFactory : IFacadesFactory
     {
-        private string url = "http://localhost:8080";
+        private readonly string _url ;
         private RabbitMQClient _rabbitMQClient;
         private ICommandFacade _commandFacade;
         private IReactiveDataQueryFacade _reactiveDataQueryFacade;
@@ -16,8 +16,9 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         private ISecurityFacade _securityFacade;
         private IPermissionSecurityFacade _permissionSecurityFacade;
 
-        public WebApiFacadeFactory(string serverUrl, string userName, string password)
+        public WebApiFacadeFactory(string url, string serverUrl, string userName, string password)
         {
+            _url = url;
             try
             {
                 _rabbitMQClient = new RabbitMQClient(serverUrl, userName, password, "/");
@@ -25,48 +26,47 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             catch (Exception)
             {
                 _rabbitMQClient = null;
-
             }
         }
 
         public ICommandFacade CreateCommandFacade()
         {
-            return _commandFacade ?? (_commandFacade = new CommandFacade(url));
+            return _commandFacade ?? (_commandFacade = new CommandFacade(_url, _rabbitMQClient));
         }
 
         public IReactiveDataQueryFacade CreateReactiveDataQueryFacade()
         {
-            return _reactiveDataQueryFacade ?? (_reactiveDataQueryFacade = new ReactiveDataQueryFacade("http://localhost:8080", _rabbitMQClient));
+            return _reactiveDataQueryFacade ?? (_reactiveDataQueryFacade = new ReactiveDataQueryFacade(_url, _rabbitMQClient));
         }
 
         public ITemporalDataQueryFacade CreateTemporalDataQueryFacade()
         {
-            return _temporalDataQueryFacade ?? (_temporalDataQueryFacade =  new TemporalDataQueryFacade(url));
+            return _temporalDataQueryFacade ?? (_temporalDataQueryFacade = new TemporalDataQueryFacade(_url, _rabbitMQClient));
         }
 
         public IMetaDataAdminFacade CreateMetaDataAdminFacade()
         {
-            return _metaDataAdmnFacade ??  (_metaDataAdmnFacade = new MetaDataAdminFacade("http://localhost:8080", _rabbitMQClient));
+            return _metaDataAdmnFacade ?? (_metaDataAdmnFacade = new MetaDataAdminFacade(_url, _rabbitMQClient));
         }
 
         public IMetaDataFacade CreateMetaDataFacade()
         {
-            return _metaDataAdmnFacade ?? (_metaDataAdmnFacade = new MetaDataAdminFacade("http://localhost:8080", _rabbitMQClient));
+            return _metaDataAdmnFacade ?? (_metaDataAdmnFacade = new MetaDataAdminFacade(_url, _rabbitMQClient));
         }
 
         public ISearchFacade CreateSearchFacade()
         {
-            return _searchFacade ??  (_searchFacade = new SearchFacade(url));
+            return _searchFacade ?? (_searchFacade = new SearchFacade(_url, _rabbitMQClient));
         }
 
         public ISecurityFacade CreateSecurityFacade()
         {
-            return _securityFacade ?? (_securityFacade = new SecurityFacade("http://localhost:8080", _rabbitMQClient));
+            return _securityFacade ?? (_securityFacade = new SecurityFacade(_url, _rabbitMQClient));
         }
 
         public IPermissionSecurityFacade CreatePermissionSecurityFacade()
         {
-            return _permissionSecurityFacade ?? (_permissionSecurityFacade = new PermissionSecurityFacade("http://localhost:8080", _rabbitMQClient));
+            return _permissionSecurityFacade ?? (_permissionSecurityFacade = new PermissionSecurityFacade(_url, _rabbitMQClient));
         }
 
         public ITestFacade CreateTestFacade()
@@ -76,7 +76,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public void Dispose()
         {
-            //_rabbitMQClient.Close();
+            if (_rabbitMQClient!=null)
+                _rabbitMQClient.Close();
         }
     }
 }

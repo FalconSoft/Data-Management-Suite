@@ -6,8 +6,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class SearchFacade : WebApiClientBase, ISearchFacade
     {
-        public SearchFacade(string url)
-            : base(url, "SearchApi")
+        public SearchFacade(string url, IRabbitMQClient client)
+            : base(url, "SearchApi", client)
         {
             
         }

@@ -7,18 +7,25 @@ using System.Reactive.Subjects;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using FalconSoft.Data.Management.Common.Facades;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using RabbitMQ.Client.Exceptions;
+using Timer = System.Timers.Timer;
 
 namespace FalconSoft.Data.Management.Client.WebAPI
 {
-    internal sealed class RabbitMQClient : IRabbitMQClient
+    internal sealed class RabbitMQClient : IRabbitMQClient, IServerNotification
     {
         private IConnection _connection;
         private IModel _commandChannel;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
-
+        private readonly Timer _timer;
         private readonly ConnectionFactory _factory;
+        private readonly string _replyTo;
+        private readonly QueueingBasicConsumer _consumer;
+        private const string CommandQueueName = "CommandQueue";
 
         public RabbitMQClient(string hostName, string userName, string password, string virtualHost)
         {
@@ -34,6 +41,67 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             };
 
             RestoreConnection();
+
+            _replyTo = _commandChannel.QueueDeclare().QueueName;
+
+            _timer = new Timer();
+            _timer.Interval = 3000;
+            _timer.Elapsed += TimerOnElapsed;
+            _timer.Start();
+
+            _consumer = new QueueingBasicConsumer(_commandChannel);
+            _commandChannel.BasicConsume(_replyTo, false, _consumer);
+
+           
+        }
+
+        private void CheckConnection()
+        {
+            if (_commandChannel.IsClosed)
+            {
+                RestoreConnection();
+            }
+            var props = _commandChannel.CreateBasicProperties();
+            props.ReplyTo = _replyTo;
+            _commandChannel.BasicPublish("", CommandQueueName, props, null);
+
+            try
+            {
+                BasicDeliverEventArgs eventArgs;
+                if (_consumer.Queue.Dequeue(3000, out eventArgs))
+                {
+                    if (ServerReconnectedEvent != null)
+                        ServerReconnectedEvent(this, new ServerReconnectionArgs());
+
+                }
+                else
+                {
+                    if (ServerReconnectedEvent != null)
+                        ServerErrorHandler(this,
+                            new ServerErrorEvArgs("Connection to server lost", new NullReferenceException()));
+                }
+            }
+            catch (AlreadyClosedException ex)
+            {
+
+                if (ServerReconnectedEvent != null)
+                    ServerErrorHandler(this,
+                        new ServerErrorEvArgs("Connection to server lost", new NullReferenceException()));
+
+                try
+                {
+                    RestoreConnection();
+                }
+                catch (BrokerUnreachableException)
+                {
+
+                }
+            }
+        }
+
+        private void TimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
+        {
+            //CheckConnection();
         }
 
         public void SubscribeOnExchange<T>(string exchangeName, string exchangeType, string routingKey, Action<T> action)
@@ -85,7 +153,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
                     {
                         var ea = consumerForExceptions.Queue.Dequeue();
 
-                        var array = CastTo<string>(ea.Body).Split(new []{"[#]"}, StringSplitOptions.None);
+                        var array = CastTo<string>(ea.Body).Split(new[] { "[#]" }, StringSplitOptions.None);
 
                         if (action != null)
                             action(array[0], array[1]);
@@ -165,6 +233,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public void Close()
         {
+            _timer.Stop();
+            _timer.Dispose();
             _cts.Cancel();
             _cts.Dispose();
             _commandChannel.Close();
@@ -190,6 +260,10 @@ namespace FalconSoft.Data.Management.Client.WebAPI
                 return (T)binForm.Deserialize(memStream);
             }
         }
+
+        public event EventHandler<ServerErrorEvArgs> ServerErrorHandler;
+
+        public event EventHandler<ServerReconnectionArgs> ServerReconnectedEvent;
     }
 
     public interface IRabbitMQClient

@@ -10,7 +10,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
 
         public SecurityFacade(string url, IRabbitMQClient rabbitMQClient)
-            : base(url, "SecurityApi")
+            : base(url, "SecurityApi", rabbitMQClient)
         {
             if (rabbitMQClient!=null)
                 rabbitMQClient.SubscribeOnExchange(ExceptionsExchangeName, "fanout", "", ErrorMessageHandledAction);
@@ -53,7 +53,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
             {
                 {"userRole", userRole},
                 {"userToken", userToken}
-            }).Content.ReadAsStringAsync().Result;
+            }).Result.Content.ReadAsStringAsync().Result;
         }
 
         public void UpdateUser(User user, UserRole userRole, string userToken)
@@ -67,7 +67,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public void RemoveUser(User user, string userToken)
         {
-            PostWebApiCall("UpdateUser", user, new Dictionary<string, object>
+            PostWebApiCall("RemoveUser", user, new Dictionary<string, object>
             {
                 {"userToken", userToken}
             });
