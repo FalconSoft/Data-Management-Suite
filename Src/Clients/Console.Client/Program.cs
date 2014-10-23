@@ -33,7 +33,8 @@ namespace FalconSoft.Data.Console
             }
             if (facadeType.Equals("WebApi", StringComparison.OrdinalIgnoreCase))
             {
-                return new WebApiFacadeFactory(ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RabbitMqAdminLogin"], ConfigurationManager.AppSettings["RabbitMqAdminPass"]);
+                var url = ConfigurationManager.AppSettings["WebApiURL"];
+                return new WebApiFacadeFactory(url, ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RabbitMqAdminLogin"], ConfigurationManager.AppSettings["RabbitMqAdminPass"]);
             }
             if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
             {

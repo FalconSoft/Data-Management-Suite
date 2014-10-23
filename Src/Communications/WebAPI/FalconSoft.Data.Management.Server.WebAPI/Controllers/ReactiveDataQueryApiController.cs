@@ -87,9 +87,8 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
-        [BindJson(typeof(RecordChangedParam[]), "changedRecord")]
-        [HttpGet]
-        public HttpResponseMessage ResolveRecordbyForeignKey([FromUri]RecordChangedParam[] changedRecord, [FromUri]string dataSourceUrn, [FromUri]string userToken)
+        [HttpPost]
+        public HttpResponseMessage ResolveRecordbyForeignKey([FromBody]RecordChangedParam[] changedRecord, [FromUri]string dataSourceUrn, [FromUri]string userToken)
         {
             _logger.Debug("Call ReactiveDataQueryApiController ResolveRecordbyForeignKey");
             

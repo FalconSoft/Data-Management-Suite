@@ -12,7 +12,7 @@ using FalconSoft.Data.Management.Common.Facades;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
-using Timer = System.Timers.Timer;
+using Timer = System.Threading.Timer;
 
 namespace FalconSoft.Data.Management.Client.WebAPI
 {
@@ -26,6 +26,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         private readonly string _replyTo;
         private readonly QueueingBasicConsumer _consumer;
         private const string CommandQueueName = "CommandQueue";
+        private readonly object _lockThis = new object();
 
         public RabbitMQClient(string hostName, string userName, string password, string virtualHost)
         {
@@ -44,46 +45,29 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
             _replyTo = _commandChannel.QueueDeclare().QueueName;
 
-            _timer = new Timer();
-            _timer.Interval = 3000;
-            _timer.Elapsed += TimerOnElapsed;
-            _timer.Start();
+            _timer = new Timer(TimerOnElapsed, null, 3000, Timeout.Infinite);
 
             _consumer = new QueueingBasicConsumer(_commandChannel);
             _commandChannel.BasicConsume(_replyTo, false, _consumer);
 
-           
+
         }
 
-        private void CheckConnection()
+        private void TimerOnElapsed(object state)
         {
-            if (_commandChannel.IsClosed)
-            {
-                RestoreConnection();
-            }
-            var props = _commandChannel.CreateBasicProperties();
-            props.ReplyTo = _replyTo;
-            _commandChannel.BasicPublish("", CommandQueueName, props, null);
+            TryToConnect();
+            _timer.Change(3000, Timeout.Infinite);
+        }
 
+        private void TryToConnect()
+        {
             try
             {
-                BasicDeliverEventArgs eventArgs;
-                if (_consumer.Queue.Dequeue(3000, out eventArgs))
-                {
-                    if (ServerReconnectedEvent != null)
-                        ServerReconnectedEvent(this, new ServerReconnectionArgs());
-
-                }
-                else
-                {
-                    if (ServerReconnectedEvent != null)
-                        ServerErrorHandler(this,
-                            new ServerErrorEvArgs("Connection to server lost", new NullReferenceException()));
-                }
+                CheckConnection();
             }
             catch (AlreadyClosedException ex)
             {
-
+                HasConnection = false;
                 if (ServerReconnectedEvent != null)
                     ServerErrorHandler(this,
                         new ServerErrorEvArgs("Connection to server lost", new NullReferenceException()));
@@ -97,88 +81,154 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
                 }
             }
+            catch (EndOfStreamException ex)
+            {
+                HasConnection = false;
+                if (ServerReconnectedEvent != null)
+                    ServerErrorHandler(this,
+                        new ServerErrorEvArgs("Connection to server lost", new NullReferenceException()));
+            }
+            catch (NullReferenceException ex)
+            {
+                HasConnection = false;
+                ServerErrorHandler(this,
+                                new ServerErrorEvArgs("Connection to server lost", ex));
+            }
         }
 
-        private void TimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
+        public void CheckConnection()
         {
-            //CheckConnection();
+            try
+            {
+                lock (_lockThis)
+                {
+                    if (_commandChannel.IsClosed)
+                    {
+                        RestoreConnection();
+                    }
+
+                    var props = _commandChannel.CreateBasicProperties();
+                    props.ReplyTo = _replyTo;
+                    _commandChannel.BasicPublish("", CommandQueueName, props, null);
+
+
+                    BasicDeliverEventArgs eventArgs;
+                    if (_consumer.Queue.Dequeue(3000, out eventArgs))
+                    {
+                        if (!HasConnection)
+                            if (ServerReconnectedEvent != null)
+                            {
+                                HasConnection = true;
+                                ServerReconnectedEvent(this, new ServerReconnectionArgs());
+                            }
+
+                    }
+                    else
+                    {
+                        if (HasConnection)
+                            if (ServerReconnectedEvent != null)
+                            {
+                                HasConnection = false;
+                                throw new NullReferenceException("No message respoce from server.");
+                            }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                HasConnection = false;
+                ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server lost", ex));
+                throw;
+            }
+
         }
+
+        private bool HasConnection { get; set; }
 
         public void SubscribeOnExchange<T>(string exchangeName, string exchangeType, string routingKey, Action<T> action)
         {
-            _commandChannel.ExchangeDeclare(exchangeName, exchangeType);
-
-            string queueName = _commandChannel.QueueDeclare().QueueName;
-            _commandChannel.QueueBind(queueName, exchangeName, routingKey);
-
-            var con = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(queueName, true, con);
-
-            Task.Factory.StartNew(obj =>
+            lock (_lockThis)
             {
-                var consumer = (QueueingBasicConsumer)obj;
-                while (true)
+                _commandChannel.ExchangeDeclare(exchangeName, exchangeType);
+
+                string queueName = _commandChannel.QueueDeclare().QueueName;
+                _commandChannel.QueueBind(queueName, exchangeName, routingKey);
+
+                var con = new QueueingBasicConsumer(_commandChannel);
+                _commandChannel.BasicConsume(queueName, true, con);
+
+                Task.Factory.StartNew(obj =>
                 {
-                    try
+                    var consumer = (QueueingBasicConsumer) obj;
+                    while (true)
                     {
-                        var ea = consumer.Queue.Dequeue();
+                        try
+                        {
+                            var ea = consumer.Queue.Dequeue();
 
-                        var responce = CastTo<T>(ea.Body);
+                            var responce = CastTo<T>(ea.Body);
 
-                        if (action != null)
-                            action(responce);
+                            if (action != null)
+                                action(responce);
+                        }
+                        catch (EndOfStreamException)
+                        {
+                            break;
+                        }
                     }
-                    catch (EndOfStreamException)
-                    {
-                        break;
-                    }
-                }
-            }, con, _cts.Token);
+                }, con, _cts.Token);
+            }
         }
 
         public void SubscribeOnExchange(string exchangeName, string exchangeType, string routingKey, Action<string, string> action)
         {
-            _commandChannel.ExchangeDeclare(exchangeName, exchangeType);
-
-            var queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
-
-            var consumerForExceptions = new QueueingBasicConsumer(_commandChannel);
-            _commandChannel.BasicConsume(queueNameForExceptions, false, consumerForExceptions);
-
-            Task.Factory.StartNew(() =>
+            lock (_lockThis)
             {
-                while (true)
+                _commandChannel.ExchangeDeclare(exchangeName, exchangeType);
+
+                var queueNameForExceptions = _commandChannel.QueueDeclare().QueueName;
+
+                var consumerForExceptions = new QueueingBasicConsumer(_commandChannel);
+                _commandChannel.BasicConsume(queueNameForExceptions, false, consumerForExceptions);
+
+                Task.Factory.StartNew(() =>
                 {
-                    try
+                    while (true)
                     {
-                        var ea = consumerForExceptions.Queue.Dequeue();
+                        try
+                        {
+                            var ea = consumerForExceptions.Queue.Dequeue();
 
-                        var array = CastTo<string>(ea.Body).Split(new[] { "[#]" }, StringSplitOptions.None);
+                            var array = CastTo<string>(ea.Body).Split(new[] {"[#]"}, StringSplitOptions.None);
 
-                        if (action != null)
-                            action(array[0], array[1]);
+                            if (action != null)
+                                action(array[0], array[1]);
+                        }
+                        catch (Exception)
+                        {
+                            break;
+                        }
                     }
-                    catch (Exception)
-                    {
-                        break;
-                    }
-                }
-            }, _cts.Token);
+                }, _cts.Token);
+            }
         }
 
         public IObservable<T> CreateExchngeObservable<T>(string exchangeName,
             string exchangeType, string routingKey)
         {
-            var subjects = CreateSubject<T>(exchangeName, exchangeType, routingKey);
-
-            var func = new Func<IObserver<T>, IDisposable>(subj =>
+            lock (_lockThis)
             {
-                var dispoce = subjects.Subscribe(subj);
+                var subjects = CreateSubject<T>(exchangeName, exchangeType, routingKey);
 
-                return Disposable.Create(dispoce.Dispose);
-            });
+                var func = new Func<IObserver<T>, IDisposable>(subj =>
+                {
+                    var dispoce = subjects.Subscribe(subj);
 
-            return Observable.Create(func);
+                    return Disposable.Create(dispoce.Dispose);
+                });
+
+                return Observable.Create(func);
+            }
         }
 
         private IObservable<T> CreateSubject<T>(string exchangeName,
@@ -233,7 +283,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public void Close()
         {
-            _timer.Stop();
+            //_timer.Stop();
             _timer.Dispose();
             _cts.Cancel();
             _cts.Dispose();
@@ -275,6 +325,9 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         IObservable<T> CreateExchngeObservable<T>(string exchangeName,
             string exchangeType, string routingKey);
+
+
+        void CheckConnection();
 
         void Close();
     }

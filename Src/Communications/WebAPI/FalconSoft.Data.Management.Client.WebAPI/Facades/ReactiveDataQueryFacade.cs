@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -12,13 +14,13 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class ReactiveDataQueryFacade : WebApiClientBase, IReactiveDataQueryFacade
     {
-        private readonly IRabbitMQClient _rabbitMQClient;
+       
         private const string GetDataChangesTopic = "GetDataChangesTopic";
 
         public ReactiveDataQueryFacade(string url, IRabbitMQClient rabbitMQClient)
             : base(url, "ReactiveDataQueryApi", rabbitMQClient)
         {
-            _rabbitMQClient = rabbitMQClient;
+           
         }
 
         public IEnumerable<Dictionary<string, object>> GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
@@ -88,16 +90,46 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
                : string.Format("{0}.{1}", dataSourcePath, userToken);
 
 
-            return _rabbitMQClient.CreateExchngeObservable<RecordChangedParam[]>(
+            var observable =  CreateExchngeObservable<RecordChangedParam[]>(
                 GetDataChangesTopic, "topic", routingKey);
+
+            return Observable.Create<RecordChangedParam[]>(subj =>
+            {
+                var disposable = observable.Subscribe(subj);
+
+                var keepAlive = new EventHandler<ServerReconnectionArgs>((obj, evArgs) =>
+                {
+                    disposable.Dispose();
+
+                    observable = CreateExchngeObservable<RecordChangedParam[]>(
+                    GetDataChangesTopic, "topic", routingKey);
+
+                    disposable = observable.Subscribe(subj);
+
+                    GetWebApiAsyncCall("GetDataChanges", new Dictionary<string, object>
+                    {
+                        {"userToken", userToken},
+                        {"dataSourcePath", dataSourcePath},
+                        {"fields", fields}
+                    });
+                });
+
+                ServerReconnectedEvent += keepAlive;
+
+                return Disposable.Create(() =>
+                {
+                    ServerReconnectedEvent -= keepAlive;
+                    disposable.Dispose();
+
+                });
+            });
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken,
             Action<string, RecordChangedParam[]> onSuccess, Action<string, Exception> onFail)
         {
-            GetWebApiAsyncCall("ResolveRecordbyForeignKey", new Dictionary<string, object>
+            PostWebApiCallMessage("ResolveRecordbyForeignKey", changedRecord, new Dictionary<string, object>
             {
-                {"changedRecord", changedRecord},
                 {"dataSourceUrn", dataSourceUrn},
                 {"userToken", userToken}
             }).ContinueWith(completeTask =>

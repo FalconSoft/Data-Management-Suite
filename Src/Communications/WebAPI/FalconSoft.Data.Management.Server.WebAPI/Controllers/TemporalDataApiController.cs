@@ -31,6 +31,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         [HttpGet]
         public HttpResponseMessage GetRecordsHistory([FromUri]DataSourceInfo dataSourceInfo, [FromUri]string recordKey)
         {
+            _logger.Debug("Call TemporalDataApiController GetRecordsHistory");
             return EnumeratorToStream(_temporalDataQueryFacade.GetRecordsHistory(dataSourceInfo, recordKey), "GetRecordsHistory failed ");
         }
 
@@ -39,6 +40,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         [HttpGet]
         public HttpResponseMessage GetDataHistoryByTag([FromUri]DataSourceInfo dataSourceInfo, [FromUri]TagInfo tagInfo)
         {
+            _logger.Debug("Call TemporalDataApiController GetDataHistoryByTag");
             return EnumeratorToStream(_temporalDataQueryFacade.GetDataHistoryByTag(dataSourceInfo, tagInfo), "GetDataHistoryByTag failed ");
         }
 
@@ -46,6 +48,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         [HttpGet]
         public HttpResponseMessage GetRecordsAsOf([FromUri]DataSourceInfo dataSourceInfo, [FromUri]DateTime timeStamp)
         {
+            _logger.Debug("Call TemporalDataApiController GetRecordsAsOf");
            return EnumeratorToStream(_temporalDataQueryFacade.GetRecordsAsOf(dataSourceInfo, timeStamp), "GetRecordsAsOf failed ");
         }
 
@@ -54,6 +57,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         public HttpResponseMessage GetTemporalDataByRevisionId([FromUri]DataSourceInfo dataSourceInfo,
             [FromUri]object revisionId)
         {
+            _logger.Debug("Call TemporalDataApiController GetTemporalDataByRevisionId");
             return EnumeratorToStream(_temporalDataQueryFacade.GetTemporalDataByRevisionId(dataSourceInfo, revisionId), "GetTemporalDataByRevisionId failed ");
         }
         
@@ -61,12 +65,14 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         [HttpGet]
         public HttpResponseMessage GetRevisions([FromUri]DataSourceInfo dataSourceInfo)
         {
+            _logger.Debug("Call TemporalDataApiController GetRevisions");
             return EnumeratorToStream(_temporalDataQueryFacade.GetRevisions(dataSourceInfo), "GetRevisions failed ");
         }
 
         [HttpGet]
         public HttpResponseMessage GeTagInfos()
         {
+            _logger.Debug("Call TemporalDataApiController GeTagInfos");
             var responce = new HttpResponseMessage();
 
             try
@@ -87,6 +93,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         [HttpPost]
         public HttpResponseMessage SaveTagInfo([FromBody]TagInfo tagInfo)
         {
+            _logger.Debug("Call TemporalDataApiController SaveTagInfo");
             var responce = new HttpResponseMessage();
             try
             {
@@ -104,6 +111,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         [HttpPost]
         public HttpResponseMessage RemoveTagInfo([FromBody]TagInfo tagInfo)
         {
+            _logger.Debug("Call TemporalDataApiController RemoveTagInfo");
             try
             {
                 _temporalDataQueryFacade.RemoveTagInfo(tagInfo);

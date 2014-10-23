@@ -17,17 +17,13 @@ namespace FalconSoft.Data.Management.Client.WebAPI
     {
         private readonly string _apiControllerName;
         private readonly HttpClient _client;
-
+        private readonly IRabbitMQClient _rabbitMQClient;
         public WebApiClientBase(string url, string apiControllerName, IRabbitMQClient rabbitMQClient)
         {
             _apiControllerName = apiControllerName;
             _client = new HttpClient {BaseAddress = new Uri(url)};
 
-            if (rabbitMQClient != null)
-            {
-                ((IServerNotification) rabbitMQClient).ServerErrorHandler += ServerErrorHandler;
-                ((IServerNotification) rabbitMQClient).ServerReconnectedEvent += ServerReconnectedEvent;
-            }
+            _rabbitMQClient = rabbitMQClient;
         }
 
         protected T GetWebApiCall<T>(string methodName, Dictionary<string, object> inputParams)
@@ -145,8 +141,18 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             var jsonSerializer = new JavaScriptSerializer();
             requesturl.Append(ParametersToUriRequest(inputParams));
 
-            var stream = _client.PostAsync(requesturl.ToString(), new ObjectContent(typeof(TM), body, new JsonMediaTypeFormatter()));
-            var sr = new StreamReader(stream.Result.Content.ReadAsStreamAsync().Result);
+            var responce = _client.PostAsync(requesturl.ToString(), new ObjectContent(typeof(TM), body, new JsonMediaTypeFormatter())).Result;
+
+            try
+            {
+                responce.EnsureSuccessStatusCode();
+            }
+            catch (Exception)
+            {
+                yield break;
+            }
+
+            var sr = new StreamReader(responce.Content.ReadAsStreamAsync().Result);
 
             var lastItem = string.Empty;
 
@@ -236,6 +242,15 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             return _client.PostAsync(request.ToString(), content);
         }
 
+        #region Rabbit MQ
+
+        public IObservable<T> CreateExchngeObservable<T>(string exchangeName,
+            string exchangeType, string routingKey)
+        {
+           return _rabbitMQClient.CreateExchngeObservable<T>(exchangeName, exchangeType, routingKey);
+        }
+        #endregion
+
         private string ParametersToUriRequest(Dictionary<string, object> inputParams)
         {
             var request = new StringBuilder();
@@ -287,8 +302,16 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         }
 
 
-        public event EventHandler<ServerErrorEvArgs> ServerErrorHandler;
+        public event EventHandler<ServerErrorEvArgs> ServerErrorHandler
+        {
+            add { if (_rabbitMQClient != null) ((IServerNotification) _rabbitMQClient).ServerErrorHandler += value; }
+            remove { if (_rabbitMQClient != null) ((IServerNotification)_rabbitMQClient).ServerErrorHandler -= value; }
+        }
 
-        public event EventHandler<ServerReconnectionArgs> ServerReconnectedEvent;
+        public event EventHandler<ServerReconnectionArgs> ServerReconnectedEvent
+        {
+            add { if (_rabbitMQClient != null)((IServerNotification)_rabbitMQClient).ServerReconnectedEvent += value; }
+            remove { if (_rabbitMQClient != null)((IServerNotification)_rabbitMQClient).ServerReconnectedEvent -= value; }
+        }
     }
 }

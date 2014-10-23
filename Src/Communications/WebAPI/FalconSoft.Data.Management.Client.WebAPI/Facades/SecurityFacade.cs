@@ -7,11 +7,13 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class SecurityFacade :WebApiClientBase, ISecurityFacade
     {
+        private IRabbitMQClient _rabbitMQ;
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
 
         public SecurityFacade(string url, IRabbitMQClient rabbitMQClient)
             : base(url, "SecurityApi", rabbitMQClient)
         {
+            _rabbitMQ = rabbitMQClient;
             if (rabbitMQClient!=null)
                 rabbitMQClient.SubscribeOnExchange(ExceptionsExchangeName, "fanout", "", ErrorMessageHandledAction);
             
@@ -24,6 +26,15 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public KeyValuePair<bool, string> Authenticate(string userName, string password)
         {
+            try
+            {
+                _rabbitMQ.CheckConnection();
+            }
+            catch (Exception ex)
+            {
+                return new KeyValuePair<bool, string>(false, ex.Message);
+            }
+
             return GetWebApiCall<KeyValuePair<bool, string>>("Authenticate", new Dictionary<string, object>
             {
                 {"userName", userName},

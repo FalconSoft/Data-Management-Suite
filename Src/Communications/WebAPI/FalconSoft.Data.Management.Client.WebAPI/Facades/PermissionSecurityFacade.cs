@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Net.Http;
-using System.Reactive.Subjects;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
 
@@ -69,8 +69,38 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
                 {"userToken", userToken}
             }).Wait();
 
-            return _rabbitMQClient.CreateExchngeObservable<Dictionary<string, AccessLevel>>(
+
+            var observable = CreateExchngeObservable<Dictionary<string, AccessLevel>>(
                 PermissionSecurityFacadeExchangeName, "direct", userToken);
+
+            return Observable.Create<Dictionary<string, AccessLevel>>(subj =>
+            {
+                var disposable = observable.Subscribe(subj);
+
+                var keepAlive = new EventHandler<ServerReconnectionArgs>((obj, evArgs) =>
+                {
+                    disposable.Dispose();
+
+                    observable = CreateExchngeObservable<Dictionary<string, AccessLevel>>(
+                PermissionSecurityFacadeExchangeName, "direct", userToken);
+
+                    disposable = observable.Subscribe(subj);
+
+                    GetWebApiAsyncCall("GetPermissionChanged", new Dictionary<string, object>
+                    {
+                        {"userToken", userToken}
+                    });
+                });
+
+                ServerReconnectedEvent += keepAlive;
+
+                return Disposable.Create(() =>
+                {
+                    ServerReconnectedEvent -= keepAlive;
+                    disposable.Dispose();
+
+                });
+            });
         }
     }
 }
