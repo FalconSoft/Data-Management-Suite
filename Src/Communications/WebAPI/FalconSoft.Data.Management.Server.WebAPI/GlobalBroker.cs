@@ -80,40 +80,51 @@ namespace FalconSoft.Data.Management.Server.WebAPI
 
         }
 
+        private readonly object _lockThis = new object();
+        private readonly object _lockThisPermissions = new object();
+
         public void SubscribeOnGetDataChanges(string userToken, string dataSourcePath, string[] fields = null)
         {
-            var routingKey = fields != null ? string.Format("{0}.{1}.", dataSourcePath, userToken) + fields.Aggregate("",
-              (cur, next) => string.Format("{0}.{1}", cur, next)).GetHashCode() : string.Format("{0}.{1}", dataSourcePath, userToken);
-
-            if (_getDataChangesDispocebles.ContainsKey(routingKey))
+            lock (_lockThis)
             {
-                _getDataChangesDispocebles[routingKey].Count++;
-                return;
-            }
+                var routingKey = fields != null
+                    ? string.Format("{0}.{1}.", dataSourcePath, userToken) + fields.Aggregate("",
+                        (cur, next) => string.Format("{0}.{1}", cur, next)).GetHashCode()
+                    : string.Format("{0}.{1}", dataSourcePath, userToken);
 
-            var disposer = _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath, fields).Subscribe(
-                rcpArgs =>
+                if (_getDataChangesDispocebles.ContainsKey(routingKey))
                 {
-                    var messageBytes = _rabbitMQBroker.CastToBytes(rcpArgs);
+                    _getDataChangesDispocebles[routingKey].Count++;
+                    return;
+                }
 
-                    _rabbitMQBroker.SendMessage(messageBytes, ReactiveDataQueryTopic, "topic", routingKey);
-                });
+                var disposer = _reactiveDataQueryFacade.GetDataChanges(userToken, dataSourcePath, fields).Subscribe(
+                    rcpArgs =>
+                    {
+                        var messageBytes = _rabbitMQBroker.CastToBytes(rcpArgs);
 
-            _getDataChangesDispocebles.Add(routingKey, new DispoceItems { Count = 1, Disposable = disposer });
+                        _rabbitMQBroker.SendMessage(messageBytes, ReactiveDataQueryTopic, "topic", routingKey);
+                    });
+
+                _getDataChangesDispocebles.Add(routingKey, new DispoceItems {Count = 1, Disposable = disposer});
+            }
         }
 
         public void SubscribeOnGetPermissionChanges(string userToken)
         {
-            if (_getPermissionChangesDisposables.ContainsKey(userToken)) return;
-
-            var disposer = _permissionSecurityFacade.GetPermissionChanged(userToken).Subscribe(data =>
+            lock (_lockThisPermissions)
             {
-                var messageBytes = _rabbitMQBroker.CastToBytes(data);
+                if (_getPermissionChangesDisposables.ContainsKey(userToken)) return;
 
-                _rabbitMQBroker.SendMessage(messageBytes, PermissionSecurityFacadeExchangeName, "direct", userToken);
-            });
+                var disposer = _permissionSecurityFacade.GetPermissionChanged(userToken).Subscribe(data =>
+                {
+                    var messageBytes = _rabbitMQBroker.CastToBytes(data);
 
-            _getPermissionChangesDisposables.Add(userToken, disposer);
+                    _rabbitMQBroker.SendMessage(messageBytes, PermissionSecurityFacadeExchangeName, "direct", userToken);
+                });
+
+                _getPermissionChangesDisposables.Add(userToken, disposer);
+            }
         }
 
         private void MetaDataAdminFacadeOnObjectInfoChanged(object sender, SourceObjectChangedEventArgs sourceObjectChangedEventArgs)
@@ -151,6 +162,15 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             _metaDataAdminFacade.ErrorMessageHandledAction = null;
             _securityFacade.ErrorMessageHandledAction = null;
 
+            foreach (var disposable in _getDataChangesDispocebles.Values)
+            {
+                disposable.Disposable.Dispose();
+            }
+
+            foreach (var disposable in _getPermissionChangesDisposables.Values)
+            {
+                disposable.Dispose();
+            }
             _reactiveDataQueryFacade.Dispose();
         }
     }

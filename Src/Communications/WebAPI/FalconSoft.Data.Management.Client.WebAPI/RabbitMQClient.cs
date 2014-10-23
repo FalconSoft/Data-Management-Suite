@@ -91,6 +91,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             catch (NullReferenceException ex)
             {
                 HasConnection = false;
+                if (ServerReconnectedEvent != null)
                 ServerErrorHandler(this,
                                 new ServerErrorEvArgs("Connection to server lost", ex));
             }
