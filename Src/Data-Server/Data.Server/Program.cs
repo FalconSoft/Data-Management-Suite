@@ -23,7 +23,8 @@ namespace FalconSoft.Data.Server
                 if (Console.ReadKey(true).Key == ConsoleKey.Enter)
                 {
                     serverService.Stop();
-                    Thread.Sleep(2000);
+                    Thread.Sleep(1000);
+                    Environment.Exit(0);
                 }
             }
             else

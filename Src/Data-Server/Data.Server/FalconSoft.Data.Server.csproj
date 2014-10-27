@@ -94,6 +94,10 @@
       <Project>{47235916-5BF9-405B-9E21-C494CC5F6F93}</Project>
       <Name>FalconSoft.Data.Management.Server.RabbitMQ</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Communications\WebAPI\FalconSoft.Data.Management.Server.WebAPI\FalconSoft.Data.Management.Server.WebAPI.csproj">
+      <Project>{b0af1114-7a59-4100-8558-ecc47beb5b0b}</Project>
+      <Name>FalconSoft.Data.Management.Server.WebAPI</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DataSources\DefaultMongoDbSource\FalconSoft.Data.Server.DefaultMongoDbSource.csproj">
       <Project>{4aca894f-3b93-4857-9005-fa31e890dc3e}</Project>
       <Name>FalconSoft.Data.Server.DefaultMongoDbSource</Name>
@@ -126,6 +130,9 @@
     <EmbeddedResource Include="Installers\ProjectInstaller.resx">
       <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
