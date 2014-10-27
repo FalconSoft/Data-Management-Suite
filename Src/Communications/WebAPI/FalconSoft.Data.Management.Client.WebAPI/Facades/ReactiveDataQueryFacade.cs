@@ -67,12 +67,11 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public IEnumerable<Dictionary<string, object>> GetDataByKey(string userToken, string dataSourcePath, string[] recordKeys, string[] fields = null)
         {
-            return GetStreamDataToEnumerable<Dictionary<string, object>>("GetDataByKey",
+            return GetStreamDataToEnumerable<Dictionary<string, object>, string[]>("GetDataByKey", recordKeys,
                 new Dictionary<string, object>
                 {
                     {"userToken", userToken},
                     {"dataSourcePath", dataSourcePath},
-                    {"recordKeys", recordKeys},
                     {"fields", fields}
                 });
         }

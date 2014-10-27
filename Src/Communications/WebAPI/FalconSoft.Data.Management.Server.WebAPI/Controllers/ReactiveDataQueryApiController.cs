@@ -59,11 +59,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             
             return EnumeratorToStream(_reactiveDataQueryFacade.GetFieldData(userToken, dataSourcePath, field, match, elementsToReturn), "GetFieldData failed ");
         }
-
-        [BindJson(typeof(string[]), "recordKeys")]
+     
         [BindJson(typeof(string[]), "fields")]
-        [HttpGet]
-        public HttpResponseMessage GetDataByKey([FromUri]string userToken, [FromUri] string dataSourcePath, [FromUri]string[] recordKeys, [FromUri]string[] fields)
+        [HttpPost]
+        public HttpResponseMessage GetDataByKey([FromUri]string userToken, [FromUri] string dataSourcePath, [FromBody]string[] recordKeys, [FromUri]string[] fields)
         {
             _logger.Debug("Call ReactiveDataQueryApiController GetDataByKey");
            
