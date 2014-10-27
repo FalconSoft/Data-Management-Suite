@@ -32,7 +32,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
             }
             catch (Exception ex)
             {
-                return new KeyValuePair<bool, string>(false, ex.Message);
+                return new KeyValuePair<bool, string>(false, "Wrong server credentials or unknown server name.");
             }
 
             return GetWebApiCall<KeyValuePair<bool, string>>("Authenticate", new Dictionary<string, object>

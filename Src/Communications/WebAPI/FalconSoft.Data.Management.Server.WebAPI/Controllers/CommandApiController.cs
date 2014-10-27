@@ -25,12 +25,41 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger = logger;
         }
 
-        [BindJson(typeof (string[]), "deleted")]
+        [HttpPost]
+        public HttpResponseMessage Delete(
+            [FromUri] string dataSourcePath,
+            [FromUri] string userToken)
+        {
+            _logger.Debug("Call CommandApiController Delete");
+            try
+            {
+                var responce = new HttpResponseMessage();
+
+                var deleted = Request.Content.ReadAsAsync<string[]>().Result;
+                _commandFacade.SubmitChanges(dataSourcePath, userToken, null, deleted,
+                    rInfo =>
+                    {
+                        responce.StatusCode = HttpStatusCode.OK;
+                        responce.Content = new ObjectContent(typeof(RevisionInfo), rInfo, new JsonMediaTypeFormatter());
+                    }, ex =>
+                    {
+                        responce.StatusCode = HttpStatusCode.InternalServerError;
+                        responce.Content = new ObjectContent(typeof(Exception), ex, new JsonMediaTypeFormatter());
+                    });
+                return responce;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("SubmitChanges failed.", ex);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
+            }
+        }
+
+
         [HttpPost]
         public HttpResponseMessage SubmitChanges( 
             [FromUri] string dataSourcePath,
-            [FromUri] string userToken,
-            [FromUri] string[] deleted)
+            [FromUri] string userToken)
         {
             _logger.Debug("Call CommandApiController SubmitChanges");
             try
@@ -39,7 +68,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 
                 var request = Request.Content.ReadAsStreamAsync().Result;
                 _commandFacade.SubmitChanges(dataSourcePath, userToken,
-                    StreamToEnumerable<Dictionary<string, object>>(request), deleted,
+                    StreamToEnumerable<Dictionary<string, object>>(request), null,
                     rInfo =>
                     {
                         responce.StatusCode = HttpStatusCode.OK;

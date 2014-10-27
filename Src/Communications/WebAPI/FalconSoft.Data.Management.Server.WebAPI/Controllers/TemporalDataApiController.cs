@@ -27,43 +27,38 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger = logger;
         }
 
-        [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
-        [HttpGet]
-        public HttpResponseMessage GetRecordsHistory([FromUri]DataSourceInfo dataSourceInfo, [FromUri]string recordKey)
+        [HttpPost]
+        public HttpResponseMessage GetRecordsHistory([FromBody]DataSourceInfo dataSourceInfo, [FromUri]string recordKey)
         {
             _logger.Debug("Call TemporalDataApiController GetRecordsHistory");
             return EnumeratorToStream(_temporalDataQueryFacade.GetRecordsHistory(dataSourceInfo, recordKey), "GetRecordsHistory failed ");
         }
 
-        [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
         [BindJson(typeof(TagInfo), "tagInfo")]
-        [HttpGet]
-        public HttpResponseMessage GetDataHistoryByTag([FromUri]DataSourceInfo dataSourceInfo, [FromUri]TagInfo tagInfo)
+        [HttpPost]
+        public HttpResponseMessage GetDataHistoryByTag([FromBody]DataSourceInfo dataSourceInfo, [FromUri]TagInfo tagInfo)
         {
             _logger.Debug("Call TemporalDataApiController GetDataHistoryByTag");
             return EnumeratorToStream(_temporalDataQueryFacade.GetDataHistoryByTag(dataSourceInfo, tagInfo), "GetDataHistoryByTag failed ");
         }
 
-        [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
-        [HttpGet]
-        public HttpResponseMessage GetRecordsAsOf([FromUri]DataSourceInfo dataSourceInfo, [FromUri]DateTime timeStamp)
+        [HttpPost]
+        public HttpResponseMessage GetRecordsAsOf([FromBody]DataSourceInfo dataSourceInfo, [FromUri]DateTime timeStamp)
         {
             _logger.Debug("Call TemporalDataApiController GetRecordsAsOf");
            return EnumeratorToStream(_temporalDataQueryFacade.GetRecordsAsOf(dataSourceInfo, timeStamp), "GetRecordsAsOf failed ");
         }
 
-        [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
-        [HttpGet]
-        public HttpResponseMessage GetTemporalDataByRevisionId([FromUri]DataSourceInfo dataSourceInfo,
+       [HttpPost]
+        public HttpResponseMessage GetTemporalDataByRevisionId([FromBody]DataSourceInfo dataSourceInfo,
             [FromUri]object revisionId)
         {
             _logger.Debug("Call TemporalDataApiController GetTemporalDataByRevisionId");
             return EnumeratorToStream(_temporalDataQueryFacade.GetTemporalDataByRevisionId(dataSourceInfo, revisionId), "GetTemporalDataByRevisionId failed ");
         }
         
-        [BindJson(typeof(DataSourceInfo), "dataSourceInfo")]
-        [HttpGet]
-        public HttpResponseMessage GetRevisions([FromUri]DataSourceInfo dataSourceInfo)
+        [HttpPost]
+        public HttpResponseMessage GetRevisions([FromBody]DataSourceInfo dataSourceInfo)
         {
             _logger.Debug("Call TemporalDataApiController GetRevisions");
             return EnumeratorToStream(_temporalDataQueryFacade.GetRevisions(dataSourceInfo), "GetRevisions failed ");

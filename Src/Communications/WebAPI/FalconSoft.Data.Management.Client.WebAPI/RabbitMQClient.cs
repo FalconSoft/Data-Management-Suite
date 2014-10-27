@@ -68,7 +68,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             catch (AlreadyClosedException ex)
             {
                 HasConnection = false;
-                if (ServerReconnectedEvent != null)
+                if (ServerErrorHandler != null)
                     ServerErrorHandler(this,
                         new ServerErrorEvArgs("Connection to server lost", new NullReferenceException()));
 
@@ -84,14 +84,14 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             catch (EndOfStreamException ex)
             {
                 HasConnection = false;
-                if (ServerReconnectedEvent != null)
+                if (ServerErrorHandler != null)
                     ServerErrorHandler(this,
                         new ServerErrorEvArgs("Connection to server lost", new NullReferenceException()));
             }
             catch (NullReferenceException ex)
             {
                 HasConnection = false;
-                if (ServerReconnectedEvent != null)
+                if (ServerErrorHandler != null)
                 ServerErrorHandler(this,
                                 new ServerErrorEvArgs("Connection to server lost", ex));
             }
@@ -126,8 +126,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
                     }
                     else
                     {
-                        if (HasConnection)
-                            if (ServerReconnectedEvent != null)
+                            if (HasConnection)
                             {
                                 HasConnection = false;
                                 throw new NullReferenceException("No message respoce from server.");
@@ -138,7 +137,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             catch (Exception ex)
             {
                 HasConnection = false;
-                ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server lost", ex));
+                if (ServerErrorHandler != null)
+                    ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server lost", ex));
                 throw;
             }
 

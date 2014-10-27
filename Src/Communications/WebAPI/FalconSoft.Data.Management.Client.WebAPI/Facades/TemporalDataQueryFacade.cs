@@ -12,51 +12,44 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
         
         public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)
         {
-            return GetStreamDataToEnumerable<Dictionary<string, object>>("GetRecordsHistory",
+            return GetStreamDataToEnumerable<Dictionary<string, object>, DataSourceInfo>("GetRecordsHistory", dataSourceInfo,
                 new Dictionary<string, object>
                 {
-                    {"dataSourceInfo", dataSourceInfo},
                     {"recordKey", recordKey}
                 });
         }
 
         public IEnumerable<Dictionary<string, object>> GetDataHistoryByTag(DataSourceInfo dataSourceInfo, TagInfo tagInfo)
         {
-            return GetStreamDataToEnumerable<Dictionary<string, object>>("GetDataHistoryByTag",
+            return GetStreamDataToEnumerable<Dictionary<string, object>, DataSourceInfo>("GetDataHistoryByTag", dataSourceInfo,
                 new Dictionary<string, object>
                 {
-                    {"dataSourceInfo", dataSourceInfo},
                     {"tagInfo", tagInfo}
                 });
         }
 
         public IEnumerable<Dictionary<string, object>> GetRecordsAsOf(DataSourceInfo dataSourceInfo, DateTime timeStamp)
         {
-            return GetStreamDataToEnumerable<Dictionary<string, object>>("GetRecordsAsOf",
+            return GetStreamDataToEnumerable<Dictionary<string, object>, DataSourceInfo>("GetRecordsAsOf", dataSourceInfo,
                 new Dictionary<string, object>
                 {
-                    {"dataSourceInfo", dataSourceInfo},
                     {"timeStamp", timeStamp}
                 });
         }
 
         public IEnumerable<Dictionary<string, object>> GetTemporalDataByRevisionId(DataSourceInfo dataSourceInfo, object revisionId)
         {
-            return GetStreamDataToEnumerable<Dictionary<string, object>>("GetTemporalDataByRevisionId",
+            return GetStreamDataToEnumerable<Dictionary<string, object>, DataSourceInfo>("GetTemporalDataByRevisionId", dataSourceInfo,
                 new Dictionary<string, object>
                 {
-                    {"dataSourceInfo", dataSourceInfo},
                     {"revisionId", revisionId}
                 });
         }
 
         public IEnumerable<Dictionary<string, object>> GetRevisions(DataSourceInfo dataSourceInfo)
         {
-            return GetStreamDataToEnumerable<Dictionary<string, object>>("GetRevisions",
-                 new Dictionary<string, object>
-                {
-                    {"dataSourceInfo", dataSourceInfo}
-                });
+            return GetStreamDataToEnumerable<Dictionary<string, object>, DataSourceInfo>("GetRevisions", dataSourceInfo,
+                 new Dictionary<string, object>());
         }
 
         public IEnumerable<TagInfo> GeTagInfos()
