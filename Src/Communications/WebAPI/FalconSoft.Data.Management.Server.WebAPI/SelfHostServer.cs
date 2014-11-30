@@ -5,25 +5,25 @@ using System.Web.Http.SelfHost;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Server.WebAPI.Controllers;
-using FalconSoft.Data.Management.Server.WebAPI.IoC;
-using Ninject;
-using Ninject.Web.Common;
 
 namespace FalconSoft.Data.Management.Server.WebAPI
 {
+    public static class FacadesFactory
+    {
+        public static IReactiveDataQueryFacade ReactiveDataQueryFacade { get; set; }
+        public static IMetaDataAdminFacade MetaDataAdminFacade { get; set; }
+        public static ISearchFacade SearchFacade { get; set; }
+        public static ISecurityFacade SecurityFacade { get; set; }
+        public static IPermissionSecurityFacade PermissionSecurityFacade { get; set; }
+        public static ITemporalDataQueryFacade TemporalDataQueryFacade { get; set; }
+        public static ICommandFacade CommandFacade { get; set; }
+        public static ILogger Logger { get; set; }
+    }
+
     public class SelfHostServer : IDisposable
     {
-        private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
-        private readonly IMetaDataAdminFacade _metaDataAdminFacade;
-        private readonly ISearchFacade _searchFacade;
-        private readonly ISecurityFacade _securityFacade;
-        private readonly IPermissionSecurityFacade _permissionSecurityFacade;
-        private readonly ITemporalDataQueryFacade _temporalDataQueryFacade;
-        private readonly ICommandFacade _commandFacade;
-        private readonly ILogger _logger;
+
         private HttpSelfHostServer _server;
-        private readonly GlobalBroker _globalBroker;
-        private StandardKernel _kernel;
 
         public SelfHostServer(IReactiveDataQueryFacade reactiveDataQueryFacade,
             IMetaDataAdminFacade metaDataAdminFacade,
@@ -38,22 +38,22 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             string password,
             string virtualHost)
         {
-            _reactiveDataQueryFacade = reactiveDataQueryFacade;
-            _metaDataAdminFacade = metaDataAdminFacade;
-            _searchFacade = searchFacade;
-            _securityFacade = securityFacade;
-            _permissionSecurityFacade = permissionSecurityFacade;
-            _temporalDataQueryFacade = temporalDataQueryFacade;
-            _commandFacade = commandFacade;
-            _logger = logger;
+            FacadesFactory.ReactiveDataQueryFacade = reactiveDataQueryFacade;
+            FacadesFactory.MetaDataAdminFacade = metaDataAdminFacade;
+            FacadesFactory.SearchFacade = searchFacade;
+            FacadesFactory.SecurityFacade = securityFacade;
+            FacadesFactory.PermissionSecurityFacade = permissionSecurityFacade;
+            FacadesFactory.TemporalDataQueryFacade = temporalDataQueryFacade;
+            FacadesFactory.CommandFacade = commandFacade;
+            FacadesFactory.Logger = logger;
 
-            var rabbitMq = new RabbitMQBroker(hostName, userName, password, virtualHost);
+            //var rabbitMq = new RabbitMQBroker(hostName, userName, password, virtualHost);
 
-            _globalBroker = new GlobalBroker(rabbitMq,
-                _reactiveDataQueryFacade,
-                _metaDataAdminFacade,
-                _permissionSecurityFacade,
-                _securityFacade);
+            //_globalBroker = new GlobalBroker(rabbitMq,
+            //    ReactiveDataQueryFacade,
+            //    MetaDataAdminFacade,
+            //    PermissionSecurityFacade,
+            //    SecurityFacade);
         }
 
         public void Start(string url)
@@ -63,12 +63,6 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             config.MaxBufferSize = Int32.MaxValue;
             config.MaxReceivedMessageSize = Int32.MaxValue;
 
-            _kernel = new StandardKernel();
-            _kernel.Bind<Func<IKernel>>().ToMethod(ctx => () => new Bootstrapper().Kernel);
-
-            RegisterServices(_kernel);
-
-            config.DependencyResolver = new NinjectDependencyResolver(_kernel);
 
             config.Routes.MapHttpRoute(
                 "API Default", "api/{controller}/{action}/{id}",
@@ -78,29 +72,13 @@ namespace FalconSoft.Data.Management.Server.WebAPI
 
             _server.OpenAsync().Wait();
 
-            _logger.Info("Web Api server is running ");
+            FacadesFactory.Logger.Info("Web Api server is running ");
         }
 
         public void Dispose()
         {
             _server.CloseAsync().Wait();
             _server.Dispose();
-            _kernel.Dispose();
-            _globalBroker.Close();
-        }
-
-        private void RegisterServices(IKernel kernel)
-        {
-            // This is where we tell Ninject how to resolve service requests
-            kernel.Bind<IReactiveDataQueryFacade>().ToConstant(_reactiveDataQueryFacade);
-            kernel.Bind<IMetaDataAdminFacade>().ToConstant(_metaDataAdminFacade);
-            kernel.Bind<ISearchFacade>().ToConstant(_searchFacade);
-            kernel.Bind<ISecurityFacade>().ToConstant(_securityFacade);
-            kernel.Bind<IPermissionSecurityFacade>().ToConstant(_permissionSecurityFacade);
-            kernel.Bind<ITemporalDataQueryFacade>().ToConstant(_temporalDataQueryFacade);
-            kernel.Bind<ICommandFacade>().ToConstant(_commandFacade);
-            kernel.Bind<IFalconSoftBroker>().ToConstant(_globalBroker);
-            kernel.Bind<ILogger>().ToConstant(_logger);
         }
     }
 }

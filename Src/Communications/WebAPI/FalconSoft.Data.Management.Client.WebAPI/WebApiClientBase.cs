@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
@@ -17,23 +18,27 @@ namespace FalconSoft.Data.Management.Client.WebAPI
     {
         private readonly string _apiControllerName;
         private readonly HttpClient _client;
-        private readonly IRabbitMQClient _rabbitMQClient;
-        public WebApiClientBase(string url, string apiControllerName, IRabbitMQClient rabbitMQClient)
+        protected readonly ILogger _log;
+
+        public WebApiClientBase(string url, string apiControllerName, ILogger log)
         {
+            _log = log;
             _apiControllerName = apiControllerName;
             _client = new HttpClient {BaseAddress = new Uri(url)};
-
-            _rabbitMQClient = rabbitMQClient;
         }
 
         protected T GetWebApiCall<T>(string methodName, Dictionary<string, object> inputParams)
         {
             var request = new StringBuilder(string.Format(@"api/{0}/{1}/", _apiControllerName, methodName));
-
+            
             request.Append(ParametersToUriRequest(inputParams));
 
+            DateTime startTime = DateTime.Now;
             var response = _client.GetAsync(request.ToString()).Result;
-            return response.Content.ReadAsAsync<T>().Result;
+            var result = response.Content.ReadAsAsync<T>().Result;
+
+            _log.DebugFormat("WebApi get [{0}] in {1}", request, DateTime.Now - startTime);
+            return result;
         }
 
         protected Task<HttpResponseMessage> GetWebApiAsyncCall(string methodName, Dictionary<string, object> inputParams)
@@ -49,8 +54,13 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         {
             var request = new StringBuilder(string.Format("api/{0}/{1}/", _apiControllerName, methodName));
 
+            DateTime startTime = DateTime.Now;
             var response = _client.GetAsync(request.ToString()).Result;
-            return response.Content.ReadAsAsync<T>().Result;
+            var result = response.Content.ReadAsAsync<T>().Result;
+
+            _log.DebugFormat("WebApi get [{0}] in {1}", request, DateTime.Now - startTime);
+
+            return result;
         }
 
         protected void PostWebApiCall<T>(string methodName, T bodyElenment, Dictionary<string, object> uriParams)
@@ -58,9 +68,12 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             var request = new StringBuilder(string.Format("api/{0}/{1}/", _apiControllerName, methodName));
 
             request.Append(ParametersToUriRequest(uriParams));
+            DateTime startTime = DateTime.Now;
 
             var response = _client.PostAsJsonAsync(request.ToString(), bodyElenment).Result;
             response.EnsureSuccessStatusCode();
+
+            _log.DebugFormat("WebApi post [{0}] in {1}", request, DateTime.Now - startTime);
         }
 
         protected Task<HttpResponseMessage> PostWebApiCallMessage<T>(string methodName, T bodyElenment, Dictionary<string, object> uriParams)
@@ -78,8 +91,11 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         {
             var request = new StringBuilder(string.Format("api/{0}/{1}/", _apiControllerName, methodName));
 
+            DateTime startTime = DateTime.Now;
             var response = _client.PostAsJsonAsync(request.ToString(), bodyElenment).Result;
             response.EnsureSuccessStatusCode();
+
+            _log.DebugFormat("WebApi post [{0}] in {1}", request, DateTime.Now - startTime);
         }
 
         protected void PostWebApiCall(string methodName, Dictionary<string, object> uriParams)
@@ -88,8 +104,11 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
             request.Append(ParametersToUriRequest(uriParams));
 
+            DateTime startTime = DateTime.Now;
             var response = _client.PostAsync(request.ToString(), new StringContent(methodName)).Result;
             response.EnsureSuccessStatusCode();
+
+            _log.DebugFormat("WebApi post [{0}] in {1}", request, DateTime.Now - startTime);
         }
 
         protected void ResolveRecordbyForeignKeyGet(RecordChangedParam[] changedRecord, string dataSourceUrn,
@@ -137,7 +156,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         protected IEnumerable<T> GetStreamDataToEnumerable<T,TM>(string methodName, TM body, Dictionary<string, object> inputParams, bool allowReadStreamBuffering = true)
         {
             var requesturl = new StringBuilder(string.Format(@"api/{0}/{1}/", _apiControllerName, methodName));
-           
+            
+            DateTime startTime = DateTime.Now;
             var jsonSerializer = new JavaScriptSerializer();
             requesturl.Append(ParametersToUriRequest(inputParams));
 
@@ -155,6 +175,9 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             var sr = new StreamReader(responce.Content.ReadAsStreamAsync().Result);
 
             var lastItem = string.Empty;
+
+            _log.DebugFormat("WebApi streaming {0} in {1} after started", requesturl.ToString(), DateTime.Now - startTime);
+
 
             while (!sr.EndOfStream)
             {
@@ -181,11 +204,13 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         {
             var request = new StringBuilder(string.Format(@"api/{0}/{1}/", _apiControllerName, methodName));
             var jsonSerializer = new JavaScriptSerializer();
+            DateTime startTime = DateTime.Now;
             request.Append(ParametersToUriRequest(inputParams));
 
             var stream = _client.GetStreamAsync(request.ToString());
             var sr = new StreamReader(stream.Result);
 
+            _log.DebugFormat("WebApi streaming {0} in {1} after started", request.ToString(), DateTime.Now - startTime);
             var lastItem = string.Empty;
 
             while (!sr.EndOfStream)
@@ -247,7 +272,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         public IObservable<T> CreateExchngeObservable<T>(string exchangeName,
             string exchangeType, string routingKey)
         {
-           return _rabbitMQClient.CreateExchngeObservable<T>(exchangeName, exchangeType, routingKey);
+           return new Subject<T>(); //_rabbitMQClient.CreateExchngeObservable<T>(exchangeName, exchangeType, routingKey);
         }
         #endregion
 
@@ -302,16 +327,22 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         }
 
 
-        public event EventHandler<ServerErrorEvArgs> ServerErrorHandler
-        {
-            add { if (_rabbitMQClient != null) ((IServerNotification) _rabbitMQClient).ServerErrorHandler += value; }
-            remove { if (_rabbitMQClient != null) ((IServerNotification)_rabbitMQClient).ServerErrorHandler -= value; }
-        }
+        public event EventHandler<ServerErrorEvArgs> ServerErrorHandler;
+    //{
+    //        add { if (_rabbitMQClient != null) ((IServerNotification) _rabbitMQClient).ServerErrorHandler += value; }
+    //        remove { if (_rabbitMQClient != null) ((IServerNotification)_rabbitMQClient).ServerErrorHandler -= value; }
+    //    }
 
-        public event EventHandler<ServerReconnectionArgs> ServerReconnectedEvent
-        {
-            add { if (_rabbitMQClient != null)((IServerNotification)_rabbitMQClient).ServerReconnectedEvent += value; }
-            remove { if (_rabbitMQClient != null)((IServerNotification)_rabbitMQClient).ServerReconnectedEvent -= value; }
-        }
+        public event EventHandler<ServerReconnectionArgs> ServerReconnectedEvent;
+    //{
+    //    add
+    //    {
+    //        if (_rabbitMQClient != null) ((IServerNotification) _rabbitMQClient).ServerReconnectedEvent += value;
+    //    }
+    //    remove
+    //    {
+    //        if (_rabbitMQClient != null) ((IServerNotification) _rabbitMQClient).ServerReconnectedEvent -= value;
+    //    }
+    //}
     }
 }

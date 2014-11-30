@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
 
@@ -10,14 +11,11 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class PermissionSecurityFacade : WebApiClientBase, IPermissionSecurityFacade
     {
-        private readonly IRabbitMQClient _rabbitMQClient;
         private const string PermissionSecurityFacadeExchangeName = "PermissionSecurityFacadeExchange";
 
-        public PermissionSecurityFacade(string url, IRabbitMQClient rabbitMQClient)
-            : base(url, "PermissionApi", rabbitMQClient)
+        public PermissionSecurityFacade(string url, ILogger log)
+            : base(url, "PermissionApi", log)
         {
-            _rabbitMQClient = rabbitMQClient;
-
         }
 
         public void Dispose()

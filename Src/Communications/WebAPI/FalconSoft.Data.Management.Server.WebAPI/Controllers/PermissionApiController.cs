@@ -13,14 +13,12 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
     public class PermissionApiController : ApiController
     {
         private readonly IPermissionSecurityFacade _permissionFacade;
-        private readonly IFalconSoftBroker _falconSoftBroker;
         private readonly ILogger _logger;
 
-        public PermissionApiController(IPermissionSecurityFacade searchFacade, IFalconSoftBroker falconSoftBroker, ILogger logger)
+        public PermissionApiController()
         {
-            _permissionFacade = searchFacade;
-            _falconSoftBroker = falconSoftBroker;
-            _logger = logger;
+            _permissionFacade = FacadesFactory.PermissionSecurityFacade;
+            _logger = FacadesFactory.Logger;
         }
 
         [HttpGet]
@@ -66,7 +64,6 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger.Debug("Call PermissionApiController GetPermissionChanged");
             try
             {
-                _falconSoftBroker.SubscribeOnGetPermissionChanges(userToken);
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
             catch (Exception ex)

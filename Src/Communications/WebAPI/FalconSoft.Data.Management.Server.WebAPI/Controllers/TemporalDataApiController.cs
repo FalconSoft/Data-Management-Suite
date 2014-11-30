@@ -21,10 +21,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         private readonly ITemporalDataQueryFacade _temporalDataQueryFacade;
         private readonly ILogger _logger;
 
-        public TemporalDataApiController(ITemporalDataQueryFacade temporalDataQueryFacade, ILogger logger)
+        public TemporalDataApiController()
         {
-            _temporalDataQueryFacade = temporalDataQueryFacade;
-            _logger = logger;
+            _temporalDataQueryFacade = FacadesFactory.TemporalDataQueryFacade;
+            _logger = FacadesFactory.Logger;
         }
 
         [HttpPost]

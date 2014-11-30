@@ -19,10 +19,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         private readonly ICommandFacade _commandFacade;
         private readonly ILogger _logger;
 
-        public CommandApiController(ICommandFacade commandFacade, ILogger logger)
+        public CommandApiController()
         {
-            _commandFacade = commandFacade;
-            _logger = logger;
+            _commandFacade = FacadesFactory.CommandFacade;
+            _logger = FacadesFactory.Logger;
         }
 
         [HttpPost]

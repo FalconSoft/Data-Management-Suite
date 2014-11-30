@@ -12,10 +12,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         private readonly ISearchFacade _searchFacade;
         private readonly ILogger _logger;
 
-        public SearchApiController(ISearchFacade searchFacade, ILogger logger)
+        public SearchApiController()
         {
-            _searchFacade = searchFacade;
-            _logger = logger;
+            _searchFacade = FacadesFactory.SearchFacade;
+            _logger = FacadesFactory.Logger;
         }
 
         [HttpGet]

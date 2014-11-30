@@ -34,7 +34,7 @@ namespace FalconSoft.Data.Console
             if (facadeType.Equals("WebApi", StringComparison.OrdinalIgnoreCase))
             {
                 var url = ConfigurationManager.AppSettings["WebApiURL"];
-                return new WebApiFacadeFactory(url, ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RabbitMqAdminLogin"], ConfigurationManager.AppSettings["RabbitMqAdminPass"]);
+                return new WebApiFacadeFactory(url, Logger);
             }
             if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
             {

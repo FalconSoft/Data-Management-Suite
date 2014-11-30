@@ -1,23 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Security;
 
 namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
-    internal sealed class SecurityFacade :WebApiClientBase, ISecurityFacade
+    internal sealed class SecurityFacade : WebApiClientBase, ISecurityFacade
     {
-        private IRabbitMQClient _rabbitMQ;
         private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
 
-        public SecurityFacade(string url, IRabbitMQClient rabbitMQClient)
-            : base(url, "SecurityApi", rabbitMQClient)
-        {
-            _rabbitMQ = rabbitMQClient;
-            if (rabbitMQClient!=null)
-                rabbitMQClient.SubscribeOnExchange(ExceptionsExchangeName, "fanout", "", ErrorMessageHandledAction);
-            
-        }
+        public SecurityFacade(string url, ILogger log)
+            : base(url, "SecurityApi", log) { }
 
         public void Dispose()
         {
@@ -26,15 +20,6 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public KeyValuePair<bool, string> Authenticate(string userName, string password)
         {
-            try
-            {
-                _rabbitMQ.CheckConnection();
-            }
-            catch (Exception ex)
-            {
-                return new KeyValuePair<bool, string>(false, "Wrong server credentials or unknown server name.");
-            }
-
             return GetWebApiCall<KeyValuePair<bool, string>>("Authenticate", new Dictionary<string, object>
             {
                 {"userName", userName},

@@ -14,10 +14,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         private readonly IMetaDataAdminFacade _metaDataAdminFacade;
         private readonly ILogger _logger;
 
-        public MetaDataApiController(IMetaDataAdminFacade metaDataAdminFacade, ILogger logger)
+        public MetaDataApiController()
         {
-            _metaDataAdminFacade = metaDataAdminFacade;
-            _logger = logger;
+            _metaDataAdminFacade = FacadesFactory.MetaDataAdminFacade;
+            _logger = FacadesFactory.Logger;
         }
 
         [HttpGet]

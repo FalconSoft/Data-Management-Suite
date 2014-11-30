@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 
@@ -7,8 +8,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class TemporalDataQueryFacade : WebApiClientBase, ITemporalDataQueryFacade
     {
-        public TemporalDataQueryFacade(string url, IRabbitMQClient client)
-            : base(url, "TemporalDataApi", client) { }
+        public TemporalDataQueryFacade(string url, ILogger log)
+            : base(url, "TemporalDataApi", log) { }
         
         public IEnumerable<Dictionary<string, object>> GetRecordsHistory(DataSourceInfo dataSourceInfo, string recordKey)
         {

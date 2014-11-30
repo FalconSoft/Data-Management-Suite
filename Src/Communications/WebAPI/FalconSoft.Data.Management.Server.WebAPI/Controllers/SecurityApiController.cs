@@ -9,15 +9,15 @@ using FalconSoft.Data.Management.Common.Security;
 
 namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 {
-    public class SecurityApiController:ApiController
+    public class SecurityApiController : ApiController
     {
         private readonly ISecurityFacade _securityFacade;
         private readonly ILogger _logger;
 
-        public SecurityApiController(ISecurityFacade securityFacade, ILogger logger)
+        public SecurityApiController()
         {
-            _securityFacade = securityFacade;
-            _logger = logger;
+            _securityFacade = FacadesFactory.SecurityFacade;
+            _logger = FacadesFactory.Logger;
         }
 
         [HttpGet]

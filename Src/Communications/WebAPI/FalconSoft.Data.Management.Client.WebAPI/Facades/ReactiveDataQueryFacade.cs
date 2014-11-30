@@ -17,8 +17,8 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
        
         private const string GetDataChangesTopic = "GetDataChangesTopic";
 
-        public ReactiveDataQueryFacade(string url, IRabbitMQClient rabbitMQClient)
-            : base(url, "ReactiveDataQueryApi", rabbitMQClient)
+        public ReactiveDataQueryFacade(string url, ILogger log)
+            : base(url, "ReactiveDataQueryApi", log)
         {
            
         }

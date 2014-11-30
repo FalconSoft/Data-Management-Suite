@@ -10,8 +10,10 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class CommandFacade : WebApiClientBase, ICommandFacade
     {
-        public CommandFacade(string url, IRabbitMQClient client)
-            : base(url, "CommandApi", client) { }
+        private string _url;
+
+        public CommandFacade(string url, ILogger log)
+            : base(url, "CommandApi", log) { }
 
         public void SubmitChanges<T>(string dataSourcePath, string userToken, IEnumerable<T> changedRecords = null,
              IEnumerable<string> deleted = null, Action<RevisionInfo> onSuccess = null, Action<Exception> onFail = null, Action<string, string> onNotifcation = null)

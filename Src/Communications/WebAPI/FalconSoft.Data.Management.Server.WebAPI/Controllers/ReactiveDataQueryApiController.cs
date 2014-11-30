@@ -21,14 +21,12 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
     public sealed class ReactiveDataQueryApiController : ApiController
     {
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
-        private readonly IFalconSoftBroker _falconSoftBroker;
         private readonly ILogger _logger;
 
-        public ReactiveDataQueryApiController(IReactiveDataQueryFacade reactiveDataQueryFacade, IFalconSoftBroker falconSoftBroker, ILogger logger)
+        public ReactiveDataQueryApiController()
         {
-            _reactiveDataQueryFacade = reactiveDataQueryFacade;
-            _falconSoftBroker = falconSoftBroker;
-            _logger = logger;
+            _reactiveDataQueryFacade = FacadesFactory.ReactiveDataQueryFacade;
+            _logger = FacadesFactory.Logger;
         }
 
         [BindJson(typeof(FilterRule[]), "filterRules")]
@@ -76,7 +74,6 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger.Debug("Call ReactiveDataQueryApiController GetDataChanges");
             try
             {
-                _falconSoftBroker.SubscribeOnGetDataChanges(userToken, dataSourcePath, fields);
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
             catch (Exception ex)
