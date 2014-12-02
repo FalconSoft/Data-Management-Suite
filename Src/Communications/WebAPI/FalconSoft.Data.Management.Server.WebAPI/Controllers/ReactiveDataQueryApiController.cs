@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Text;
-using System.Threading;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Script.Serialization;
@@ -24,18 +24,19 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ILogger _logger;
 
-        private static Dictionary<string, string> _pushMessages = null;
+        private volatile static Dictionary<string, string> _pushMessages = null;
         private static object _locker = new object();
+        private static bool _subscribed = false;
 
         public Dictionary<string, string> PushMessages
         {
             get
             {
-                if (_pushMessages != null)
+                if (_pushMessages == null)
                 {
                     lock (_locker)
                     {
-                        if (_pushMessages != null)
+                        if (_pushMessages == null)
                             _pushMessages = new Dictionary<string, string>();
                     }
                 }
@@ -43,14 +44,23 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
-
         public ReactiveDataQueryApiController()
         {
             _reactiveDataQueryFacade = FacadesFactory.ReactiveDataQueryFacade;
             _logger = FacadesFactory.Logger;
 
-            FacadesFactory.MessageBus.Listen<RecordChangedParam[]>().Subscribe(p => Trace.WriteLine(JsonConvert.SerializeObject(p)));
-//            _reactiveDataQueryFacade.GetDataChanges()
+
+            if (!_subscribed)
+            {
+                _subscribed = true;
+                FacadesFactory.MessageBus.Listen<RecordChangedParam[]>().Subscribe(p =>
+                {
+                    var pushKey = DateTime.Now.ToLongTimeString() + "_" + string.Join(",", p.Select(_ => _.ProviderString));
+                    var serializedMsg = JsonConvert.SerializeObject(p);
+                    PushMessages.Add(pushKey, serializedMsg);
+                    Trace.WriteLine(pushKey + " | " + serializedMsg);
+                });
+            }
         }
 
         [BindJson(typeof(FilterRule[]), "filterRules")]
@@ -80,6 +90,16 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger.Debug("Call ReactiveDataQueryApiController GetFieldData");
             
             return EnumeratorToStream(_reactiveDataQueryFacade.GetFieldData(userToken, dataSourcePath, field, match, elementsToReturn), "GetFieldData failed ");
+        }
+
+        [HttpGet]
+        public HttpResponseMessage GetPushMessage([FromUri]string userToken, [FromUri]string pushKey)
+        {
+            var response = new HttpResponseMessage();
+
+//            if(PushMessages.ContainsKey(pushKey))
+            return new HttpResponseMessage(HttpStatusCode.OK){ };
+
         }
      
         [BindJson(typeof(string[]), "fields")]
