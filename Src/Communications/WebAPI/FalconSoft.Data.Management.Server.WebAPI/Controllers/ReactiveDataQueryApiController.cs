@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -23,10 +24,33 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ILogger _logger;
 
+        private static Dictionary<string, string> _pushMessages = null;
+        private static object _locker = new object();
+
+        public Dictionary<string, string> PushMessages
+        {
+            get
+            {
+                if (_pushMessages != null)
+                {
+                    lock (_locker)
+                    {
+                        if (_pushMessages != null)
+                            _pushMessages = new Dictionary<string, string>();
+                    }
+                }
+                return _pushMessages;
+            }
+        }
+
+
         public ReactiveDataQueryApiController()
         {
             _reactiveDataQueryFacade = FacadesFactory.ReactiveDataQueryFacade;
             _logger = FacadesFactory.Logger;
+
+            FacadesFactory.MessageBus.Listen<RecordChangedParam[]>().Subscribe(p => Trace.WriteLine(JsonConvert.SerializeObject(p)));
+//            _reactiveDataQueryFacade.GetDataChanges()
         }
 
         [BindJson(typeof(FilterRule[]), "filterRules")]

@@ -108,6 +108,7 @@ namespace FalconSoft.Data.Server.Installers
                 ServerApp.TemporalQueryFacade,
                 ServerApp.CommandFacade,
                 ServerApp.Logger,
+                ServerApp.MessageBus,
                 hostName,
                 userName,
                 password,

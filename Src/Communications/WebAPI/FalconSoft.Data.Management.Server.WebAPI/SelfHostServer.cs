@@ -11,18 +11,26 @@ namespace FalconSoft.Data.Management.Server.WebAPI
     public static class FacadesFactory
     {
         public static IReactiveDataQueryFacade ReactiveDataQueryFacade { get; set; }
+        
         public static IMetaDataAdminFacade MetaDataAdminFacade { get; set; }
+        
         public static ISearchFacade SearchFacade { get; set; }
+        
         public static ISecurityFacade SecurityFacade { get; set; }
+        
         public static IPermissionSecurityFacade PermissionSecurityFacade { get; set; }
+        
         public static ITemporalDataQueryFacade TemporalDataQueryFacade { get; set; }
+        
         public static ICommandFacade CommandFacade { get; set; }
+        
         public static ILogger Logger { get; set; }
+        
+        public static IMessageBus MessageBus { get; set; }
     }
 
     public class SelfHostServer : IDisposable
     {
-
         private HttpSelfHostServer _server;
 
         public SelfHostServer(IReactiveDataQueryFacade reactiveDataQueryFacade,
@@ -33,6 +41,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             ITemporalDataQueryFacade temporalDataQueryFacade,
             ICommandFacade commandFacade,
             ILogger logger,
+            IMessageBus messageBus,
             string hostName,
             string userName,
             string password,
@@ -46,6 +55,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             FacadesFactory.TemporalDataQueryFacade = temporalDataQueryFacade;
             FacadesFactory.CommandFacade = commandFacade;
             FacadesFactory.Logger = logger;
+            FacadesFactory.MessageBus = messageBus;
 
             //var rabbitMq = new RabbitMQBroker(hostName, userName, password, virtualHost);
 
