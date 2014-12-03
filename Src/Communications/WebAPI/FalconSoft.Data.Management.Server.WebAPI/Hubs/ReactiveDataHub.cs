@@ -9,22 +9,16 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Hubs
 {
     public class ReactiveDataHub : Hub
     {
-        //public void Send(string name, string message)
-        //{
-        //    Clients.All.UpdatesAreReady(name, message);
-        //}
+
         public override Task OnConnected()
         {
-            Console.WriteLine("Client connected: " + Context.ConnectionId);
-
+            FacadesFactory.Logger.InfoFormat("Client connected: {0} - {1}", Context.ConnectionId, Context.User);
             return base.OnConnected();
         }
 
         public override Task OnDisconnected(bool stopCalled)
         {
-                
-            Console.WriteLine("Client disconnected: " + Context.ConnectionId);
-
+            FacadesFactory.Logger.InfoFormat("Client disconnected: {0} - {1", Context.ConnectionId, Context.User);
             return base.OnDisconnected(stopCalled);
         }
 

@@ -27,9 +27,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
             //Connection.Closed += Connection_Closed;
             var hubProxy = _connection.CreateHubProxy("ReactiveDataHub");
             //Handle incoming event from server: use Invoke to write to console from SignalR's thread
-            hubProxy.On<string, string>("UpdatesAreReady", (name, message) =>
-                Trace.WriteLine(String.Format("Client received message -> {0}: {1}\r", name, message))
-                );
+            hubProxy.On<string, string>("UpdatesAreReady", OnUpdatesAreReady);
             
             try
             {
@@ -51,6 +49,20 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
             ConnectAsync();
 
         }
+
+        private void OnUpdatesAreReady(string pushKey, string dataSources)
+        {
+
+            var msg = GetWebApiCall<string>("GetPushMessage",
+                new Dictionary<string, object>
+                {
+                    { "userToken", "" },
+                    { "pushKey", pushKey }
+                });
+
+            Trace.WriteLine(String.Format("** -> {0}: {1} : {2}\r", pushKey, dataSources, msg));
+        }
+
 
         public IEnumerable<Dictionary<string, object>> GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
             FilterRule[] filterRules = null)

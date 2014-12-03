@@ -26,8 +26,6 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ILogger _logger;
         private readonly Lazy<IHubContext> _reactiveDataHub = new Lazy<IHubContext>(() => GlobalHost.ConnectionManager.GetHubContext<ReactiveDataHub>());
-
-
         private volatile static Dictionary<string, string> _pushMessages = null;
         private static object _locker = new object();
         private static bool _subscribed = false;
@@ -59,12 +57,14 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
                 _subscribed = true;
                 FacadesFactory.MessageBus.Listen<RecordChangedParam[]>().Subscribe(p =>
                 {
-                    _reactiveDataHub.Value.Clients.All.UpdatesAreReady("test-> " + DateTime.Now.ToLongTimeString(), "ReactiveDataQueryApiController");
-
-                    var pushKey = DateTime.Now.ToLongTimeString() + "_" + string.Join(",", p.Select(_ => _.ProviderString));
+                    var pushKey = DateTime.Now.Ticks.ToString();
+                    var dataSources = string.Join(",", p.Select(_ => _.ProviderString));
                     var serializedMsg = JsonConvert.SerializeObject(p);
-                   // PushMessages.Add(pushKey, serializedMsg);
-                    Trace.WriteLine(pushKey + " | " + serializedMsg);
+
+                    PushMessages.Add(pushKey, serializedMsg);
+                    
+                    // notify all clients about change
+                    _reactiveDataHub.Value.Clients.All.UpdatesAreReady(pushKey, dataSources);                   
                 });
             }
         }
@@ -99,13 +99,9 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [HttpGet]
-        public HttpResponseMessage GetPushMessage([FromUri]string userToken, [FromUri]string pushKey)
+        public string GetPushMessage([FromUri]string userToken, [FromUri]string pushKey)
         {
-            var response = new HttpResponseMessage();
-
-//            if(PushMessages.ContainsKey(pushKey))
-            return new HttpResponseMessage(HttpStatusCode.OK){ };
-
+            return (PushMessages.ContainsKey(pushKey)) ? PushMessages[pushKey] : string.Empty;
         }
      
         [BindJson(typeof(string[]), "fields")]
