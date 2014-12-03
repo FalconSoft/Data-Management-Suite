@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -9,6 +10,8 @@ using System.Reactive.Subjects;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
+using Microsoft.AspNet.SignalR.Client;
+using Microsoft.AspNet.SignalR.Client.Hubs;
 
 namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
@@ -16,11 +19,37 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
     {
        
         private const string GetDataChangesTopic = "GetDataChangesTopic";
+        private HubConnection _connection = null;
+
+        private async void ConnectAsync()
+        {
+             _connection = new HubConnection("http://localhost:8082");
+            //Connection.Closed += Connection_Closed;
+            var hubProxy = _connection.CreateHubProxy("ReactiveDataHub");
+            //Handle incoming event from server: use Invoke to write to console from SignalR's thread
+            hubProxy.On<string, string>("UpdatesAreReady", (name, message) =>
+                Trace.WriteLine(String.Format("Client received message -> {0}: {1}\r", name, message))
+                );
+            
+            try
+            {
+                await _connection.Start();
+            }
+            catch (HttpRequestException)
+            {
+                Trace.WriteLine("Unable to connect to server: Start server before connecting clients.");
+                //No connection: Don't enable Send button or show chat UI
+                return;
+            }
+
+            Trace.WriteLine("Connected to server at ");
+        }
 
         public ReactiveDataQueryFacade(string url, ILogger log)
             : base(url, "ReactiveDataQueryApi", log)
         {
-           
+            ConnectAsync();
+
         }
 
         public IEnumerable<Dictionary<string, object>> GetAggregatedData(string userToken, string dataSourcePath, AggregatedWorksheetInfo aggregatedWorksheet,
@@ -172,7 +201,11 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public void Dispose()
         {
-
+            if (_connection != null)
+            {
+                _connection.Stop();
+                _connection.Dispose();
+            }
         }
     }
 }

@@ -62,14 +62,6 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             FacadesFactory.CommandFacade = commandFacade;
             FacadesFactory.Logger = logger;
             FacadesFactory.MessageBus = messageBus;
-
-            //var rabbitMq = new RabbitMQBroker(hostName, userName, password, virtualHost);
-
-            //_globalBroker = new GlobalBroker(rabbitMq,
-            //    ReactiveDataQueryFacade,
-            //    MetaDataAdminFacade,
-            //    PermissionSecurityFacade,
-            //    SecurityFacade);
         }
 
         public void Start(string url)
@@ -86,7 +78,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
 
             _server = new HttpSelfHostServer(config);
 
-            _signalRDisposable = WebApp.Start("http://localhost:8082");
+            _signalRDisposable = WebApp.Start<Startup>("http://localhost:8082");
 
             _server.OpenAsync().Wait();
 

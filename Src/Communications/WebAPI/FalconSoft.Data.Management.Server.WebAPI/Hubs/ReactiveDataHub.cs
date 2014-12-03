@@ -9,10 +9,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Hubs
 {
     public class ReactiveDataHub : Hub
     {
-        public void Send(string name, string message)
-        {
-            Clients.All.SomeTestMessage(name, message);
-        }
+        //public void Send(string name, string message)
+        //{
+        //    Clients.All.UpdatesAreReady(name, message);
+        //}
         public override Task OnConnected()
         {
             Console.WriteLine("Client connected: " + Context.ConnectionId);

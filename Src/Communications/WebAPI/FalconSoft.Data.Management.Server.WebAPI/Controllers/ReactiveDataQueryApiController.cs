@@ -25,6 +25,8 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
     {
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ILogger _logger;
+        private readonly Lazy<IHubContext> _reactiveDataHub = new Lazy<IHubContext>(() => GlobalHost.ConnectionManager.GetHubContext<ReactiveDataHub>());
+
 
         private volatile static Dictionary<string, string> _pushMessages = null;
         private static object _locker = new object();
@@ -57,13 +59,11 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
                 _subscribed = true;
                 FacadesFactory.MessageBus.Listen<RecordChangedParam[]>().Subscribe(p =>
                 {
+                    _reactiveDataHub.Value.Clients.All.UpdatesAreReady("test-> " + DateTime.Now.ToLongTimeString(), "ReactiveDataQueryApiController");
 
-                    var hub = GlobalHost.DependencyResolver.Resolve<ReactiveDataHub>();
-
-                    hub.Send("", "asas");
                     var pushKey = DateTime.Now.ToLongTimeString() + "_" + string.Join(",", p.Select(_ => _.ProviderString));
                     var serializedMsg = JsonConvert.SerializeObject(p);
-                    PushMessages.Add(pushKey, serializedMsg);
+                   // PushMessages.Add(pushKey, serializedMsg);
                     Trace.WriteLine(pushKey + " | " + serializedMsg);
                 });
             }
