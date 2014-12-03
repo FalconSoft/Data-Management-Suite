@@ -16,6 +16,8 @@ using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Server.WebAPI.Attributes;
 using Newtonsoft.Json;
+using Microsoft.AspNet.SignalR;
+using FalconSoft.Data.Management.Server.WebAPI.Hubs;
 
 namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 {
@@ -55,6 +57,10 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
                 _subscribed = true;
                 FacadesFactory.MessageBus.Listen<RecordChangedParam[]>().Subscribe(p =>
                 {
+
+                    var hub = GlobalHost.DependencyResolver.Resolve<ReactiveDataHub>();
+
+                    hub.Send("", "asas");
                     var pushKey = DateTime.Now.ToLongTimeString() + "_" + string.Join(",", p.Select(_ => _.ProviderString));
                     var serializedMsg = JsonConvert.SerializeObject(p);
                     PushMessages.Add(pushKey, serializedMsg);

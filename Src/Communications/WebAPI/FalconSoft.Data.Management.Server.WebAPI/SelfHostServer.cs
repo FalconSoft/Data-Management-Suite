@@ -5,6 +5,11 @@ using System.Web.Http.SelfHost;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Server.WebAPI.Controllers;
+using Owin;
+using Microsoft.Owin.Cors;
+using Microsoft.AspNet.SignalR;
+using FalconSoft.Data.Management.Server.WebAPI.Hubs;
+using Microsoft.Owin.Hosting;
 
 namespace FalconSoft.Data.Management.Server.WebAPI
 {
@@ -32,6 +37,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
     public class SelfHostServer : IDisposable
     {
         private HttpSelfHostServer _server;
+        private IDisposable _signalRDisposable = null;
 
         public SelfHostServer(IReactiveDataQueryFacade reactiveDataQueryFacade,
             IMetaDataAdminFacade metaDataAdminFacade,
@@ -80,15 +86,29 @@ namespace FalconSoft.Data.Management.Server.WebAPI
 
             _server = new HttpSelfHostServer(config);
 
+            _signalRDisposable = WebApp.Start("http://localhost:8082");
+
             _server.OpenAsync().Wait();
+
+
 
             FacadesFactory.Logger.Info("Web Api server is running ");
         }
 
         public void Dispose()
         {
+            _signalRDisposable.Dispose();
             _server.CloseAsync().Wait();
             _server.Dispose();
+        }
+    }
+
+    public class Startup
+    {
+        public void Configuration(IAppBuilder app)
+        {
+            app.UseCors(CorsOptions.AllowAll);
+            app.MapSignalR();
         }
     }
 }
