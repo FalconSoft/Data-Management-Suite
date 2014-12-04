@@ -38,7 +38,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
     {
         private HttpSelfHostServer _server;
         private IDisposable _signalRDisposable = null;
-
+        private string _pushUrl;
         public SelfHostServer(IReactiveDataQueryFacade reactiveDataQueryFacade,
             IMetaDataAdminFacade metaDataAdminFacade,
             ISearchFacade searchFacade,
@@ -48,10 +48,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             ICommandFacade commandFacade,
             ILogger logger,
             IMessageBus messageBus,
-            string hostName,
-            string userName,
-            string password,
-            string virtualHost)
+            string pushUrl)
         {
             FacadesFactory.ReactiveDataQueryFacade = reactiveDataQueryFacade;
             FacadesFactory.MetaDataAdminFacade = metaDataAdminFacade;
@@ -62,6 +59,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI
             FacadesFactory.CommandFacade = commandFacade;
             FacadesFactory.Logger = logger;
             FacadesFactory.MessageBus = messageBus;
+            _pushUrl = pushUrl;
         }
 
         public void Start(string url)
@@ -78,12 +76,9 @@ namespace FalconSoft.Data.Management.Server.WebAPI
 
             _server = new HttpSelfHostServer(config);
 
-            _signalRDisposable = WebApp.Start<Startup>("http://localhost:8082");
+            _signalRDisposable = WebApp.Start<Startup>(_pushUrl);
 
             _server.OpenAsync().Wait();
-
-
-
             FacadesFactory.Logger.Info("Web Api server is running ");
         }
 

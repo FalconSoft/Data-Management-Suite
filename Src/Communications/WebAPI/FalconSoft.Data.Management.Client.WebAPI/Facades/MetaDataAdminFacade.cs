@@ -13,48 +13,49 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class MetaDataAdminFacade : WebApiClientBase, IMetaDataAdminFacade
     {
+        private const string HubName = "MetaDataHub";
+        private readonly SignalRHub _signalRHub;
 
-        private HubConnection _connection = null;
 
-        public MetaDataAdminFacade(string url, ILogger log)
+        public MetaDataAdminFacade(string url, string pushUrl, ILogger log)
             : base(url, "MetaDataApi", log)
         {
-            ConnectAsync();
-            //_rabbitMQClient = rabbitMQClient;
-
-            //_rabbitMQClient.SubscribeOnExchange<SourceObjectChangedEventArgs>(MetadataExchangeName, "fanout", "", oic => ObjectInfoChanged(this, oic));
-
-            //_rabbitMQClient.SubscribeOnExchange(ExceptionsExchangeName, "fanout", "", ErrorMessageHandledAction);
+            _signalRHub = new SignalRHub(pushUrl, HubName, log, hubProxy => hubProxy.On<string, string, string, string>("ObjectInfoChanged", OnObjectInfoChanged));
         }
 
-        private async void ConnectAsync()
-        {
-            _connection = new HubConnection("http://localhost:8082");
-            //Connection.Closed += Connection_Closed;
-            var hubProxy = _connection.CreateHubProxy("MetaDataHub");
-            //Handle incoming event from server: use Invoke to write to console from SignalR's thread
-            hubProxy.On<string>("ObjectInfoChanged", OnObjectInfoChanged);
-
-            try
-            {
-                await _connection.Start();
-            }
-            catch (HttpRequestException)
-            {
-                Trace.WriteLine("Unable to connect to server: Start server before connecting clients.");
-                //No connection: Don't enable Send button or show chat UI
-                return;
-            }
-
-            Trace.WriteLine("Connected to MetaDataHub server ");
-        }
-
-        private void OnObjectInfoChanged(string msg)
+        private void OnObjectInfoChanged(string pushKey, string oldUri, string changedActionType, string changedObjectType)
         {
             var ev = ObjectInfoChanged;
             if (ev != null)
             {
-                var eventArg = JsonConvert.DeserializeObject<SourceObjectChangedEventArgs>(msg);
+                var msg = GetWebApiCall<string>("GetPushedMetaDataObject", new Dictionary<string, object>
+                {
+                    { "userToken", "" },
+                    { "pushKey", pushKey }
+                });
+
+                // this whole workaround types is due to bad design!
+                // SourceObjectInfo should not have three objects in one
+                var eventArg = new SourceObjectChangedEventArgs
+                {
+                    OldObjectUrn = oldUri,
+                    ChangedActionType = (ChangedActionType)Enum.Parse(typeof(ChangedActionType), changedActionType),
+                    ChangedObjectType = (ChangedObjectType)Enum.Parse(typeof(ChangedObjectType), changedObjectType)
+                };
+
+                if (eventArg.ChangedObjectType == ChangedObjectType.DataSourceInfo)
+                {
+                    eventArg.SourceObjectInfo = JsonConvert.DeserializeObject<DataSourceInfo>(msg);
+                }
+                else if (eventArg.ChangedObjectType == ChangedObjectType.WorksheetInfo)
+                {
+                    eventArg.SourceObjectInfo = JsonConvert.DeserializeObject<WorksheetInfo>(msg);
+                }
+                else if (eventArg.ChangedObjectType == ChangedObjectType.AggregatedWorksheetInfo)
+                {
+                    eventArg.SourceObjectInfo = JsonConvert.DeserializeObject<AggregatedWorksheetInfo>(msg);
+                }
+
                 ev(this, eventArg);
             }
         }
@@ -206,11 +207,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public void Dispose()
         {
-            if (_connection != null)
-            {
-                _connection.Stop();
-                _connection.Dispose();
-            }
+
         }
 
         public Action<string, string> ErrorMessageHandledAction { get; set; }

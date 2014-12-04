@@ -47,15 +47,25 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             if (!_subscribed)
             {
                 _subscribed = true;
-
                 FacadesFactory.MetaDataAdminFacade.ObjectInfoChanged += MetaDataAdminFacade_ObjectInfoChanged;
             }
         }
 
         private void MetaDataAdminFacade_ObjectInfoChanged(object sender, SourceObjectChangedEventArgs e)
         {
-            string msg = JsonConvert.SerializeObject(e);
-            _metaDataHub.Value.Clients.All.ObjectInfoChanged(msg);
+            string msg = JsonConvert.SerializeObject(e.SourceObjectInfo);
+            string pushKey = DateTime.Now.Ticks.ToString();
+
+            PushMessages.Add(pushKey, msg);
+
+            _metaDataHub.Value.Clients.All.ObjectInfoChanged(pushKey, e.OldObjectUrn, e.ChangedActionType.ToString(),
+                e.ChangedObjectType.ToString());
+        }
+
+        [HttpGet]
+        public string GetPushedMetaDataObject(string userToken, string pushKey)
+        {
+            return PushMessages.ContainsKey(pushKey) ? PushMessages[pushKey] : null;
         }
 
         [HttpGet]

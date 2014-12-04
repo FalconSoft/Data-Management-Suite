@@ -18,37 +18,16 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class ReactiveDataQueryFacade : WebApiClientBase, IReactiveDataQueryFacade
     {
-       
-        private HubConnection _connection = null;
+
+        private const string HubName = "ReactiveDataHub";
+        private readonly SignalRHub _signalRHub;
         private readonly Subject<RecordChangedParam[]> _dataChangesObservable = new Subject<RecordChangedParam[]>();
 
-        private async void ConnectAsync()
-        {
-             _connection = new HubConnection("http://localhost:8082");
-            //Connection.Closed += Connection_Closed;
-            var hubProxy = _connection.CreateHubProxy("ReactiveDataHub");
-            //Handle incoming event from server: use Invoke to write to console from SignalR's thread
-            hubProxy.On<string, string>("UpdatesAreReady", OnUpdatesAreReady);
-            
-            try
-            {
-                await _connection.Start();
-            }
-            catch (HttpRequestException)
-            {
-                Trace.WriteLine("Unable to connect to server: Start server before connecting clients.");
-                //No connection: Don't enable Send button or show chat UI
-                return;
-            }
 
-            Trace.WriteLine("Connected to server at ");
-        }
-
-        public ReactiveDataQueryFacade(string url, ILogger log)
+        public ReactiveDataQueryFacade(string url, string pushUrl, ILogger log)
             : base(url, "ReactiveDataQueryApi", log)
         {
-            ConnectAsync();
-
+            _signalRHub = new SignalRHub(pushUrl, HubName, log, hubProxy => hubProxy.On<string, string>("UpdatesAreReady", OnUpdatesAreReady));
         }
 
         private void OnUpdatesAreReady(string pushKey, string dataSources)
@@ -62,8 +41,6 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
                 });
 
             var recordChangedParams = JsonConvert.DeserializeObject<RecordChangedParam[]>(msg);
-
-            Trace.WriteLine(String.Format("** -> {0}: {1} : {2}\r", pushKey, dataSources, recordChangedParams.Length));
             _dataChangesObservable.OnNext(recordChangedParams);
         }
 
@@ -174,11 +151,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public void Dispose()
         {
-            if (_connection != null)
-            {
-                _connection.Stop();
-                _connection.Dispose();
-            }
+
         }
     }
 }

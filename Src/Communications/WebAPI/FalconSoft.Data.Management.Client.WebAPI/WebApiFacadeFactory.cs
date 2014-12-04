@@ -8,6 +8,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
     public class WebApiFacadeFactory : IFacadesFactory
     {
         private readonly string _url ;
+        private readonly string _pushUrl;
         private ICommandFacade _commandFacade;
         private IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private ITemporalDataQueryFacade _temporalDataQueryFacade;
@@ -17,9 +18,10 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         private IPermissionSecurityFacade _permissionSecurityFacade;
         private ILogger _log;
 
-        public WebApiFacadeFactory(string url, ILogger log)
+        public WebApiFacadeFactory(string url, string pushUrl, ILogger log)
         {
             _url = url;
+            _pushUrl = pushUrl;
             _log = log;
         }
 
@@ -30,7 +32,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public IReactiveDataQueryFacade CreateReactiveDataQueryFacade()
         {
-            return _reactiveDataQueryFacade ?? (_reactiveDataQueryFacade = new ReactiveDataQueryFacade(_url, _log));
+            return _reactiveDataQueryFacade ?? (_reactiveDataQueryFacade = new ReactiveDataQueryFacade(_url, _pushUrl, _log));
         }
 
         public ITemporalDataQueryFacade CreateTemporalDataQueryFacade()
@@ -40,12 +42,12 @@ namespace FalconSoft.Data.Management.Client.WebAPI
 
         public IMetaDataAdminFacade CreateMetaDataAdminFacade()
         {
-            return _metaDataAdmnFacade ?? (_metaDataAdmnFacade = new MetaDataAdminFacade(_url, _log));
+            return _metaDataAdmnFacade ?? (_metaDataAdmnFacade = new MetaDataAdminFacade(_url, _pushUrl, _log));
         }
 
         public IMetaDataFacade CreateMetaDataFacade()
         {
-            return _metaDataAdmnFacade ?? (_metaDataAdmnFacade = new MetaDataAdminFacade(_url, _log));
+            return _metaDataAdmnFacade ?? (_metaDataAdmnFacade = new MetaDataAdminFacade(_url, _pushUrl, _log));
         }
 
         public ISearchFacade CreateSearchFacade()

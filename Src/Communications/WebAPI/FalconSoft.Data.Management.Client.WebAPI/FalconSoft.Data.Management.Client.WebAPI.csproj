@@ -84,6 +84,7 @@
     <Compile Include="Facades\SecurityFacade.cs" />
     <Compile Include="Facades\TemporalDataQueryFacade.cs" />
     <Compile Include="Facades\TestFacade.cs" />
+    <Compile Include="SignalRHub.cs" />
     <Compile Include="WebApiClientBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebApiFacadeFactory.cs" />
