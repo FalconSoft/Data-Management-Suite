@@ -116,6 +116,7 @@
     <Compile Include="Controllers\SearchApiController.cs" />
     <Compile Include="Controllers\MetaDataApiController.cs" />
     <Compile Include="Controllers\ReactiveDataQueryApiController.cs" />
+    <Compile Include="Hubs\MetaDataHub.cs" />
     <Compile Include="Hubs\ReactiveDataHub.cs" />
     <Compile Include="SelfHostServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

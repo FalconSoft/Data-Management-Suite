@@ -1,25 +1,62 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net.Http;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
+using Microsoft.AspNet.SignalR.Client;
+using Newtonsoft.Json;
 
 namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class MetaDataAdminFacade : WebApiClientBase, IMetaDataAdminFacade
     {
-        private const string MetadataExchangeName = "MetaDataFacadeExchange";
-        private const string ExceptionsExchangeName = "MetaDataFacadeExceptionsExchangeName";
+
+        private HubConnection _connection = null;
 
         public MetaDataAdminFacade(string url, ILogger log)
             : base(url, "MetaDataApi", log)
         {
+            ConnectAsync();
             //_rabbitMQClient = rabbitMQClient;
 
             //_rabbitMQClient.SubscribeOnExchange<SourceObjectChangedEventArgs>(MetadataExchangeName, "fanout", "", oic => ObjectInfoChanged(this, oic));
 
             //_rabbitMQClient.SubscribeOnExchange(ExceptionsExchangeName, "fanout", "", ErrorMessageHandledAction);
+        }
+
+        private async void ConnectAsync()
+        {
+            _connection = new HubConnection("http://localhost:8082");
+            //Connection.Closed += Connection_Closed;
+            var hubProxy = _connection.CreateHubProxy("MetaDataHub");
+            //Handle incoming event from server: use Invoke to write to console from SignalR's thread
+            hubProxy.On<string>("ObjectInfoChanged", OnObjectInfoChanged);
+
+            try
+            {
+                await _connection.Start();
+            }
+            catch (HttpRequestException)
+            {
+                Trace.WriteLine("Unable to connect to server: Start server before connecting clients.");
+                //No connection: Don't enable Send button or show chat UI
+                return;
+            }
+
+            Trace.WriteLine("Connected to MetaDataHub server ");
+        }
+
+        private void OnObjectInfoChanged(string msg)
+        {
+            var ev = ObjectInfoChanged;
+            if (ev != null)
+            {
+                var eventArg = JsonConvert.DeserializeObject<SourceObjectChangedEventArgs>(msg);
+                ev(this, eventArg);
+            }
         }
 
         public DataSourceInfo[] GetAvailableDataSources(string userToken, AccessLevel minAccessLevel = AccessLevel.Read)
@@ -169,7 +206,11 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public void Dispose()
         {
-
+            if (_connection != null)
+            {
+                _connection.Stop();
+                _connection.Dispose();
+            }
         }
 
         public Action<string, string> ErrorMessageHandledAction { get; set; }

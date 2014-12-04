@@ -12,14 +12,15 @@ using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Hubs;
+using Newtonsoft.Json;
 
 namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class ReactiveDataQueryFacade : WebApiClientBase, IReactiveDataQueryFacade
     {
        
-        private const string GetDataChangesTopic = "GetDataChangesTopic";
         private HubConnection _connection = null;
+        private readonly Subject<RecordChangedParam[]> _dataChangesObservable = new Subject<RecordChangedParam[]>();
 
         private async void ConnectAsync()
         {
@@ -60,7 +61,10 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
                     { "pushKey", pushKey }
                 });
 
-            Trace.WriteLine(String.Format("** -> {0}: {1} : {2}\r", pushKey, dataSources, msg));
+            var recordChangedParams = JsonConvert.DeserializeObject<RecordChangedParam[]>(msg);
+
+            Trace.WriteLine(String.Format("** -> {0}: {1} : {2}\r", pushKey, dataSources, recordChangedParams.Length));
+            _dataChangesObservable.OnNext(recordChangedParams);
         }
 
 
@@ -119,50 +123,7 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public IObservable<RecordChangedParam[]> GetDataChanges(string userToken, string dataSourcePath, string[] fields = null)
         {
-            GetWebApiAsyncCall("GetDataChanges", new Dictionary<string, object>
-            {
-                {"userToken", userToken},
-                {"dataSourcePath", dataSourcePath},
-                {"fields", fields}
-            }).Wait();
-
-            var routingKey = fields != null ? string.Format("{0}.{1}.", dataSourcePath, userToken) + fields.Aggregate("", (cur, next) => string.Format("{0}.{1}", cur, next)).GetHashCode()
-               : string.Format("{0}.{1}", dataSourcePath, userToken);
-
-
-            var observable =  CreateExchngeObservable<RecordChangedParam[]>(
-                GetDataChangesTopic, "topic", routingKey);
-
-            return Observable.Create<RecordChangedParam[]>(subj =>
-            {
-                var disposable = observable.Subscribe(subj);
-
-                var keepAlive = new EventHandler<ServerReconnectionArgs>((obj, evArgs) =>
-                {
-                    disposable.Dispose();
-
-                    observable = CreateExchngeObservable<RecordChangedParam[]>(
-                    GetDataChangesTopic, "topic", routingKey);
-
-                    disposable = observable.Subscribe(subj);
-
-                    GetWebApiAsyncCall("GetDataChanges", new Dictionary<string, object>
-                    {
-                        {"userToken", userToken},
-                        {"dataSourcePath", dataSourcePath},
-                        {"fields", fields}
-                    });
-                });
-
-                ServerReconnectedEvent += keepAlive;
-
-                return Disposable.Create(() =>
-                {
-                    ServerReconnectedEvent -= keepAlive;
-                    disposable.Dispose();
-
-                });
-            });
+            return _dataChangesObservable.Where(r=> r != null && r.Length > 0 && r[0].ProviderString == dataSourcePath);
         }
 
         public void ResolveRecordbyForeignKey(RecordChangedParam[] changedRecord, string dataSourceUrn, string userToken,

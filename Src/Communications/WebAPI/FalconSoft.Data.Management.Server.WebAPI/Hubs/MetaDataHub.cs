@@ -7,18 +7,18 @@ using System.Threading.Tasks;
 
 namespace FalconSoft.Data.Management.Server.WebAPI.Hubs
 {
-    public class ReactiveDataHub : Hub
+    public class MetaDataHub : Hub
     {
 
         public override Task OnConnected()
         {
-            FacadesFactory.Logger.InfoFormat("[ReactiveDataHub] Client connected : {0} - {1}", Context.ConnectionId, Context.User);
+            FacadesFactory.Logger.InfoFormat("[MetaDataHub] Client connected : {0} - {1}", Context.ConnectionId, Context.User);
             return base.OnConnected();
         }
 
         public override Task OnDisconnected(bool stopCalled)
         {
-            FacadesFactory.Logger.InfoFormat("[ReactiveDataHub] Client disconnected: {0} - {1}", Context.ConnectionId, Context.User);
+            FacadesFactory.Logger.InfoFormat("[MetaDataHub] Client disconnected: {0} - {1}", Context.ConnectionId, Context.User);
             return base.OnDisconnected(stopCalled);
         }
 

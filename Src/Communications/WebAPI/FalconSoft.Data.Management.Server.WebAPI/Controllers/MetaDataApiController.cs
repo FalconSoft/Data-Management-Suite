@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
@@ -6,6 +8,9 @@ using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
+using FalconSoft.Data.Management.Server.WebAPI.Hubs;
+using Microsoft.AspNet.SignalR;
+using Newtonsoft.Json;
 
 namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 {
@@ -13,11 +18,44 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
     {
         private readonly IMetaDataAdminFacade _metaDataAdminFacade;
         private readonly ILogger _logger;
+        private readonly Lazy<IHubContext> _metaDataHub = new Lazy<IHubContext>(() => GlobalHost.ConnectionManager.GetHubContext<MetaDataHub>());
+        private volatile static Dictionary<string, string> _pushMessages = null;
+        private static object _locker = new object();
+        private static bool _subscribed = false;
+
+        public Dictionary<string, string> PushMessages
+        {
+            get
+            {
+                if (_pushMessages == null)
+                {
+                    lock (_locker)
+                    {
+                        if (_pushMessages == null)
+                            _pushMessages = new Dictionary<string, string>();
+                    }
+                }
+                return _pushMessages;
+            }
+        }
 
         public MetaDataApiController()
         {
             _metaDataAdminFacade = FacadesFactory.MetaDataAdminFacade;
             _logger = FacadesFactory.Logger;
+
+            if (!_subscribed)
+            {
+                _subscribed = true;
+
+                FacadesFactory.MetaDataAdminFacade.ObjectInfoChanged += MetaDataAdminFacade_ObjectInfoChanged;
+            }
+        }
+
+        private void MetaDataAdminFacade_ObjectInfoChanged(object sender, SourceObjectChangedEventArgs e)
+        {
+            string msg = JsonConvert.SerializeObject(e);
+            _metaDataHub.Value.Clients.All.ObjectInfoChanged(msg);
         }
 
         [HttpGet]
