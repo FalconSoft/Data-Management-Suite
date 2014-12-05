@@ -18,6 +18,7 @@ using FalconSoft.Data.Management.Server.WebAPI.Attributes;
 using Newtonsoft.Json;
 using Microsoft.AspNet.SignalR;
 using FalconSoft.Data.Management.Server.WebAPI.Hubs;
+using System.Runtime.Caching;
 
 namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
 {
@@ -26,11 +27,11 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         private readonly IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private readonly ILogger _logger;
         private readonly Lazy<IHubContext> _reactiveDataHub = new Lazy<IHubContext>(() => GlobalHost.ConnectionManager.GetHubContext<ReactiveDataHub>());
-        private volatile static Dictionary<string, string> _pushMessages = null;
-        private static object _locker = new object();
+        private volatile static MemoryCache _pushMessages = null;
+        private static readonly object _locker = new object();
         private static bool _subscribed = false;
 
-        public Dictionary<string, string> PushMessages
+        public MemoryCache PushMessages
         {
             get
             {
@@ -39,7 +40,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
                     lock (_locker)
                     {
                         if (_pushMessages == null)
-                            _pushMessages = new Dictionary<string, string>();
+                            _pushMessages = new MemoryCache("ReactiveDataControllerCache");
                     }
                 }
                 return _pushMessages;
@@ -61,7 +62,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
                     var dataSources = string.Join(",", p.Select(_ => _.ProviderString));
                     var serializedMsg = JsonConvert.SerializeObject(p);
 
-                    PushMessages.Add(pushKey, serializedMsg);
+                    PushMessages.Add(pushKey, serializedMsg, new CacheItemPolicy{AbsoluteExpiration = DateTimeOffset.Now.AddSeconds(5.0)});
                     
                     // notify all clients about change
                     _reactiveDataHub.Value.Clients.All.UpdatesAreReady(pushKey, dataSources);                   
@@ -101,7 +102,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         [HttpGet]
         public string GetPushMessage([FromUri]string userToken, [FromUri]string pushKey)
         {
-            return (PushMessages.ContainsKey(pushKey)) ? PushMessages[pushKey] : string.Empty;
+            return (PushMessages.Contains(pushKey)) ? PushMessages[pushKey].ToString() : string.Empty;
         }
      
         [BindJson(typeof(string[]), "fields")]

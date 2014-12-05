@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.Caching;
 using System.Web.Http;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
@@ -19,20 +20,20 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         private readonly IMetaDataAdminFacade _metaDataAdminFacade;
         private readonly ILogger _logger;
         private readonly Lazy<IHubContext> _metaDataHub = new Lazy<IHubContext>(() => GlobalHost.ConnectionManager.GetHubContext<MetaDataHub>());
-        private volatile static Dictionary<string, string> _pushMessages = null;
-        private static object _locker = new object();
+        private volatile static MemoryCache _pushMessages = null;
+        private static readonly object Locker = new object();
         private static bool _subscribed = false;
 
-        public Dictionary<string, string> PushMessages
+        public MemoryCache PushMessages
         {
             get
             {
                 if (_pushMessages == null)
                 {
-                    lock (_locker)
+                    lock (Locker)
                     {
                         if (_pushMessages == null)
-                            _pushMessages = new Dictionary<string, string>();
+                            _pushMessages = new MemoryCache("MetaDataAdminCache");
                     }
                 }
                 return _pushMessages;
@@ -56,7 +57,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             string msg = JsonConvert.SerializeObject(e.SourceObjectInfo);
             string pushKey = DateTime.Now.Ticks.ToString();
 
-            PushMessages.Add(pushKey, msg);
+            PushMessages.Add(pushKey, msg, new CacheItemPolicy{AbsoluteExpiration = DateTimeOffset.Now.AddSeconds(5.0)});
 
             _metaDataHub.Value.Clients.All.ObjectInfoChanged(pushKey, e.OldObjectUrn, e.ChangedActionType.ToString(),
                 e.ChangedObjectType.ToString());
@@ -65,7 +66,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         [HttpGet]
         public string GetPushedMetaDataObject(string userToken, string pushKey)
         {
-            return PushMessages.ContainsKey(pushKey) ? PushMessages[pushKey] : null;
+            return PushMessages.Contains(pushKey) ? PushMessages[pushKey].ToString() : null;
         }
 
         [HttpGet]
