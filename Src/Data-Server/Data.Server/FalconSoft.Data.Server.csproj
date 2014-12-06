@@ -95,10 +95,6 @@
       <Project>{ca16ffe9-bc48-4dc6-bbce-9a7a3eeca424}</Project>
       <Name>FalconSoft.Data.Management.Components</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Communications\RabbitMQ\FalconSoft.Data.Management.Server.RabbitMQ\FalconSoft.Data.Management.Server.RabbitMQ.csproj">
-      <Project>{47235916-5BF9-405B-9E21-C494CC5F6F93}</Project>
-      <Name>FalconSoft.Data.Management.Server.RabbitMQ</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Communications\WebAPI\FalconSoft.Data.Management.Server.WebAPI\FalconSoft.Data.Management.Server.WebAPI.csproj">
       <Project>{b0af1114-7a59-4100-8558-ecc47beb5b0b}</Project>
       <Name>FalconSoft.Data.Management.Server.WebAPI</Name>

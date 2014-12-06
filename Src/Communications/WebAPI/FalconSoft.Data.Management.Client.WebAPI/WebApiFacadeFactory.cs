@@ -1,14 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security;
 using FalconSoft.Data.Management.Client.WebAPI.Facades;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Security;
 
 namespace FalconSoft.Data.Management.Client.WebAPI
 {
     public class WebApiFacadeFactory : IFacadesFactory
     {
-        private readonly string _url ;
-        private readonly string _pushUrl;
+        private string _url ;
+        private string _pushUrl;
         private ICommandFacade _commandFacade;
         private IReactiveDataQueryFacade _reactiveDataQueryFacade;
         private ITemporalDataQueryFacade _temporalDataQueryFacade;
@@ -16,12 +21,10 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         private ISearchFacade _searchFacade;
         private ISecurityFacade _securityFacade;
         private IPermissionSecurityFacade _permissionSecurityFacade;
-        private ILogger _log;
+        private readonly ILogger _log;
 
-        public WebApiFacadeFactory(string url, string pushUrl, ILogger log)
+        public WebApiFacadeFactory(ILogger log)
         {
-            _url = url;
-            _pushUrl = pushUrl;
             _log = log;
         }
 
@@ -73,5 +76,23 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         public void Dispose()
         {
         }
+
+        public User Authenticate(string url, string companyName, string userName, string password)
+        {
+            _url = url;
+            var security = CreateSecurityFacade();
+
+            var user = security.Authenticate(companyName, userName,  password);
+
+            if (!string.IsNullOrWhiteSpace(user.Id))
+            {
+                var userSettings = security.GetUserSettings(user.Id);
+                _pushUrl = userSettings["pushUrl"];
+                return user;
+            }
+
+            return user;
+        }
+
     }
 }

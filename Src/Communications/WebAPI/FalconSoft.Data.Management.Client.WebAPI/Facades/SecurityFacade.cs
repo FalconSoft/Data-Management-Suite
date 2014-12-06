@@ -8,8 +8,6 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 {
     internal sealed class SecurityFacade : WebApiClientBase, ISecurityFacade
     {
-        private const string ExceptionsExchangeName = "SecurityFacadeExceptionsExchangeName";
-
         public SecurityFacade(string url, ILogger log)
             : base(url, "SecurityApi", log) { }
 
@@ -18,10 +16,11 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
             
         }
 
-        public KeyValuePair<bool, string> Authenticate(string userName, string password)
+        public User Authenticate(string companyName, string userName, string password)
         {
-            return GetWebApiCall<KeyValuePair<bool, string>>("Authenticate", new Dictionary<string, object>
+            return GetWebApiCall<User>("Authenticate", new Dictionary<string, object>
             {
+                {"companyName", companyName},
                 {"userName", userName},
                 {"password", password}
             });
@@ -30,6 +29,14 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
         public List<User> GetUsers(string userToken)
         {
             return GetWebApiCall<List<User>>("GetUsers", new Dictionary<string, object>
+            {
+                {"userToken", userToken}
+            });
+        }
+
+        public Dictionary<string, string> GetUserSettings(string userToken)
+        {
+            return GetWebApiCall<Dictionary<string, string>>("GetUserSettings", new Dictionary<string, object>
             {
                 {"userToken", userToken}
             });

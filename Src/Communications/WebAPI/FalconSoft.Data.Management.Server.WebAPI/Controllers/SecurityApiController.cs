@@ -21,17 +21,17 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [HttpGet]
-        public KeyValuePair<bool, string> Authenticate([FromUri]string userName, [FromUri]string password)
+        public User Authenticate([FromUri]string companyName, [FromUri]string userName, [FromUri]string password)
         {
             _logger.Debug("Call SecurityApiController Authenticate");
             try
             {
-                return _securityFacade.Authenticate(userName, password ?? string.Empty);
+                return _securityFacade.Authenticate(companyName, userName, password ?? string.Empty);
             }
             catch (Exception ex)
             {
                 _logger.Error("Authenticate failed ", ex);
-                return new KeyValuePair<bool, string>(false, string.Empty);
+                return new User{Id = string.Empty};
             }
         }
 
@@ -65,6 +65,20 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             }
         }
 
+        [HttpGet]
+        public Dictionary<string, string> GetUserSettings([FromUri]string userToken)
+        {
+            _logger.Debug("Call GetUserSettings");
+            try
+            {
+                return new Dictionary<string, string> { { "pushUrl", FacadesFactory.PushUrl } };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("GetUser failed ", ex);
+                return null;
+            }
+        }
         [HttpPost]
         public HttpResponseMessage SaveNewUser([FromBody]User user, [FromUri]UserRole userRole, [FromUri]string userToken)
         {
