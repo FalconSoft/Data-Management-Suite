@@ -72,10 +72,6 @@
       <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
       <Name>FalconSoft.Data.Management.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Communications\RabbitMQ\FalconSoft.Data.Management.Client.RabbitMQ\FalconSoft.Data.Management.Client.RabbitMQ.csproj">
-      <Project>{e5f3dec3-b616-4a4e-bfe4-266ea569291c}</Project>
-      <Name>FalconSoft.Data.Management.Client.RabbitMQ</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />

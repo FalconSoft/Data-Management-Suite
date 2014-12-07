@@ -71,5 +71,10 @@ namespace FalconSoft.Data.Management.InProcessServer.Client
         {
             
         }
+
+        public Common.Security.User Authenticate(string url, string companyName, string userName, string password)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

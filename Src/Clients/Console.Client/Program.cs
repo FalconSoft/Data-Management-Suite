@@ -27,14 +27,14 @@ namespace FalconSoft.Data.Console
 
         private static IFacadesFactory GetFacadesFactory(string facadeType)
         {
-            if (facadeType.Equals("RabbitMQ", StringComparison.OrdinalIgnoreCase))
-            {
-                return new RabbitMqFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RabbitMqAdminLogin"], ConfigurationManager.AppSettings["RabbitMqAdminPass"]);
-            }
+            //if (facadeType.Equals("RabbitMQ", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    return new RabbitMqFacadesFactory(ConfigurationManager.AppSettings["ConnectionString"], ConfigurationManager.AppSettings["RabbitMqAdminLogin"], ConfigurationManager.AppSettings["RabbitMqAdminPass"]);
+            //}
             if (facadeType.Equals("WebApi", StringComparison.OrdinalIgnoreCase))
             {
                 var url = ConfigurationManager.AppSettings["WebApiURL"];
-                return new WebApiFacadeFactory(url, "", Logger);
+                return new WebApiFacadeFactory(Logger);
             }
             if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
             {
