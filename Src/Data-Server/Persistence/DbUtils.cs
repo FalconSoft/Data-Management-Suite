@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Management.Common.Security;
 using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace FalconSoft.Data.Server.Persistence
 {
-    public static class MongoDBExtention
+
+    public static class DbUtils
     {
         private static BsonElement ConvertAggregateFunc(string header, string fieldName, AggregatedFunction function)
         {
@@ -53,7 +56,7 @@ namespace FalconSoft.Data.Server.Persistence
             return new BsonDocument(fieldNames.Select(x => new BsonElement(x, 1)));
         }
 
-        public static BsonDocument[] GetPipeline(this AggregatedWorksheetInfo aggregatedWorksheet)
+        public static BsonDocument[] GetPipeline(AggregatedWorksheetInfo aggregatedWorksheet)
         {
             var agregations = new BsonDocument
             {
@@ -75,5 +78,7 @@ namespace FalconSoft.Data.Server.Persistence
             var pipeline = new[] {group, sort};
             return pipeline;
         }
+
+
     }
 }

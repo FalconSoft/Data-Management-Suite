@@ -45,13 +45,13 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName).RemoveAll();
         }
 
-        public DataSourceInfo[] GetAvailableDataSources()
+        public DataSourceInfo[] GetAvailableDataSources(string userId)
         {
             ConnectToDb();
             return _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName).FindAll().ToArray();
         }
 
-        public DataSourceInfo GetDataSourceInfo(string dataSourceProviderString)
+        public DataSourceInfo GetDataSourceInfo(string dataSourceProviderString, string userId)
         {
             ConnectToDb();
             var allds = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName);

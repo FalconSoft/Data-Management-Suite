@@ -142,7 +142,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             {
                 var keyCols = aggregatedWorksheet.GroupByColumns.Select(x => x.Header).ToArray();
                 var result = new List<LiveDataObject>();
-                var collection = _collection.Aggregate(aggregatedWorksheet.GetPipeline()).ResultDocuments;
+                var collection = _collection.Aggregate(DbUtils.GetPipeline(aggregatedWorksheet)).ResultDocuments;
 
                 foreach (var row in collection)
                 {

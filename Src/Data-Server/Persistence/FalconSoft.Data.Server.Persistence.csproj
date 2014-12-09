@@ -53,7 +53,9 @@
     </Compile>
     <Compile Include="ErrorData\ErrorDataPersistence.cs" />
     <Compile Include="MetaData\MetadataPersistence.cs" />
-    <Compile Include="MongoDBExtention.cs" />
+    <Compile Include="DbUtils.cs" />
+    <Compile Include="MongoCollections\BaseMongoCollections.cs" />
+    <Compile Include="MongoCollections\MetaDataMongoCollections.cs" />
     <Compile Include="SearchIndexes\SearchIndexPersistence.cs" />
     <Compile Include="Security\PermissionSecurityPersistance.cs" />
     <Compile Include="Security\SecurityPersistence.cs" />
@@ -63,11 +65,9 @@
     <Compile Include="TemporalData\TemporalDataPersistenceBuffer.cs" />
     <Compile Include="TemporalData\TemporalDataPersistenceTime.cs" />
     <Compile Include="TemporalData\TemporalDataPersistense.cs" />
-    <Compile Include="WorksheetPersistence.cs" />
+    <Compile Include="MetaData\WorksheetPersistence.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="EventsStore\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
       <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>

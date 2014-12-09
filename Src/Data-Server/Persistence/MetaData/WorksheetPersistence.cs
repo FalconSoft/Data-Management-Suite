@@ -7,13 +7,13 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 
-namespace FalconSoft.Data.Server.Persistence
+namespace FalconSoft.Data.Server.Persistence.MetaData
 {
     public class WorksheetPersistence : IWorksheetPersistence
     {
         private readonly string _connectionString;
-        private const string WorksheetInfoCollectionName = "WorksheetInfo";
-        private const string AggregatedWorksheetInfoCollectionName = "AggregatedWorksheetInfo";
+        private const string WorksheetInfoCollectionName = "MetaData_WorksheetInfo";
+        private const string AggregatedWorksheetInfoCollectionName = "MetaData_AggregatedWorksheetInfo";
         private MongoDatabase _mongoDatabase;
 
         public WorksheetPersistence(string connectionString)
@@ -29,7 +29,7 @@ namespace FalconSoft.Data.Server.Persistence
             }
         }
 
-        public WorksheetInfo GetWorksheetInfo(string urn)
+        public WorksheetInfo GetWorksheetInfo(string urn, string userId)
         {
             ConnectToDb();
 
@@ -68,7 +68,7 @@ namespace FalconSoft.Data.Server.Persistence
                                                                   Query.EQ("Category", worksheetUrn.GetCategory())));
         }
 
-        public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn)
+        public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userId)
         {
             ConnectToDb();
             return _mongoDatabase.GetCollection<AggregatedWorksheetInfo>(AggregatedWorksheetInfoCollectionName)
