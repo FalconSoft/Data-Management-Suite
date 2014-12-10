@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -11,33 +12,26 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 {
     public class TemporalDataPersistence : ITemporalDataPersistense
     {
-        private readonly string _connectionString;
         private readonly string _dataSourceProviderString;
         private readonly string _userId;
         private readonly string[] _dbfields = { "RecordKey", "ValidFrom", "ValidTo", "UserId", "_id" };
         private readonly DataSourceInfo _dataSourceInfo;
-        private MongoDatabase _mongoDatabase;
+        private readonly DataMongoCollections _mongoCollections;
+        private readonly MetaDataMongoCollections _metaMongoCollections;
 
-        public TemporalDataPersistence(string connectionString, DataSourceInfo dataSourceInfo, string userId)
+        public TemporalDataPersistence(DataMongoCollections mongoCollections, MetaDataMongoCollections metaMongoCollections, DataSourceInfo dataSourceInfo, string userId)
         {
-            _connectionString = connectionString;
+            _mongoCollections = mongoCollections;
+            _metaMongoCollections = metaMongoCollections;
             _dataSourceProviderString = dataSourceInfo.DataSourcePath;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
         }
 
-        private void ConnectToDb()
-        {
-            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
-            {
-                _mongoDatabase = MongoDatabase.Create(_connectionString);
-            }
-        }
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(string recordKey)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
+            var collection = _mongoCollections.GetHistoryDataCollection(_dataSourceProviderString.ToValidDbString());
             var users = _mongoDatabase.GetCollection<BsonDocument>("Users");
             var cursorData = collection.FindAllAs<BsonDocument>();
             var cursorUser = users.FindAllAs<BsonDocument>();
@@ -64,7 +58,6 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(DateTime timeStamp, string urn)
         {
-            ConnectToDb();
             var collection = _mongoDatabase.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
             var users = _mongoDatabase.GetCollection<BsonDocument>("Users");
             var cursorData = collection.FindAllAs<BsonDocument>();

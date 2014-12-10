@@ -13,28 +13,39 @@ namespace FalconSoft.Data.Server.Persistence.MongoCollections
     {
         private readonly string _connectionString;
         private readonly string _databaseName;
+        private readonly Lazy<MongoClient> _mongoClient;
+        private readonly Lazy<MongoDatabase> _database;
+
         public BaseMongoCollections(string connectionString)
         {
-            _connectionString = connectionString;
-            _databaseName = connectionString.Substring(connectionString.LastIndexOf("/"));
+            connectionString = connectionString.TrimEnd('/');
+            int lastIndex = connectionString.LastIndexOf("/", StringComparison.Ordinal);
+            _connectionString = connectionString.Substring(0, lastIndex);
+            _databaseName = connectionString.Substring(lastIndex + 1);
+            _mongoClient = new Lazy<MongoClient>(() => new MongoClient(_connectionString));
+            _database = new Lazy<MongoDatabase>(() => _mongoClient.Value.GetServer().GetDatabase(_databaseName));
         }
-
-        private MongoClient _mongoClient;
-        private MongoDatabase _database;
 
         protected MongoDatabase GetMongoDatabase()
         {
-            if (_mongoClient != null)
-                _mongoClient = new MongoClient(_connectionString);
-
-            // reconnect if needed
-
-            if (_database == null)
+            if (_database.Value.Server.State != MongoServerState.Connected)
             {
-                _database = _mongoClient.GetServer().GetDatabase(_databaseName);
+                _database.Value.Server.Reconnect();
             }
+            return _database.Value;
+        }
 
-            return _database;
+        public bool EnsureCollectionExists(string collectionName)
+        {
+            if (!GetMongoDatabase().CollectionExists(collectionName))
+            {
+                GetMongoDatabase().CreateCollection(collectionName);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

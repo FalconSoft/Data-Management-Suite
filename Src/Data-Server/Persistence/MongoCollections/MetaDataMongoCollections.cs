@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
 using MongoDB.Driver;
 
@@ -21,10 +22,36 @@ namespace FalconSoft.Data.Server.Persistence.MongoCollections
         {
         }
 
-        public MongoCollection Users
+        public MongoCollection<User> Users
         {
             get { return GetMongoDatabase().GetCollection<User>(UsersCollectionName); }
         }
+
+        public MongoCollection<Permission> Permissions
+        {
+            get { return GetMongoDatabase().GetCollection<Permission>(PermissionsCollectionName); }
+        }
+
+        public MongoCollection<CompanyInfo> Companies
+        {
+            get { return GetMongoDatabase().GetCollection<CompanyInfo>(CompaniesCollectionName); }
+        }
+
+        public MongoCollection<DataSourceInfo> DataSources
+        {
+            get { return GetMongoDatabase().GetCollection<DataSourceInfo>(DataSourceCollectionName); }
+        }
+
+        public MongoCollection<WorksheetInfo> Worksheets
+        {
+            get { return GetMongoDatabase().GetCollection<WorksheetInfo>(WorksheetInfoCollectionName); }
+        }
+
+        public MongoCollection<AggregatedWorksheetInfo> AggregatedWorksheets
+        {
+            get { return GetMongoDatabase().GetCollection<AggregatedWorksheetInfo>(AggregatedWorksheetInfoCollectionName); }
+        }
+
     }
 
 }

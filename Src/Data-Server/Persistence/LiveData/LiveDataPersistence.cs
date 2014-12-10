@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
@@ -16,20 +17,11 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         private readonly MongoCollection<BsonDocument> _collection;
         private readonly ILogger _logger;
 
-        public LiveDataPersistence(string connectionString, string collectionName, ILogger logger)
+        public LiveDataPersistence(DataMongoCollections mongoCollections, string collectionName, ILogger logger)
         {
             _logger = logger;
-            var database = MongoDatabase.Create(connectionString);
-            if (database.CollectionExists(collectionName))
-            {
-                _collection = database.GetCollection(collectionName);
-            }
-            else
-            {
-                database.CreateCollection(collectionName);
-                _collection = database.GetCollection(collectionName);
-                _collection.CreateIndex("RecordKey");
-            }
+            _collection = mongoCollections.GetDataCollection(collectionName);
+            _collection.CreateIndex("RecordKey");
         }
 
         /// <summary>

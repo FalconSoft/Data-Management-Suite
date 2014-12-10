@@ -3,6 +3,7 @@ using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -11,50 +12,33 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
 {
     public class WorksheetPersistence : IWorksheetPersistence
     {
-        private readonly string _connectionString;
-        private const string WorksheetInfoCollectionName = "MetaData_WorksheetInfo";
-        private const string AggregatedWorksheetInfoCollectionName = "MetaData_AggregatedWorksheetInfo";
-        private MongoDatabase _mongoDatabase;
+        private readonly MetaDataMongoCollections _mongoCollections;
 
-        public WorksheetPersistence(string connectionString)
+        public WorksheetPersistence(MetaDataMongoCollections mongoCollections)
         {
-            _connectionString = connectionString;
-        }
-
-        private void ConnectToDb()
-        {
-            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
-            {
-                _mongoDatabase = MongoDatabase.Create(_connectionString);
-            }
+            _mongoCollections = mongoCollections;
         }
 
         public WorksheetInfo GetWorksheetInfo(string urn, string userId)
         {
-            ConnectToDb();
-
-            return _mongoDatabase.GetCollection<WorksheetInfo>(WorksheetInfoCollectionName)
+            return _mongoCollections.Worksheets
                     .FindOne(Query.And(Query.EQ("Name", urn.GetName()),
                                                 Query.EQ("Category", urn.GetCategory())));
         }
 
         public WorksheetInfo[] GetAvailableWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            ConnectToDb();
-            return _mongoDatabase.GetCollection<WorksheetInfo>(WorksheetInfoCollectionName).FindAll().ToArray();
+            return _mongoCollections.Worksheets.FindAll().ToArray();
         }
 
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string userId)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<WorksheetInfo>(WorksheetInfoCollectionName);
-            collection.Save(wsInfo);
+            _mongoCollections.Worksheets.Save(wsInfo);
         }
 
         public WorksheetInfo CreateWorksheetInfo(WorksheetInfo wsInfo, string userId)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<WorksheetInfo>(WorksheetInfoCollectionName);
+            var collection = _mongoCollections.Worksheets;
             wsInfo.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(wsInfo);
             return collection.FindOneAs<WorksheetInfo>(Query.And(Query.EQ("Name", wsInfo.DataSourcePath.GetName()),
@@ -63,36 +47,30 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
 
         public void DeleteWorksheetInfo(string worksheetUrn, string userId)
         {
-            ConnectToDb();
-            _mongoDatabase.GetCollection(WorksheetInfoCollectionName).Remove(Query.And(Query.EQ("Name", worksheetUrn.GetName()),
+            _mongoCollections.Worksheets.Remove(Query.And(Query.EQ("Name", worksheetUrn.GetName()),
                                                                   Query.EQ("Category", worksheetUrn.GetCategory())));
         }
 
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userId)
         {
-            ConnectToDb();
-            return _mongoDatabase.GetCollection<AggregatedWorksheetInfo>(AggregatedWorksheetInfoCollectionName)
+            return _mongoCollections.AggregatedWorksheets
                     .FindOne(Query.And(Query.EQ("Name", worksheetUrn.GetName()),
                                                 Query.EQ("Category", worksheetUrn.GetCategory())));
         }
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            ConnectToDb();
-            return _mongoDatabase.GetCollection<AggregatedWorksheetInfo>(AggregatedWorksheetInfoCollectionName).FindAll().ToArray();
+            return _mongoCollections.AggregatedWorksheets.FindAll().ToArray();
         }
 
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userId)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<AggregatedWorksheetInfo>(AggregatedWorksheetInfoCollectionName);
-            collection.Save(wsInfo);
+            _mongoCollections.AggregatedWorksheets.Save(wsInfo);
         }
 
         public AggregatedWorksheetInfo CreateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userId)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<AggregatedWorksheetInfo>(AggregatedWorksheetInfoCollectionName);
+            var collection = _mongoCollections.AggregatedWorksheets;
             wsInfo.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(wsInfo);
             return collection.FindOneAs<AggregatedWorksheetInfo>(Query.And(Query.EQ("Name", wsInfo.DataSourcePath.GetName()),
@@ -101,8 +79,7 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
 
         public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userId)
         {
-            ConnectToDb();
-            _mongoDatabase.GetCollection(AggregatedWorksheetInfoCollectionName).Remove(Query.And(Query.EQ("Name", worksheetUrn.GetName()),
+            _mongoCollections.AggregatedWorksheets.Remove(Query.And(Query.EQ("Name", worksheetUrn.GetName()),
                                                                   Query.EQ("Category", worksheetUrn.GetCategory())));
         }
     }

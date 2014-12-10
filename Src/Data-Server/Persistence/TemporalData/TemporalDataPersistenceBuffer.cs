@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
@@ -19,12 +20,10 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         private const string BsonId = "_id";
         private const string BsonLoginName = "@LoginName";
 
-        private readonly string _connectionString;
         private readonly string _dataSourceProviderString;
         private readonly string _userId;
         private readonly string[] _dbfields = { "RecordKey", BsonTimeStamp, BsonUserId, BsonId, BsonRevisionId };
         private readonly DataSourceInfo _dataSourceInfo;
-        private MongoDatabase _mongoDatabase;
         private MongoCollection<BsonDocument> _collection;
         private MongoCollection<BsonDocument> _collectionRevision; 
         //BUFFER
@@ -32,11 +31,11 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         //ROLLOVER
         private readonly bool _rollover = false;
 
+        private readonly DataMongoCollections _mongoCollections;
 
-
-        public TemporalDataPersistenceBuffer(string connectionString, DataSourceInfo dataSourceInfo, string userId, int buffer, bool rollover = false)
+        public TemporalDataPersistenceBuffer(DataMongoCollections mongoCollections, DataSourceInfo dataSourceInfo, string userId, int buffer, bool rollover = false)
         {
-            _connectionString = connectionString;
+            _mongoCollections = mongoCollections;
             _dataSourceProviderString = dataSourceInfo.DataSourcePath;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
@@ -47,24 +46,11 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         private void ConnectToDb()
         {
-            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
-            {
-                _mongoDatabase = MongoDatabase.Create(_connectionString);
-            }
-            if (_mongoDatabase.CollectionExists(_dataSourceProviderString.ToValidDbString() + "_History"))
-            {
-                _collection = _mongoDatabase.GetCollection(_dataSourceProviderString.ToValidDbString() + "_History");
-                _collectionRevision = _mongoDatabase.GetCollection("Revisions"); 
-                _collectionRevision.CreateIndex(new[] { BsonId });
-            }
-            else
-            {
-                _mongoDatabase.CreateCollection(_dataSourceProviderString.ToValidDbString() + "_History");
-                _collection = _mongoDatabase.GetCollection(_dataSourceProviderString.ToValidDbString() + "_History");
-                _collection.CreateIndex("RecordKey", "Current");
-                _collectionRevision = _mongoDatabase.GetCollection("Revisions");
-                _collectionRevision.CreateIndex(new[] {BsonId });
-            }
+            _collection = _mongoCollections.GetHistoryDataCollection(_dataSourceProviderString.ToValidDbString());
+            _collectionRevision = _mongoCollections.Revisions;
+
+            _collectionRevision.CreateIndex(new[] { BsonId });
+            _collection.CreateIndex("RecordKey", "Current");
         }
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(string recordKey)
@@ -99,7 +85,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(DateTime timeStamp, string dataSourcePath)
         {
-            var cursorData = _mongoDatabase.GetCollection(dataSourcePath.ToValidDbString() + "_History").FindAllAs<BsonDocument>();
+            var cursorData = _mongoCollections.GetHistoryDataCollection(dataSourcePath.ToValidDbString()).FindAllAs<BsonDocument>();
             var list = new List<Dictionary<string, object>>();
             foreach (var cdata in cursorData)
             {
@@ -115,7 +101,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetDataByLTEDate(DateTime timeStamp, string dataSourcePath)
         {
-            var cursorData = _mongoDatabase.GetCollection(dataSourcePath.ToValidDbString() + "_History").FindAllAs<BsonDocument>();
+            var cursorData = _mongoCollections.GetHistoryDataCollection(dataSourcePath.ToValidDbString()).FindAllAs<BsonDocument>();
             var resultData = new List<Dictionary<string, object>>();
             foreach (var cdata in cursorData)
             {
@@ -182,14 +168,14 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         public IEnumerable<Dictionary<string, object>> GetRevisions()
         {
             var query = Query.EQ("Urn", _dataSourceInfo.DataSourcePath);
-            var collectionRevision = _mongoDatabase.GetCollection("Revisions");
+            var collectionRevision = _mongoCollections.Revisions;
             var revisions = collectionRevision.FindAs<BsonDocument>(query).SetFields(Fields.Exclude("Urn")); //"_id", "RevisionId" 
             return revisions.Select(revision => revision.ToDictionary(k => k.Name, v => (object) v.Value.ToString())).ToList();
         }
 
         public object AddRevision(string urn,string userId)
         {
-            var revisions = _mongoDatabase.GetCollection("Revisions");
+            var revisions = _mongoCollections.Revisions;
             var revisionId = ObjectId.GenerateNewId();
             var bson = new BsonDocument
             {
@@ -272,20 +258,20 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public void SaveTagInfo(TagInfo tagInfo)
         {
-            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
+            var collection = _mongoCollections.TagInfos;
             collection.Insert(tagInfo);
         }
 
         public void RemoveTagInfo(TagInfo tagInfo)
         {
-            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
+            var collection = _mongoCollections.TagInfos;
             var query = Query<TagInfo>.EQ(t => t.TagName, tagInfo.TagName);
             collection.Remove(query);
         }
 
         public IEnumerable<TagInfo> GeTagInfos()
         {
-            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
+            var collection = _mongoCollections.TagInfos;
             return collection.FindAll().SetFields(Fields.Exclude(BsonId)).ToList();
         }
 

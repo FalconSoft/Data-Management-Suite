@@ -13,6 +13,7 @@ using FalconSoft.Data.Server.Persistence;
 using FalconSoft.Data.Server.Persistence.ErrorData;
 using FalconSoft.Data.Server.Persistence.LiveData;
 using FalconSoft.Data.Server.Persistence.MetaData;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using FalconSoft.Data.Server.Persistence.SearchIndexes;
 using FalconSoft.Data.Server.Persistence.Security;
 using FalconSoft.Data.Server.Persistence.TemporalData;
@@ -94,6 +95,27 @@ namespace FalconSoft.Data.Server
         private static ILogger _logger;
 
         private static ServerInfo _serverInfo;
+
+        private static MetaDataMongoCollections _metaDbMongoCollections;
+        
+        private static DataMongoCollections _mongoCollections;
+        
+        public static DataMongoCollections DataMongoCollections
+        {
+            get
+            {
+                return _mongoCollections ?? (_mongoCollections = new DataMongoCollections(_persistenceDataConnectionString));
+            }
+        }
+
+            
+        public static MetaDataMongoCollections MetaDbMongoCollections
+        {
+            get
+            {
+                return _metaDbMongoCollections ?? (_metaDbMongoCollections = new MetaDataMongoCollections(_metaDataPersistenceConnectionString));
+            }
+        }
 
         public static IMessageBus MessageBus
         {
@@ -219,7 +241,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _worksheetsPersistence ??
-                       (_worksheetsPersistence = new WorksheetPersistence(_metaDataPersistenceConnectionString));
+                       (_worksheetsPersistence = new WorksheetPersistence(MetaDbMongoCollections));
             }
         }
 
@@ -228,7 +250,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 // TODO : this has to move to separate method and user should be able to specify specific connection string for each dataprovider or use default one 
-                return _liveDataPersistenceFactory ?? (_liveDataPersistenceFactory = s => new LiveDataPersistence(_persistenceDataConnectionString, s.GetName(),Logger));
+                return _liveDataPersistenceFactory ?? (_liveDataPersistenceFactory = s => new LiveDataPersistence(DataMongoCollections, s.GetName(),Logger));
             }
         }
 
@@ -286,7 +308,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _securityPersistence ??
-                       (_securityPersistence = new SecurityPersistence(_persistenceDataConnectionString));
+                       (_securityPersistence = new SecurityPersistence(MetaDbMongoCollections));
             }
         }
 
@@ -295,7 +317,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _permissionSecurityPersistance ??
-                       (_permissionSecurityPersistance = new PermissionSecurityPersistance(_persistenceDataConnectionString));
+                       (_permissionSecurityPersistance = new PermissionSecurityPersistance(MetaDbMongoCollections));
             }
         }
 
@@ -313,7 +335,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _metaDataPersistence ??
-                       (_metaDataPersistence = new MetaDataPersistence(_metaDataPersistenceConnectionString));
+                       (_metaDataPersistence = new MetaDataPersistence(MetaDbMongoCollections, DataMongoCollections));
             }
         }
 
