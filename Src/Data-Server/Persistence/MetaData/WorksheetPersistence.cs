@@ -14,6 +14,17 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
     {
         private readonly MetaDataMongoCollections _mongoCollections;
 
+        private string GetCategoryPart(string dataSourceUrn)
+        {
+            return dataSourceUrn.Split('\\').First();
+        }
+
+        private string GetNamePart(string dataSourceUrn)
+        {
+            return dataSourceUrn.Split('\\').Last();
+        }
+
+        
         public WorksheetPersistence(MetaDataMongoCollections mongoCollections)
         {
             _mongoCollections = mongoCollections;
@@ -22,8 +33,8 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
         public WorksheetInfo GetWorksheetInfo(string urn, string userId)
         {
             return _mongoCollections.Worksheets
-                    .FindOne(Query.And(Query.EQ("Name", urn.GetName()),
-                                                Query.EQ("Category", urn.GetCategory())));
+                    .FindOne(Query.And(Query.EQ("Name", GetNamePart(urn)),
+                                                Query.EQ("Category", GetCategoryPart(urn))));
         }
 
         public WorksheetInfo[] GetAvailableWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
@@ -41,21 +52,21 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             var collection = _mongoCollections.Worksheets;
             wsInfo.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(wsInfo);
-            return collection.FindOneAs<WorksheetInfo>(Query.And(Query.EQ("Name", wsInfo.DataSourcePath.GetName()),
-                                                                  Query.EQ("Category", wsInfo.DataSourcePath.GetCategory())));
+            return collection.FindOneAs<WorksheetInfo>(Query.And(Query.EQ("Name", GetNamePart(wsInfo.DataSourcePath)),
+                                                                  Query.EQ("Category", GetCategoryPart(wsInfo.DataSourcePath))));
         }
 
         public void DeleteWorksheetInfo(string worksheetUrn, string userId)
         {
-            _mongoCollections.Worksheets.Remove(Query.And(Query.EQ("Name", worksheetUrn.GetName()),
-                                                                  Query.EQ("Category", worksheetUrn.GetCategory())));
+            _mongoCollections.Worksheets.Remove(Query.And(Query.EQ("Name", GetNamePart(worksheetUrn)),
+                                                                  Query.EQ("Category", GetCategoryPart(worksheetUrn))));
         }
 
         public AggregatedWorksheetInfo GetAggregatedWorksheetInfo(string worksheetUrn, string userId)
         {
             return _mongoCollections.AggregatedWorksheets
-                    .FindOne(Query.And(Query.EQ("Name", worksheetUrn.GetName()),
-                                                Query.EQ("Category", worksheetUrn.GetCategory())));
+                    .FindOne(Query.And(Query.EQ("Name", GetNamePart(worksheetUrn)),
+                                                Query.EQ("Category", GetCategoryPart(worksheetUrn))));
         }
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
@@ -73,14 +84,14 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             var collection = _mongoCollections.AggregatedWorksheets;
             wsInfo.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(wsInfo);
-            return collection.FindOneAs<AggregatedWorksheetInfo>(Query.And(Query.EQ("Name", wsInfo.DataSourcePath.GetName()),
-                                                                  Query.EQ("Category", wsInfo.DataSourcePath.GetCategory())));
+            return collection.FindOneAs<AggregatedWorksheetInfo>(Query.And(Query.EQ("Name", GetNamePart(wsInfo.DataSourcePath)),
+                                                                  Query.EQ("Category",  GetCategoryPart(wsInfo.DataSourcePath))));
         }
 
         public void DeleteAggregatedWorksheetInfo(string worksheetUrn, string userId)
         {
-            _mongoCollections.AggregatedWorksheets.Remove(Query.And(Query.EQ("Name", worksheetUrn.GetName()),
-                                                                  Query.EQ("Category", worksheetUrn.GetCategory())));
+            _mongoCollections.AggregatedWorksheets.Remove(Query.And(Query.EQ("Name", GetNamePart(worksheetUrn)),
+                                                                  Query.EQ("Category", GetCategoryPart(worksheetUrn))));
         }
     }
 }

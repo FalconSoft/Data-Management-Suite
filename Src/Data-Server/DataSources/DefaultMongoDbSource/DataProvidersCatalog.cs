@@ -11,26 +11,23 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 {
     public class DataProvidersCatalog : IDataProvidersCatalog
     {
-        private const string DataSourceCollectionName = "DataSourceInfo";
-        private readonly string _connectionString;
-        private MongoDatabase _mongoDatabase;
+        private readonly MongoDbCollections _mongoCollections;
 
         public DataProvidersCatalog(string connectionString)
         {
-            _connectionString = connectionString;
+            _mongoCollections = new MongoDbCollections(connectionString);
         }
 
         public IEnumerable<DataProvidersContext> GetProviders()
         {
-            ConnectToDb();
-            var collectionDs = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName).FindAll().ToArray();
+            var collectionDs = _mongoCollections.TableInfos.FindAll().ToArray();
             var listDataProviders = new List<DataProvidersContext>();
 
             foreach (var dataSource in collectionDs)
             {
                 IDataProvider dataProvider;
                 if (string.IsNullOrEmpty(dataSource.Description))
-                    dataProvider = new DataProvider(_connectionString, dataSource);
+                    dataProvider = new DataProvider(_mongoCollections, dataSource);
                 else
                 {
                     dataProvider = new PythonDataProvider(dataSource);
@@ -41,7 +38,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
                         Urn = dataSource.DataSourcePath,
                         DataProvider = dataProvider,
                         ProviderInfo = dataSource,
-                        MetaDataProvider = new MetaDataProvider(_connectionString)
+                        MetaDataProvider = new MetaDataProvider(_mongoCollections)
                     };
 
                 var metaDataProvider = dataProviderContext.MetaDataProvider as MetaDataProvider;
@@ -57,22 +54,13 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
         public DataSourceInfo CreateDataSource(DataSourceInfo dataSource, string userId)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName);
+            var collection = _mongoCollections.TableInfos;
             dataSource.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(dataSource);
 
-            var dataCollectionName = dataSource.DataSourcePath.ToValidDbString() + "_Data";
-            if (!_mongoDatabase.CollectionExists(dataCollectionName))
-                _mongoDatabase.CreateCollection(dataCollectionName);
-
-            var historyCollectionName = dataSource.DataSourcePath.ToValidDbString() + "_History";
-            if (!_mongoDatabase.CollectionExists(historyCollectionName))
-                _mongoDatabase.CreateCollection(historyCollectionName);
-
             IDataProvider dataProvider;
             if (string.IsNullOrEmpty(dataSource.Description))
-                dataProvider = new DataProvider(_connectionString, dataSource);
+                dataProvider = new DataProvider(_mongoCollections, dataSource);
             else
             {
                 dataProvider = new PythonDataProvider(dataSource);
@@ -85,36 +73,28 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
                     Urn = dataSource.DataSourcePath,
                     DataProvider = dataProvider,
                     ProviderInfo = dataSource,
-                    MetaDataProvider = new MetaDataProvider(_connectionString)
+                    MetaDataProvider = new MetaDataProvider(_mongoCollections)
                 };
 
             var metaDataProvider = dataProviderContext.MetaDataProvider as MetaDataProvider;
             if (metaDataProvider != null & (dataProvider is DataProvider)) metaDataProvider.OnDataSourceInfoChanged = (dataProvider as DataProvider).UpdateSourceInfo;
 
             DataProviderAdded(this, dataProviderContext);
-            return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
-                                                                 Query.EQ("Category", dataSource.DataSourcePath.GetCategory())));
+            return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", Utils.GetNamePart(dataSource.DataSourcePath)),
+                                                                 Query.EQ("Category", Utils.GetCategoryPart(dataSource.DataSourcePath))));
         }
 
-        public void RemoveDataSource(string providerString)
+        public void RemoveDataSource(string dataSourceProviderString)
         {
-            ConnectToDb();
-            _mongoDatabase.GetCollection(providerString.ToValidDbString() + "_Data")
-              .Drop();
-            _mongoDatabase.GetCollection(providerString.ToValidDbString() + "_History")
-              .Drop();
-            _mongoDatabase.GetCollection(DataSourceCollectionName)
-              .Remove(Query.And(Query.EQ("Name", providerString.GetName()),
-                                Query.EQ("Category", providerString.GetCategory())));
-            DataProviderRemoved(this, new StringEventArg(providerString));
+            _mongoCollections.GetDataCollection(dataSourceProviderString)
+                           .Drop();
+            _mongoCollections.GetHistoryDataCollection(dataSourceProviderString)
+                          .Drop();
+            _mongoCollections.TableInfos
+                          .Remove(Query.And(Query.EQ("Name", Utils.GetNamePart(dataSourceProviderString)),
+                                            Query.EQ("Category", Utils.GetCategoryPart(dataSourceProviderString))));
+            DataProviderRemoved(this, new StringEventArg(dataSourceProviderString));
         }
 
-        private void ConnectToDb()
-        {
-            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
-            {
-                _mongoDatabase = MongoDatabase.Create(_connectionString);
-            }
-        }
     }
 }

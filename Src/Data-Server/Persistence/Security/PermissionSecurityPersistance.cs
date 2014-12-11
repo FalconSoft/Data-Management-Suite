@@ -17,32 +17,8 @@ namespace FalconSoft.Data.Server.Persistence.Security
         public PermissionSecurityPersistance(MetaDataMongoCollections metaMongoCollections)
         {
             _metaMongoCollections = metaMongoCollections;
-
-            if (_metaMongoCollections.EnsureCollectionExists(_metaMongoCollections.Permissions.Name))
-            {
-                CreatePowerAdmin("Admin", "Admin");
-                CreatePowerAdmin("consoleClient", "console");
-            }
         }
 
-        private void CreatePowerAdmin(string userName, string password)
-        {
-            var id = ObjectId.GenerateNewId().ToString();
-            _metaMongoCollections.Users.Insert(new User
-            {
-                Id = id,
-                LoginName = userName,
-                Password = password
-            });
-
-            _metaMongoCollections.Permissions.Insert(new Permission
-            {
-                Id = ObjectId.GenerateNewId().ToString(),
-                UserId = id,
-                UserRole = UserRole.Administrator,
-                DataSourceAccessPermissions = new Dictionary<string, DataSourceAccessPermission>()
-            });
-        }
         
       
         public Permission GetUserPermissions(string userToken)

@@ -18,10 +18,41 @@ namespace FalconSoft.Data.Server.Persistence.Security
             _metaDbMongoCollections = metaDbMongoCollections;
         }
 
-
-        public KeyValuePair<bool,string> Authenticate(string login, string password)
+        private void CreatePowerAdmin(string companyId, string userName, string password)
         {
-            var user = _metaDbMongoCollections.Users.FindOneAs<User>(Query<User>.EQ(u => u.LoginName, login));
+            var id = ObjectId.GenerateNewId().ToString();
+            _metaDbMongoCollections.Users.Insert(new User
+            {
+                Id = id,
+                LoginName = userName,
+                Password = password,
+                CompanyId = companyId
+            });
+
+            _metaDbMongoCollections.Permissions.Insert(new Permission
+            {
+                Id = ObjectId.GenerateNewId().ToString(),
+                UserId = id,
+                UserRole = UserRole.Administrator,
+                DataSourceAccessPermissions = new Dictionary<string, DataSourceAccessPermission>()
+            });
+        }
+
+
+        public KeyValuePair<bool,string> Authenticate(string companyId, string login, string password)
+        {
+            var company = _metaDbMongoCollections.Companies.FindOneAs<CompanyInfo>(Query<CompanyInfo>.EQ(c => c.CompanyId, companyId));
+            if (company == null) // creates new company and adds default power user
+            {
+                _metaDbMongoCollections.Companies.Insert(new CompanyInfo { CompanyId = companyId });
+                CreatePowerAdmin(companyId, login, password);
+            }
+
+            var user = _metaDbMongoCollections.Users.FindOneAs<User>(
+                Query.And(
+                    Query<User>.EQ(u => u.CompanyId, companyId),
+                    Query<User>.EQ(u => u.LoginName, login)));
+
             if (user == null) return new KeyValuePair<bool, string>(false, "User Login is Incorrect");
             return user.Password.Equals(password) 
                 ? new KeyValuePair<bool, string>(true,user.Id) 

@@ -55,7 +55,7 @@
     <Compile Include="MetaData\MetadataPersistence.cs" />
     <Compile Include="DbUtils.cs" />
     <Compile Include="MongoCollections\BaseMongoCollections.cs" />
-    <Compile Include="MongoCollections\DataMongoCollections.cs" />
+    <Compile Include="MongoCollections\LiveDataMongoCollections.cs" />
     <Compile Include="MongoCollections\MetaDataMongoCollections.cs" />
     <Compile Include="SearchIndexes\SearchIndexPersistence.cs" />
     <Compile Include="Security\PermissionSecurityPersistance.cs" />

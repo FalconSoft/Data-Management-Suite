@@ -31,9 +31,9 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         //ROLLOVER
         private readonly bool _rollover = false;
 
-        private readonly DataMongoCollections _mongoCollections;
+        private readonly LiveDataMongoCollections _mongoCollections;
 
-        public TemporalDataPersistenceBuffer(DataMongoCollections mongoCollections, DataSourceInfo dataSourceInfo, string userId, int buffer, bool rollover = false)
+        public TemporalDataPersistenceBuffer(LiveDataMongoCollections mongoCollections, DataSourceInfo dataSourceInfo, string userId, int buffer, bool rollover = false)
         {
             _mongoCollections = mongoCollections;
             _dataSourceProviderString = dataSourceInfo.DataSourcePath;
@@ -46,7 +46,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         private void ConnectToDb()
         {
-            _collection = _mongoCollections.GetHistoryDataCollection(_dataSourceProviderString.ToValidDbString());
+            _collection = _mongoCollections.GetHistoryDataCollection(_dataSourceProviderString);
             _collectionRevision = _mongoCollections.Revisions;
 
             _collectionRevision.CreateIndex(new[] { BsonId });
@@ -85,7 +85,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(DateTime timeStamp, string dataSourcePath)
         {
-            var cursorData = _mongoCollections.GetHistoryDataCollection(dataSourcePath.ToValidDbString()).FindAllAs<BsonDocument>();
+            var cursorData = _mongoCollections.GetHistoryDataCollection(dataSourcePath).FindAllAs<BsonDocument>();
             var list = new List<Dictionary<string, object>>();
             foreach (var cdata in cursorData)
             {
@@ -101,7 +101,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetDataByLTEDate(DateTime timeStamp, string dataSourcePath)
         {
-            var cursorData = _mongoCollections.GetHistoryDataCollection(dataSourcePath.ToValidDbString()).FindAllAs<BsonDocument>();
+            var cursorData = _mongoCollections.GetHistoryDataCollection(dataSourcePath).FindAllAs<BsonDocument>();
             var resultData = new List<Dictionary<string, object>>();
             foreach (var cdata in cursorData)
             {

@@ -12,16 +12,23 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
     public class MetaDataPersistence : IMetaDataPersistence
     {
         private readonly MetaDataMongoCollections _metaMongoCollections;
-        private readonly DataMongoCollections _mongoCollections;
+        private readonly LiveDataMongoCollections _mongoCollections;
 
+        private string GetCategoryPart(string dataSourceUrn)
+        {
+            return dataSourceUrn.Split('\\').First();
+        }
 
-        public MetaDataPersistence(MetaDataMongoCollections metaMongoCollections, DataMongoCollections mongoCollections)
+        private string GetNamePart(string dataSourceUrn)
+        {
+            return dataSourceUrn.Split('\\').Last();
+        }
+
+        public MetaDataPersistence(MetaDataMongoCollections metaMongoCollections, LiveDataMongoCollections mongoCollections)
         {
             _metaMongoCollections = metaMongoCollections;
             _mongoCollections = mongoCollections;
         }
-
-
 
         public void ClearAllMetaData()
         {
@@ -36,24 +43,24 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
         public DataSourceInfo GetDataSourceInfo(string dataSourceProviderString, string userId)
         {
             var allds = _metaMongoCollections.DataSources;
-            return allds.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSourceProviderString.GetName()),
-                                       Query.EQ("Category", dataSourceProviderString.GetCategory())));
+            return allds.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", GetNamePart(dataSourceProviderString)),
+                                       Query.EQ("Category", GetCategoryPart(dataSourceProviderString))));
         }
 
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceProviderString, string userId)
         {
             var collection = _metaMongoCollections.DataSources;
-            var oldDs = collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", oldDataSourceProviderString.GetName()),
-                                                                       Query.EQ("Category", oldDataSourceProviderString.GetCategory())));
+            var oldDs = collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", GetNamePart(oldDataSourceProviderString)),
+                                                                       Query.EQ("Category", GetCategoryPart(oldDataSourceProviderString))));
             var childDataSources = oldDataSourceProviderString.GetChildDataSources(collection.FindAllAs<DataSourceInfo>().ToArray());
             if (dataSource.DataSourcePath != oldDs.DataSourcePath)
             {
-                _mongoCollections.RenameDataCollection(oldDs.DataSourcePath.ToValidDbString(), dataSource.DataSourcePath.ToValidDbString());
-                _mongoCollections.RenameHistoryDataCollection(oldDs.DataSourcePath.ToValidDbString(), dataSource.DataSourcePath.ToValidDbString());
+                _mongoCollections.RenameDataCollection(oldDs.DataSourcePath, dataSource.DataSourcePath);
+                _mongoCollections.RenameHistoryDataCollection(oldDs.DataSourcePath, dataSource.DataSourcePath);
             }
 
-            var dataCollection = _mongoCollections.GetDataCollection(dataSource.DataSourcePath.ToValidDbString());
-            var historyCollection = _mongoCollections.GetHistoryDataCollection(dataSource.DataSourcePath.ToValidDbString());
+            var dataCollection = _mongoCollections.GetDataCollection(dataSource.DataSourcePath);
+            var historyCollection = _mongoCollections.GetHistoryDataCollection(dataSource.DataSourcePath);
             //IF NEW FIELDS ADDED  (ONLY)  
             var addedfields = dataSource.Fields.Keys.Except(oldDs.Fields.Keys).ToList();
             foreach (var addedfield in addedfields)
@@ -75,8 +82,8 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             //WE NEED TO MODIFY ALL CHILD DATASOURCES
             foreach (var childDataSource in childDataSources)
             {
-                var childDataCollection = _mongoCollections.GetDataCollection(childDataSource.DataSourcePath.ToValidDbString());
-                var childHistoryCollection = _mongoCollections.GetHistoryDataCollection(childDataSource.DataSourcePath.ToValidDbString());
+                var childDataCollection = _mongoCollections.GetDataCollection(childDataSource.DataSourcePath);
+                var childHistoryCollection = _mongoCollections.GetHistoryDataCollection(childDataSource.DataSourcePath);
 
                 foreach (var addedfield in addedfields)
                 {
@@ -109,16 +116,16 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             var collection = _metaMongoCollections.DataSources;
             dataSource.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(dataSource);
-            return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
-                                                                  Query.EQ("Category", dataSource.DataSourcePath.GetCategory())));
+            return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", GetNamePart(dataSource.DataSourcePath)),
+                                                                  Query.EQ("Category", GetCategoryPart(dataSource.DataSourcePath))));
         }
 
         public void DeleteDataSourceInfo(string dataSourceProviderString, string userId)
         {
-            _mongoCollections.GetDataCollection(dataSourceProviderString.ToValidDbString()).Drop();
-            _mongoCollections.GetHistoryDataCollection(dataSourceProviderString.ToValidDbString()).Drop();
-            _metaMongoCollections.DataSources.Remove(Query.And(Query.EQ("Name", dataSourceProviderString.GetName()),
-                                                                                    Query.EQ("Category", dataSourceProviderString.GetCategory())));
+            _mongoCollections.GetDataCollection(dataSourceProviderString).Drop();
+            _mongoCollections.GetHistoryDataCollection(dataSourceProviderString).Drop();
+            _metaMongoCollections.DataSources.Remove(Query.And(Query.EQ("Name", GetNamePart(dataSourceProviderString)),
+                                                                                    Query.EQ("Category", GetCategoryPart(dataSourceProviderString))));
         }
     }
 }

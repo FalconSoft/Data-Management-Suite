@@ -17,7 +17,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         private readonly MongoCollection<BsonDocument> _collection;
         private readonly ILogger _logger;
 
-        public LiveDataPersistence(DataMongoCollections mongoCollections, string collectionName, ILogger logger)
+        public LiveDataPersistence(LiveDataMongoCollections mongoCollections, string collectionName, ILogger logger)
         {
             _logger = logger;
             _collection = mongoCollections.GetDataCollection(collectionName);
