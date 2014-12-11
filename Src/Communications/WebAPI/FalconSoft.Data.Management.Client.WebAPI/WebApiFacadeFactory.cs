@@ -6,6 +6,7 @@ using System.Security;
 using FalconSoft.Data.Management.Client.WebAPI.Facades;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
 
 namespace FalconSoft.Data.Management.Client.WebAPI
@@ -77,21 +78,21 @@ namespace FalconSoft.Data.Management.Client.WebAPI
         {
         }
 
-        public User Authenticate(string url, string companyName, string userName, string password)
+        public AuthenticationResult Authenticate(string url, string companyName, string userName, string password)
         {
             _url = url;
             var security = CreateSecurityFacade();
 
-            var user = security.Authenticate(companyName, userName,  password);
+            var authResult = security.Authenticate(companyName, userName,  password);
 
-            if (!string.IsNullOrWhiteSpace(user.Id))
+            if (authResult.IsAuthenticated())
             {
-                var userSettings = security.GetUserSettings(user.Id);
+                var userSettings = security.GetUserSettings(authResult.User.Id);
                 _pushUrl = userSettings["pushUrl"];
-                return user;
+                return authResult;
             }
 
-            return user;
+            return authResult;
         }
 
     }

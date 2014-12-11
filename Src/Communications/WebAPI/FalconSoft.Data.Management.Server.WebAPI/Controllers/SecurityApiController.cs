@@ -21,22 +21,14 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
         }
 
         [HttpGet]
-        public User Authenticate([FromUri]string companyName, [FromUri]string userName, [FromUri]string password)
+        public AuthenticationResult Authenticate([FromUri]string companyName, [FromUri]string userName, [FromUri]string password)
         {
             _logger.Debug("Call SecurityApiController Authenticate");
-            try
-            {
-                return _securityFacade.Authenticate(companyName, userName, password ?? string.Empty);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("Authenticate failed ", ex);
-                return new User{Id = string.Empty};
-            }
+            return _securityFacade.Authenticate(companyName, userName, password ?? string.Empty);
         }
 
         [HttpGet]
-        public List<User> GetUsers([FromUri]string userToken)
+        public User[] GetUsers([FromUri]string userToken)
         {
             _logger.Debug("Call SecurityApiController GetUsers");
             try
@@ -46,7 +38,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             catch (Exception ex)
             {
                 _logger.Error("GetUsers failed ", ex);
-                return new List<User>();
+                return new User[0];
             }
         }
 

@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
+using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
 using FalconSoft.Data.Server.Persistence.MongoCollections;
 using MongoDB.Bson;
@@ -11,10 +13,12 @@ namespace FalconSoft.Data.Server.Persistence.Security
 {
     public class SecurityPersistence : ISecurityPersistence
     {
+        private readonly ILogger _logger;
         private readonly MetaDataMongoCollections _metaDbMongoCollections;
 
-        public SecurityPersistence(MetaDataMongoCollections metaDbMongoCollections)
+        public SecurityPersistence(MetaDataMongoCollections metaDbMongoCollections, ILogger logger)
         {
+            _logger = logger;
             _metaDbMongoCollections = metaDbMongoCollections;
         }
 
@@ -38,14 +42,23 @@ namespace FalconSoft.Data.Server.Persistence.Security
             });
         }
 
-
-        public KeyValuePair<bool,string> Authenticate(string companyId, string login, string password)
+        public AuthenticationResult Authenticate(string companyId, string login, string password)
         {
+            var result = new AuthenticationResult{ Status = AuthenticationStatus.Success };
             var company = _metaDbMongoCollections.Companies.FindOneAs<CompanyInfo>(Query<CompanyInfo>.EQ(c => c.CompanyId, companyId));
             if (company == null) // creates new company and adds default power user
             {
-                _metaDbMongoCollections.Companies.Insert(new CompanyInfo { CompanyId = companyId });
+                _metaDbMongoCollections.Companies.Insert(new CompanyInfo
+                    {
+                        Id = ObjectId.GenerateNewId().ToString(), 
+                        CompanyId = companyId, 
+                        FullCompanyName = companyId,
+                        Subscribtion = SubscribtionTypes.FreeTrial,
+                        CreatedAt = DateTime.Now
+                    });                
                 CreatePowerAdmin(companyId, login, password);
+                _logger.InfoFormat("=> New company '{0}' was created and new user '{1}' was added", companyId, login);
+                result.Status = AuthenticationStatus.SuccessFirstTimeUser;
             }
 
             var user = _metaDbMongoCollections.Users.FindOneAs<User>(
@@ -53,10 +66,22 @@ namespace FalconSoft.Data.Server.Persistence.Security
                     Query<User>.EQ(u => u.CompanyId, companyId),
                     Query<User>.EQ(u => u.LoginName, login)));
 
-            if (user == null) return new KeyValuePair<bool, string>(false, "User Login is Incorrect");
-            return user.Password.Equals(password) 
-                ? new KeyValuePair<bool, string>(true,user.Id) 
-                : new KeyValuePair<bool, string>(false, "Password is incorrect");
+            if (user == null)
+            {
+                result.Status = AuthenticationStatus.IncorrectLogin;
+                _logger.InfoFormat("Incorrect Login {0}\\{1}", companyId, login);
+            }
+            else if(user.Password != password) // do encryption here
+            {
+                _logger.InfoFormat("Wrong password: {0}\\{1}", companyId, login);
+                result.Status = AuthenticationStatus.WrongPassword;
+            }
+            else
+            {
+                result.User = user;
+            }
+
+            return result;
         }
 
         public User GetUser(string login)
@@ -69,9 +94,10 @@ namespace FalconSoft.Data.Server.Persistence.Security
             return _metaDbMongoCollections.Users.FindOneAs<User>(Query<User>.EQ(u => u.Id, token));
         }
 
-        public List<User> GetUsers(string userToken)
+        public User[] GetUsers(string userId)
         {
-            return _metaDbMongoCollections.Users.FindAllAs<User>().ToList();
+            var companyId = _metaDbMongoCollections.GetCompanyId(userId);
+            return _metaDbMongoCollections.Users.FindAs<User>(Query<User>.EQ(d => d.CompanyId, companyId)).ToArray();
         }
 
         public string SaveNewUser(User user, UserRole userRole, string userToken)

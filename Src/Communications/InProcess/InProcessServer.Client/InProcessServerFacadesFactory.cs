@@ -1,5 +1,6 @@
 ﻿using System;
 using FalconSoft.Data.Management.Common.Facades;
+using FalconSoft.Data.Management.Common.Security;
 using FalconSoft.Data.Server;
 
 namespace FalconSoft.Data.Management.InProcessServer.Client
@@ -72,7 +73,7 @@ namespace FalconSoft.Data.Management.InProcessServer.Client
             
         }
 
-        public Common.Security.User Authenticate(string url, string companyName, string userName, string password)
+        public AuthenticationResult Authenticate(string url, string companyName, string userName, string password)
         {
             throw new NotImplementedException();
         }

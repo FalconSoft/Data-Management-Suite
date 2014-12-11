@@ -37,7 +37,8 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
 
         public DataSourceInfo[] GetAvailableDataSources(string userId)
         {
-            return _metaMongoCollections.DataSources.FindAllAs<DataSourceInfo>().ToArray();
+            var companyId = _metaMongoCollections.GetCompanyId(userId);
+            return _metaMongoCollections.DataSources.FindAs<DataSourceInfo>(Query<DataSourceInfo>.EQ(d=>d.CompanyId,companyId)).ToArray();
         }
 
         public DataSourceInfo GetDataSourceInfo(string dataSourceProviderString, string userId)
@@ -76,6 +77,11 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
                 historyCollection.Update(Query.Null, Update.Unset(removedfield), UpdateFlags.Multi);
             }
             dataSource.Id = oldDs.Id;
+            if (string.IsNullOrWhiteSpace(dataSource.CompanyId))
+            {
+                dataSource.CompanyId = _metaMongoCollections.GetCompanyId(userId);
+            }
+
             oldDs.Update(dataSource);
             collection.Save(oldDs);
 
@@ -115,6 +121,10 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
         {
             var collection = _metaMongoCollections.DataSources;
             dataSource.Id = Convert.ToString(ObjectId.GenerateNewId());
+            if (string.IsNullOrWhiteSpace(dataSource.CompanyId))
+            {
+                dataSource.CompanyId = _metaMongoCollections.GetCompanyId(userId);
+            }
             collection.Insert(dataSource);
             return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", GetNamePart(dataSource.DataSourcePath)),
                                                                   Query.EQ("Category", GetCategoryPart(dataSource.DataSourcePath))));

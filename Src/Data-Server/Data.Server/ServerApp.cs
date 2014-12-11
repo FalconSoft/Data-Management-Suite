@@ -321,7 +321,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _securityPersistence ??
-                       (_securityPersistence = new SecurityPersistence(MetaDbMongoCollections));
+                       (_securityPersistence = new SecurityPersistence(MetaDbMongoCollections, Logger));
             }
         }
 

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
 using MongoDB.Driver;
+using MongoDB.Driver.Builders;
 
 namespace FalconSoft.Data.Server.Persistence.MongoCollections
 {
@@ -20,6 +21,12 @@ namespace FalconSoft.Data.Server.Persistence.MongoCollections
 
         public MetaDataMongoCollections(string connectionString) : base(connectionString)
         {
+        }
+
+        public string GetCompanyId(string userId)
+        {
+            return Users.FindOneAs<User>(Query<User>.EQ((u) => u.Id, userId))
+                        .CompanyId;
         }
 
         public MongoCollection<User> Users

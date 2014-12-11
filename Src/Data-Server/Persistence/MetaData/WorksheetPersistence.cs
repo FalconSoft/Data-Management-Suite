@@ -23,7 +23,6 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
         {
             return dataSourceUrn.Split('\\').Last();
         }
-
         
         public WorksheetPersistence(MetaDataMongoCollections mongoCollections)
         {
@@ -32,18 +31,27 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
 
         public WorksheetInfo GetWorksheetInfo(string urn, string userId)
         {
+            var companyId = _mongoCollections.GetCompanyId(userId);
             return _mongoCollections.Worksheets
-                    .FindOne(Query.And(Query.EQ("Name", GetNamePart(urn)),
-                                                Query.EQ("Category", GetCategoryPart(urn))));
+                    .FindOne(Query.And(
+                                Query.EQ("Name", GetNamePart(urn)),
+                                Query.EQ("CompanyId", companyId),
+                                Query.EQ("Category", GetCategoryPart(urn))));
         }
 
         public WorksheetInfo[] GetAvailableWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            return _mongoCollections.Worksheets.FindAll().ToArray();
+            var companyId = _mongoCollections.GetCompanyId(userId);
+            return _mongoCollections.DataSources.FindAs<WorksheetInfo>(Query<WorksheetInfo>.EQ(d => d.CompanyId, companyId)).ToArray();
         }
 
         public void UpdateWorksheetInfo(WorksheetInfo wsInfo, string userId)
         {
+            if (string.IsNullOrWhiteSpace(wsInfo.CompanyId))
+            {
+                wsInfo.CompanyId = _mongoCollections.GetCompanyId(userId);
+            }
+
             _mongoCollections.Worksheets.Save(wsInfo);
         }
 
@@ -51,6 +59,12 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
         {
             var collection = _mongoCollections.Worksheets;
             wsInfo.Id = Convert.ToString(ObjectId.GenerateNewId());
+
+            if (string.IsNullOrWhiteSpace(wsInfo.CompanyId))
+            {
+                wsInfo.CompanyId = _mongoCollections.GetCompanyId(userId);
+            }
+            
             collection.Insert(wsInfo);
             return collection.FindOneAs<WorksheetInfo>(Query.And(Query.EQ("Name", GetNamePart(wsInfo.DataSourcePath)),
                                                                   Query.EQ("Category", GetCategoryPart(wsInfo.DataSourcePath))));
@@ -71,11 +85,17 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
 
         public AggregatedWorksheetInfo[] GetAvailableAggregatedWorksheets(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            return _mongoCollections.AggregatedWorksheets.FindAll().ToArray();
+            var companyId = _mongoCollections.GetCompanyId(userId);
+            return _mongoCollections.DataSources.FindAs<AggregatedWorksheetInfo>(Query<AggregatedWorksheetInfo>.EQ(d => d.CompanyId, companyId)).ToArray();
         }
 
         public void UpdateAggregatedWorksheetInfo(AggregatedWorksheetInfo wsInfo, string userId)
         {
+            if (string.IsNullOrWhiteSpace(wsInfo.CompanyId))
+            {
+                wsInfo.CompanyId = _mongoCollections.GetCompanyId(userId);
+            }
+
             _mongoCollections.AggregatedWorksheets.Save(wsInfo);
         }
 
@@ -83,6 +103,12 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
         {
             var collection = _mongoCollections.AggregatedWorksheets;
             wsInfo.Id = Convert.ToString(ObjectId.GenerateNewId());
+
+            if (string.IsNullOrWhiteSpace(wsInfo.CompanyId))
+            {
+                wsInfo.CompanyId = _mongoCollections.GetCompanyId(userId);
+            }
+            
             collection.Insert(wsInfo);
             return collection.FindOneAs<AggregatedWorksheetInfo>(Query.And(Query.EQ("Name", GetNamePart(wsInfo.DataSourcePath)),
                                                                   Query.EQ("Category",  GetCategoryPart(wsInfo.DataSourcePath))));

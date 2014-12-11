@@ -16,9 +16,9 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
             
         }
 
-        public User Authenticate(string companyName, string userName, string password)
+        public AuthenticationResult Authenticate(string companyName, string userName, string password)
         {
-            return GetWebApiCall<User>("Authenticate", new Dictionary<string, object>
+            return GetWebApiCall<AuthenticationResult>("Authenticate", new Dictionary<string, object>
             {
                 {"companyName", companyName},
                 {"userName", userName},
@@ -26,9 +26,9 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
             });
         }
 
-        public List<User> GetUsers(string userToken)
+        public User[] GetUsers(string userToken)
         {
-            return GetWebApiCall<List<User>>("GetUsers", new Dictionary<string, object>
+            return GetWebApiCall<User[]>("GetUsers", new Dictionary<string, object>
             {
                 {"userToken", userToken}
             });
