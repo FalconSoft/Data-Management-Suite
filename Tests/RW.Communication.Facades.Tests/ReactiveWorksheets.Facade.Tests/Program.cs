@@ -161,7 +161,7 @@ namespace ReactiveWorksheets.Facade.Tests
 
             Console.WriteLine("Cheacking if user is created...");
             var allUsers = _securityFacade.GetUsers(user.Id);
-            if (allUsers.Exists(u => u.LoginName == user.LoginName))
+            if (allUsers.ToList().Exists(u => u.LoginName == user.LoginName))
             {
                 Console.WriteLine("Insert successfull");
                 user = allUsers.FirstOrDefault(u => u.LoginName == user.LoginName);

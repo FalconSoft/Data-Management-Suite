@@ -25,8 +25,8 @@ namespace FalconSoft.Data.Server.Persistence.MongoCollections
 
         public string GetCompanyId(string userId)
         {
-            return Users.FindOneAs<User>(Query<User>.EQ((u) => u.Id, userId))
-                        .CompanyId;
+            var company = Users.FindOneAs<User>(Query<User>.EQ((u) => u.Id, userId));
+            return (company != null)? company.CompanyId : string.Empty;
         }
 
         public MongoCollection<User> Users
