@@ -87,7 +87,7 @@ namespace ReactiveWorksheets.Facade.Tests
             Console.WriteLine("\n7. Make changes to DataSourcenfo add fields");
             var addField = new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,

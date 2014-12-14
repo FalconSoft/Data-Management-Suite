@@ -8,11 +8,13 @@ namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
     {
         private readonly List<MyTestData> _collection;
         private readonly System.Timers.Timer _timer;
+        private readonly string _dataSourceUrn;
 
         private const int Count = 150; // COUNT
 
-        public TestDataProvider()
+        public TestDataProvider(string dataSourceUrn)
         {
+            _dataSourceUrn = dataSourceUrn;
             _collection = new List<MyTestData>();
             var rand = new Random();
             for (int i = 0; i < Count; i++)
@@ -45,7 +47,7 @@ namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
                         RecordChangedEvent(this,
                             new ValueChangedEventArgs
                             {
-                                DataSourceUrn = @"ExternalDataSource\MyTestData",
+                                DataSourceUrn = _dataSourceUrn,
                                 Value = _collection[i],
                                 ChangedPropertyNames = new[] { "DoubleField", "TimeSpanField" }
                             });

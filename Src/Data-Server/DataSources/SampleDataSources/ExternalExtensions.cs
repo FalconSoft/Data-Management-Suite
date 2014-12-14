@@ -12,14 +12,15 @@ namespace FalconSoft.Data.Server.SampleDataSources
         public static DataSourceInfo CreateDefaultDataSource(string[] keyFields, Type pocoType)
         {
             var fields = new List<FieldInfo>();
+            const string companyId = "Shared";
+            const string category = "ExternalDataSource";
 
             EnumerateProperties((p, t, o) =>
             {
                 var fieldInfo = new FieldInfo
                 {
-                    Name = p,
+                    Name = p,                     
                     DataType = ToDataType(t),
-                    DataSourceProviderString = string.Format(@"{0}\{1}", "ExternalDataSource", pocoType.Name),
                     IsNullable = true
                 };
                 if (keyFields.Contains(fieldInfo.Name))
@@ -32,12 +33,18 @@ namespace FalconSoft.Data.Server.SampleDataSources
                 pocoType.GetProperties(), string.Empty);
             var dsInfo = new DataSourceInfo(fields, true)
                 {
+                    CompanyId = companyId,
                     Name = pocoType.Name, 
                     Id = "-1", 
-                    Category = "ExternalDataSource"
+                    Category = category
                 };
 
-            dsInfo.Urn = string.Format(@"{0}\{1}", dsInfo.Category, dsInfo.Name);
+            dsInfo.Urn = dsInfo.CreateUrn();
+
+            foreach (var fieldInfo in dsInfo.Fields)
+            {
+                fieldInfo.Value.DataSourceUrn = dsInfo.Urn;
+            }
             return dsInfo;
         }
 

@@ -51,7 +51,7 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             return _metaMongoCollections.DataSources.FindOneAs<DataSourceInfo>(Query.EQ("Urn", dataSourceProviderString));
         }
 
-        private void ValidateDataSource(DataSourceInfo dataSource, string userId)
+        public void ValidateDataSource(DataSourceInfo dataSource, bool failIfExists)
         {
             if (dataSource == null)
                 throw new ArgumentException("DataSource can't be null", "dataSource");
@@ -60,15 +60,31 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
                 throw new ArgumentException("DataSource Urn can't be null or whitespace", "dataSource.Urn");
 
             if (string.IsNullOrWhiteSpace(dataSource.CompanyId))
-                dataSource.CompanyId = _metaMongoCollections.GetCompanyId(userId);
+                throw new ArgumentException("DataSource CompanyId can't be null or whitespace", "DataSource.CompanyId");
 
-            if (dataSource.Urn.CompareTo(dataSource.CreateUrn()) != 0)
-                dataSource.Urn = dataSource.CreateUrn();
+            if (String.Compare(dataSource.Urn, dataSource.CreateUrn(), StringComparison.Ordinal) != 0)
+                throw new ArgumentException( string.Format("DataSource Urn is incorrect. It should be {0} instead of {1}",dataSource.CreateUrn(), dataSource.Urn), "DataSource.CompanyId");
+
+            if (dataSource.Fields == null || dataSource.Fields.Count == 0)
+                throw new ArgumentException("DataSource must have fields", "DataSource.Fields");
+
+            if (!dataSource.Fields.Any(kv=>kv.Value.IsKey))
+                throw new ArgumentException("DataSource must have at least one Key field", "DataSource.Fields");
+
+
+            if (failIfExists)
+            {
+                if (_metaMongoCollections.DataSources.Exists("Urn", dataSource.Urn))
+                {
+                    throw new ArgumentException(string.Format("Data Source with Urn '{0}' already exists",
+                        dataSource.Urn));
+                }
+            }
         }
 
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldUrn, string userId)
         {
-            ValidateDataSource(dataSource, userId);
+            ValidateDataSource(dataSource, false);
 
             var collection = _metaMongoCollections.DataSources;
             var oldDs = collection.FindOneAs<DataSourceInfo>(Query.EQ("Urn", oldUrn));
@@ -121,7 +137,7 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
                     childHistoryCollection.Update(Query.Null, Update.Unset(removedfield), UpdateFlags.Multi);
                 }
                 var childDs = (DataSourceInfo)childDataSource.Clone();
-                foreach (var fieldKey in childDataSource.Fields.Where(x => x.Value.DataSourceProviderString == oldUrn))
+                foreach (var fieldKey in childDataSource.Fields.Where(x => x.Value.DataSourceUrn == oldUrn))
                 {
                     childDs.Fields.Remove(fieldKey.Key);
                 }
@@ -138,14 +154,9 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
         
         public DataSourceInfo CreateDataSourceInfo(DataSourceInfo dataSource, string userId)
         {
-            ValidateDataSource(dataSource, userId);
+            ValidateDataSource(dataSource, true);
 
             var collection = _metaMongoCollections.DataSources;
-
-            if (collection.Exists("Urn", dataSource.Urn))
-            {
-                throw new ArgumentException(string.Format("Data Source with Urn '{0}' already exists",dataSource.Urn));
-            }
 
             dataSource.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(dataSource);

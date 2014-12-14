@@ -20,7 +20,7 @@ namespace FalconSoft.Data.Server.SampleDataSources
               var quoteContext = new DataProvidersContext
                 {
                     Urn = quoteDs.Urn,
-                    DataProvider = new QuotesFeedDataProvider(),
+                    DataProvider = new QuotesFeedDataProvider(quoteDs.Urn),
                     ProviderInfo = quoteDs
                 };
               // MYTESTDATA
@@ -28,7 +28,7 @@ namespace FalconSoft.Data.Server.SampleDataSources
               var testContext = new DataProvidersContext
               {
                   Urn = testDs.Urn,
-                  DataProvider = new TestDataProvider(),
+                  DataProvider = new TestDataProvider(testDs.Urn),
                   ProviderInfo = testDs
               };
               // MYTESTDATA
@@ -44,7 +44,7 @@ namespace FalconSoft.Data.Server.SampleDataSources
               var yahooContext = new DataProvidersContext
               {
                   Urn = yahoo.Urn,
-                  DataProvider = new YahooEquityRefDataProvider(),
+                  DataProvider = new YahooEquityRefDataProvider(yahoo.Urn),
                   ProviderInfo = yahoo
               };
               // BigData
@@ -52,12 +52,11 @@ namespace FalconSoft.Data.Server.SampleDataSources
               var bigDataContext = new DataProvidersContext
               {
                   Urn = bigData.Urn,
-                  DataProvider = new BigDataSource(),
+                  DataProvider = new BigDataSource(bigData.Urn),
                   ProviderInfo = bigData
               };
 
               return new[] { quoteContext, testContext, calcContext, yahooContext, bigDataContext };
-
         }
 
         public DataSourceInfo CreateDataSource(DataSourceInfo dataSource, string userId)
