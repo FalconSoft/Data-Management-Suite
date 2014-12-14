@@ -56,7 +56,7 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             if (string.IsNullOrWhiteSpace(wsInfo.DataSourceInfoPath))
                 throw new ArgumentException("WorksheetInfo DataSourceInfoPath can't be null or whitespace", "wsInfo.DataSourceInfoPath");
 
-            if (!_mongoCollections.DataSources.Exists("DataSourceInfoPath", wsInfo.DataSourceInfoPath))
+            if (!_mongoCollections.DataSources.Exists("Urn", wsInfo.DataSourceInfoPath))
             {
                 throw new ArgumentException(string.Format("WorksheetInfo is trying to reference invalid DataSourceInfoPath'{0}'",
                     wsInfo.DataSourceInfoPath));
@@ -90,9 +90,9 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
                 throw new ArgumentException("WorksheetInfo must have columns", "WorksheetInfo.Columns");
 
             if (string.IsNullOrWhiteSpace(wsInfo.DataSourceInfoPath))
-                throw new ArgumentException("WorksheetInfo DataSourceInfoPath can't be null or whitespace", "wsInfo.DataSourceInfoPath");
+                throw new ArgumentException("WorksheetInfo Urn can't be null or whitespace", "wsInfo.DataSourceInfoPath");
 
-            if (!_mongoCollections.DataSources.Exists("DataSourceInfoPath", wsInfo.DataSourceInfoPath))
+            if (!_mongoCollections.DataSources.Exists("Urn", wsInfo.DataSourceInfoPath))
             {
                 throw new ArgumentException(string.Format("WorksheetInfo is trying to reference invalid DataSourceInfoPath'{0}'",
                     wsInfo.DataSourceInfoPath));

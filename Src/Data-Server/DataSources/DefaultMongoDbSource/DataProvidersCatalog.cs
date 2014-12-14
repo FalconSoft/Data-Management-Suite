@@ -58,15 +58,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             dataSource.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(dataSource);
 
-            IDataProvider dataProvider;
-            if (string.IsNullOrEmpty(dataSource.Description))
-                dataProvider = new DataProvider(_mongoCollections, dataSource);
-            else
-            {
-                dataProvider = new PythonDataProvider(dataSource);
-            }
-
-            //var dataProvider = new DataProvider(_connectionString, dataSource);
+            IDataProvider dataProvider = new DataProvider(_mongoCollections, dataSource);
 
             var dataProviderContext = new DataProvidersContext
                 {
@@ -77,7 +69,8 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
                 };
 
             var metaDataProvider = dataProviderContext.MetaDataProvider as MetaDataProvider;
-            if (metaDataProvider != null & (dataProvider is DataProvider)) metaDataProvider.OnDataSourceInfoChanged = (dataProvider as DataProvider).UpdateSourceInfo;
+            if (metaDataProvider != null & (dataProvider is DataProvider))
+                metaDataProvider.OnDataSourceInfoChanged = ((DataProvider)dataProvider).UpdateSourceInfo;
 
             DataProviderAdded(dataProviderContext, userId);
             return collection.FindOneAs<DataSourceInfo>(Query.EQ("Urn", dataSource.Urn));
