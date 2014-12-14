@@ -14,16 +14,6 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
         private readonly MetaDataMongoCollections _metaMongoCollections;
         private readonly LiveDataMongoCollections _mongoCollections;
 
-        private string GetCategoryPart(string dataSourceUrn)
-        {
-            return dataSourceUrn.Split('\\').First();
-        }
-
-        private string GetNamePart(string dataSourceUrn)
-        {
-            return dataSourceUrn.Split('\\').Last();
-        }
-
         public MetaDataPersistence(MetaDataMongoCollections metaMongoCollections, LiveDataMongoCollections mongoCollections)
         {
             _metaMongoCollections = metaMongoCollections;
@@ -35,33 +25,62 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             _metaMongoCollections.DataSources.RemoveAll();
         }
 
+        public string GetCompanyIdForUser(string userId)
+        {
+            return _metaMongoCollections.GetCompanyId(userId);
+        }
+
         public DataSourceInfo[] GetAvailableDataSources(string userId)
         {
-            var companyId = _metaMongoCollections.GetCompanyId(userId);
-            return _metaMongoCollections.DataSources.FindAs<DataSourceInfo>(Query<DataSourceInfo>.EQ(d=>d.CompanyId,companyId)).ToArray();
+            if (userId != "serverAgent")
+            {
+                var companyId = _metaMongoCollections.GetCompanyId(userId);
+                return
+                    _metaMongoCollections.DataSources.FindAs<DataSourceInfo>(Query<DataSourceInfo>.EQ(d => d.CompanyId,
+                                                                                                      companyId))
+                                         .ToArray();
+            }
+            else // serverAgent is a special user for initializing server components
+            {
+                return _metaMongoCollections.DataSources.FindAllAs<DataSourceInfo>().ToArray();
+            }
         }
 
         public DataSourceInfo GetDataSourceInfo(string dataSourceProviderString, string userId)
         {
-            var allds = _metaMongoCollections.DataSources;
-            return allds.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", GetNamePart(dataSourceProviderString)),
-                                       Query.EQ("Category", GetCategoryPart(dataSourceProviderString))));
+            return _metaMongoCollections.DataSources.FindOneAs<DataSourceInfo>(Query.EQ("Urn", dataSourceProviderString));
         }
 
-        public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceProviderString, string userId)
+        private void ValidateDataSource(DataSourceInfo dataSource, string userId)
         {
+            if (dataSource == null)
+                throw new ArgumentException("DataSource can't be null", "dataSource");
+
+            if (string.IsNullOrWhiteSpace(dataSource.Urn))
+                throw new ArgumentException("DataSource Urn can't be null or whitespace", "dataSource.Urn");
+
+            if (string.IsNullOrWhiteSpace(dataSource.CompanyId))
+                dataSource.CompanyId = _metaMongoCollections.GetCompanyId(userId);
+
+            if (dataSource.Urn.CompareTo(dataSource.CreateUrn()) != 0)
+                dataSource.Urn = dataSource.CreateUrn();
+        }
+
+        public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldUrn, string userId)
+        {
+            ValidateDataSource(dataSource, userId);
+
             var collection = _metaMongoCollections.DataSources;
-            var oldDs = collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", GetNamePart(oldDataSourceProviderString)),
-                                                                       Query.EQ("Category", GetCategoryPart(oldDataSourceProviderString))));
-            var childDataSources = oldDataSourceProviderString.GetChildDataSources(collection.FindAllAs<DataSourceInfo>().ToArray());
-            if (dataSource.DataSourcePath != oldDs.DataSourcePath)
+            var oldDs = collection.FindOneAs<DataSourceInfo>(Query.EQ("Urn", oldUrn));
+            var childDataSources = oldUrn.GetChildDataSources(collection.FindAllAs<DataSourceInfo>().ToArray());
+            if (dataSource.Urn != oldDs.Urn)
             {
-                _mongoCollections.RenameDataCollection(oldDs.DataSourcePath, dataSource.DataSourcePath);
-                _mongoCollections.RenameHistoryDataCollection(oldDs.DataSourcePath, dataSource.DataSourcePath);
+                _mongoCollections.RenameDataCollection(oldDs.Urn, dataSource.Urn);
+                _mongoCollections.RenameHistoryDataCollection(oldDs.Urn, dataSource.Urn);
             }
 
-            var dataCollection = _mongoCollections.GetDataCollection(dataSource.DataSourcePath);
-            var historyCollection = _mongoCollections.GetHistoryDataCollection(dataSource.DataSourcePath);
+            var dataCollection = _mongoCollections.GetDataCollection(dataSource.Urn);
+            var historyCollection = _mongoCollections.GetHistoryDataCollection(dataSource.Urn);
             //IF NEW FIELDS ADDED  (ONLY)  
             var addedfields = dataSource.Fields.Keys.Except(oldDs.Fields.Keys).ToList();
             foreach (var addedfield in addedfields)
@@ -88,8 +107,8 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             //WE NEED TO MODIFY ALL CHILD DATASOURCES
             foreach (var childDataSource in childDataSources)
             {
-                var childDataCollection = _mongoCollections.GetDataCollection(childDataSource.DataSourcePath);
-                var childHistoryCollection = _mongoCollections.GetHistoryDataCollection(childDataSource.DataSourcePath);
+                var childDataCollection = _mongoCollections.GetDataCollection(childDataSource.Urn);
+                var childHistoryCollection = _mongoCollections.GetHistoryDataCollection(childDataSource.Urn);
 
                 foreach (var addedfield in addedfields)
                 {
@@ -102,7 +121,7 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
                     childHistoryCollection.Update(Query.Null, Update.Unset(removedfield), UpdateFlags.Multi);
                 }
                 var childDs = (DataSourceInfo)childDataSource.Clone();
-                foreach (var fieldKey in childDataSource.Fields.Where(x => x.Value.DataSourceProviderString == oldDataSourceProviderString))
+                foreach (var fieldKey in childDataSource.Fields.Where(x => x.Value.DataSourceProviderString == oldUrn))
                 {
                     childDs.Fields.Remove(fieldKey.Key);
                 }
@@ -116,26 +135,28 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
                 collection.Save(childDs);
             }
         }
-
+        
         public DataSourceInfo CreateDataSourceInfo(DataSourceInfo dataSource, string userId)
         {
+            ValidateDataSource(dataSource, userId);
+
             var collection = _metaMongoCollections.DataSources;
-            dataSource.Id = Convert.ToString(ObjectId.GenerateNewId());
-            if (string.IsNullOrWhiteSpace(dataSource.CompanyId))
+
+            if (collection.Exists("Urn", dataSource.Urn))
             {
-                dataSource.CompanyId = _metaMongoCollections.GetCompanyId(userId);
+                throw new ArgumentException(string.Format("Data Source with Urn '{0}' already exists",dataSource.Urn));
             }
+
+            dataSource.Id = Convert.ToString(ObjectId.GenerateNewId());
             collection.Insert(dataSource);
-            return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", GetNamePart(dataSource.DataSourcePath)),
-                                                                  Query.EQ("Category", GetCategoryPart(dataSource.DataSourcePath))));
+            return collection.FindOneAs<DataSourceInfo>(Query.EQ("Urn", dataSource.Urn));
         }
 
-        public void DeleteDataSourceInfo(string dataSourceProviderString, string userId)
+        public void DeleteDataSourceInfo(string urn, string userId)
         {
-            _mongoCollections.GetDataCollection(dataSourceProviderString).Drop();
-            _mongoCollections.GetHistoryDataCollection(dataSourceProviderString).Drop();
-            _metaMongoCollections.DataSources.Remove(Query.And(Query.EQ("Name", GetNamePart(dataSourceProviderString)),
-                                                                                    Query.EQ("Category", GetCategoryPart(dataSourceProviderString))));
+            _mongoCollections.GetDataCollection(urn).Drop();
+            _mongoCollections.GetHistoryDataCollection(urn).Drop();
+            _metaMongoCollections.DataSources.Remove(Query.EQ("Urn", urn));
         }
     }
 }

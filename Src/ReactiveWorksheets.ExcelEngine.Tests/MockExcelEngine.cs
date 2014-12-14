@@ -31,7 +31,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         {
             var point = new ExcelPoint(dataSourceUrn, primaryKey.ToRecordKey(), fieldName);
             RegisterSource(dataSourceUrn);
-            ResultValue = !LocalDb.ContainsKey(point.DataSourceUrn) ? "Invalid DataSourcePath" : LocalDb[dataSourceUrn][primaryKey.ToRecordKey()][fieldName];
+            ResultValue = !LocalDb.ContainsKey(point.DataSourceUrn) ? "Invalid Urn" : LocalDb[dataSourceUrn][primaryKey.ToRecordKey()][fieldName];
         }
 
 
@@ -83,7 +83,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
                 var key = record.WorkOutRecordKey(ds.GetKeyFieldsName());
                 dbData.Add(key, record);
             }
-            LocalDb.Add(ds.DataSourcePath, dbData);
+            LocalDb.Add(ds.Urn, dbData);
         }
 
         #endregion for test

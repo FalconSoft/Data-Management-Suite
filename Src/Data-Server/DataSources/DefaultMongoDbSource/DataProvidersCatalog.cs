@@ -35,7 +35,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
                 var dataProviderContext = new DataProvidersContext
                     {
-                        Urn = dataSource.DataSourcePath,
+                        Urn = dataSource.Urn,
                         DataProvider = dataProvider,
                         ProviderInfo = dataSource,
                         MetaDataProvider = new MetaDataProvider(_mongoCollections)
@@ -48,9 +48,9 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             return listDataProviders;
         }
 
-        public event EventHandler<DataProvidersContext> DataProviderAdded;
+        public Action<DataProvidersContext, string> DataProviderAdded { get; set; }
 
-        public event EventHandler<StringEventArg> DataProviderRemoved;
+        public Action<string, string> DataProviderRemoved { get; set; }
 
         public DataSourceInfo CreateDataSource(DataSourceInfo dataSource, string userId)
         {
@@ -70,7 +70,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
             var dataProviderContext = new DataProvidersContext
                 {
-                    Urn = dataSource.DataSourcePath,
+                    Urn = dataSource.Urn,
                     DataProvider = dataProvider,
                     ProviderInfo = dataSource,
                     MetaDataProvider = new MetaDataProvider(_mongoCollections)
@@ -79,22 +79,24 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             var metaDataProvider = dataProviderContext.MetaDataProvider as MetaDataProvider;
             if (metaDataProvider != null & (dataProvider is DataProvider)) metaDataProvider.OnDataSourceInfoChanged = (dataProvider as DataProvider).UpdateSourceInfo;
 
-            DataProviderAdded(this, dataProviderContext);
-            return collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", Utils.GetNamePart(dataSource.DataSourcePath)),
-                                                                 Query.EQ("Category", Utils.GetCategoryPart(dataSource.DataSourcePath))));
+            DataProviderAdded(dataProviderContext, userId);
+            return collection.FindOneAs<DataSourceInfo>(Query.EQ("Urn", dataSource.Urn));
         }
 
-        public void RemoveDataSource(string dataSourceProviderString)
+        public void RemoveDataSource(DataSourceInfo dataSource, string userId)
         {
-            _mongoCollections.GetDataCollection(dataSourceProviderString)
+
+            var dataSourceProviderString = dataSource.Urn;
+            _mongoCollections.GetDataCollection(dataSource.CompanyId, dataSourceProviderString)
                            .Drop();
-            _mongoCollections.GetHistoryDataCollection(dataSourceProviderString)
+            _mongoCollections.GetHistoryDataCollection(dataSource.CompanyId, dataSourceProviderString)
                           .Drop();
             _mongoCollections.TableInfos
-                          .Remove(Query.And(Query.EQ("Name", Utils.GetNamePart(dataSourceProviderString)),
-                                            Query.EQ("Category", Utils.GetCategoryPart(dataSourceProviderString))));
-            DataProviderRemoved(this, new StringEventArg(dataSourceProviderString));
+                          .Remove(Query.EQ("Urn", dataSource.Urn));
+            DataProviderRemoved(dataSourceProviderString, userId);
         }
 
     }
 }
+
+

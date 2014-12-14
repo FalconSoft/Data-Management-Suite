@@ -8,9 +8,10 @@ namespace FalconSoft.Data.Server.SampleDataSources
 {
     public class ExternalProviderCatalog : IDataProvidersCatalog
     {
-        public event EventHandler<DataProvidersContext> DataProviderAdded;
+        public Action<DataProvidersContext, string> DataProviderAdded { get; set; }
+    
+        public Action<string, string> DataProviderRemoved { get; set; }
 
-        public event EventHandler<StringEventArg> DataProviderRemoved;
 
         public IEnumerable<DataProvidersContext> GetProviders()  //DEMO TEST VERSION        TODO
         {
@@ -18,7 +19,7 @@ namespace FalconSoft.Data.Server.SampleDataSources
               var quoteDs = ExternalExtensions.CreateDefaultDataSource(new[] {"SecID"}, typeof (QuotesFeed));
               var quoteContext = new DataProvidersContext
                 {
-                    Urn = quoteDs.DataSourcePath,
+                    Urn = quoteDs.Urn,
                     DataProvider = new QuotesFeedDataProvider(),
                     ProviderInfo = quoteDs
                 };
@@ -26,7 +27,7 @@ namespace FalconSoft.Data.Server.SampleDataSources
               var testDs = ExternalExtensions.CreateDefaultDataSource(new[] { "FieldId" }, typeof(MyTestData));
               var testContext = new DataProvidersContext
               {
-                  Urn = testDs.DataSourcePath,
+                  Urn = testDs.Urn,
                   DataProvider = new TestDataProvider(),
                   ProviderInfo = testDs
               };
@@ -34,7 +35,7 @@ namespace FalconSoft.Data.Server.SampleDataSources
               var calcultor = ExternalExtensions.CreateDefaultDataSource(new[] { "In1", "In2" }, typeof(Calculator));
               var calcContext = new DataProvidersContext
               {
-                  Urn = calcultor.DataSourcePath,
+                  Urn = calcultor.Urn,
                   DataProvider = new CalculatorDataProvider(),
                   ProviderInfo = calcultor
               };
@@ -42,7 +43,7 @@ namespace FalconSoft.Data.Server.SampleDataSources
               var yahoo = ExternalExtensions.CreateDefaultDataSource(new[] { "Symbol" }, typeof(YahooEquityRefData));
               var yahooContext = new DataProvidersContext
               {
-                  Urn = yahoo.DataSourcePath,
+                  Urn = yahoo.Urn,
                   DataProvider = new YahooEquityRefDataProvider(),
                   ProviderInfo = yahoo
               };
@@ -50,7 +51,7 @@ namespace FalconSoft.Data.Server.SampleDataSources
               var bigData = ExternalExtensions.CreateDefaultDataSource(new[] { "ID" }, typeof(BigData));
               var bigDataContext = new DataProvidersContext
               {
-                  Urn = bigData.DataSourcePath,
+                  Urn = bigData.Urn,
                   DataProvider = new BigDataSource(),
                   ProviderInfo = bigData
               };
@@ -64,7 +65,7 @@ namespace FalconSoft.Data.Server.SampleDataSources
             return null;
         }
 
-        public void RemoveDataSource(string providerString)
+        public void RemoveDataSource(DataSourceInfo dataSource, string userId)
         {
             
         }

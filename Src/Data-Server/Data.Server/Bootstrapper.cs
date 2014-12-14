@@ -24,7 +24,7 @@ namespace FalconSoft.Data.Server
 
         public void Run()
         {
-            _commandAggregator.LoadDataSources();
+            _commandAggregator.LoadDataSources(null, "server");
         }
     }
 }

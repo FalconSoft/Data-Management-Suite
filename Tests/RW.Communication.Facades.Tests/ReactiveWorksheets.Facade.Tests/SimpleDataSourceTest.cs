@@ -38,14 +38,14 @@ namespace ReactiveWorksheets.Facade.Tests
             };
             _metaDataAdminFacade.CreateWorksheetInfo(worksheet,user.Id);
 
-            return _metaDataAdminFacade.GetWorksheetInfo(worksheet.DataSourcePath, user.Id);
+            return _metaDataAdminFacade.GetWorksheetInfo(worksheet.Urn, user.Id);
         }
 
         public void SubmitData(string comment, IEnumerable<Dictionary<string, object>> changedData = null, IEnumerable<string> deleted = null)
         {
             var tcs = new TaskCompletionSource<object>();
             var task = tcs.Task;
-            _commandFacade.SubmitChanges(_dataSourceInfo.DataSourcePath, comment, changedData, deleted, r =>
+            _commandFacade.SubmitChanges(_dataSourceInfo.Urn, comment, changedData, deleted, r =>
             {
                 Console.WriteLine("Data submited successfull");
                 tcs.SetResult(r);
@@ -60,12 +60,12 @@ namespace ReactiveWorksheets.Facade.Tests
 
         public IEnumerable<Dictionary<string, object>> GetData(FilterRule[] filterRules = null)
         {
-            return _reactiveDataQueryFacade.GetData(_userToken, _dataSourceInfo.DataSourcePath, filterRules: filterRules);
+            return _reactiveDataQueryFacade.GetData(_userToken, _dataSourceInfo.Urn, filterRules: filterRules);
         }
 
         public IObservable<RecordChangedParam[]> GetDataChanges(FilterRule[] filterRules = null)
         {
-            return _reactiveDataQueryFacade.GetDataChanges(_userToken, _dataSourceInfo.DataSourcePath, null);
+            return _reactiveDataQueryFacade.GetDataChanges(_userToken, _dataSourceInfo.Urn, null);
         }
 
         public IEnumerable<Dictionary<string,object>> GetHistory(string recordKey)
@@ -75,19 +75,19 @@ namespace ReactiveWorksheets.Facade.Tests
 
         public DataSourceInfo UpdateDataSourceInfo(DataSourceInfo dataSourceInfo,User user)
         {
-            _metaDataAdminFacade.UpdateDataSourceInfo(dataSourceInfo,_dataSourceInfo.DataSourcePath,user.Id);
-            _dataSourceInfo = _metaDataAdminFacade.GetDataSourceInfo(dataSourceInfo.DataSourcePath, user.Id);
+            _metaDataAdminFacade.UpdateDataSourceInfo(dataSourceInfo,_dataSourceInfo.Urn,user.Id);
+            _dataSourceInfo = _metaDataAdminFacade.GetDataSourceInfo(dataSourceInfo.Urn, user.Id);
             return _dataSourceInfo;
         }
 
         public void RemoveWorksheet(WorksheetInfo worksheetInfo, User user)
         {
-            _metaDataAdminFacade.DeleteWorksheetInfo(worksheetInfo.DataSourcePath,user.Id);
+            _metaDataAdminFacade.DeleteWorksheetInfo(worksheetInfo.Urn,user.Id);
         }
 
         public void RemoveDatasourceInfo(User user)
         {
-            _metaDataAdminFacade.DeleteDataSourceInfo(_dataSourceInfo.DataSourcePath,user.Id);
+            _metaDataAdminFacade.DeleteDataSourceInfo(_dataSourceInfo.Urn,user.Id);
         }
 
         public void Dispose()

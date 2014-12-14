@@ -36,7 +36,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         public TemporalDataPersistenceBuffer(LiveDataMongoCollections mongoCollections, DataSourceInfo dataSourceInfo, string userId, int buffer, bool rollover = false)
         {
             _mongoCollections = mongoCollections;
-            _dataSourceProviderString = dataSourceInfo.DataSourcePath;
+            _dataSourceProviderString = dataSourceInfo.Urn;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
             _buffer = buffer - 1; 
@@ -167,7 +167,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetRevisions()
         {
-            var query = Query.EQ("Urn", _dataSourceInfo.DataSourcePath);
+            var query = Query.EQ("Urn", _dataSourceInfo.Urn);
             var collectionRevision = _mongoCollections.Revisions;
             var revisions = collectionRevision.FindAs<BsonDocument>(query).SetFields(Fields.Exclude("Urn")); //"_id", "RevisionId" 
             return revisions.Select(revision => revision.ToDictionary(k => k.Name, v => (object) v.Value.ToString())).ToList();

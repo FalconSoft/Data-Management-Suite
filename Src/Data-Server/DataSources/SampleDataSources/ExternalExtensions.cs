@@ -30,7 +30,15 @@ namespace FalconSoft.Data.Server.SampleDataSources
                 fields.Add(fieldInfo);
             },
                 pocoType.GetProperties(), string.Empty);
-            return new DataSourceInfo(fields, true) { Name = pocoType.Name, Id = "-1", Category = "ExternalDataSource" };
+            var dsInfo = new DataSourceInfo(fields, true)
+                {
+                    Name = pocoType.Name, 
+                    Id = "-1", 
+                    Category = "ExternalDataSource"
+                };
+
+            dsInfo.Urn = string.Format(@"{0}\{1}", dsInfo.Category, dsInfo.Name);
+            return dsInfo;
         }
 
         private static void EnumerateProperties(Action<string, Type, object> setPropertyNameAction,

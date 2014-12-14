@@ -25,7 +25,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
         public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
-            var collection = _mongoCollections.GetDataCollection(DataSourceInfo.DataSourcePath);
+            var collection = _mongoCollections.GetDataCollection(DataSourceInfo.CompanyId, DataSourceInfo.Urn);
             MongoCursor<BsonDocument> cursor;
             var query = CreateFilterRuleQuery(filterRules);
             if (string.IsNullOrEmpty(query))
@@ -45,7 +45,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
         public RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange, IEnumerable<string> recordsToDelete, string comment = null)
         {
-            return SubmitChangesHelper(recordsToChange, recordsToDelete, DataSourceInfo.DataSourcePath,
+            return SubmitChangesHelper(recordsToChange, recordsToDelete, DataSourceInfo.Urn,
                  comment);
         }
 
@@ -202,7 +202,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
         private MongoCollection<BsonDocument> GetDataCollection(string urn)
         {
-            var collection = _mongoCollections.GetDataCollection(urn);
+            var collection = _mongoCollections.GetDataCollection(DataSourceInfo.CompanyId, urn);
             foreach (var keyField in DataSourceInfo.GetAllIndexFieldsNames())
             {
                 collection.CreateIndex(keyField);    

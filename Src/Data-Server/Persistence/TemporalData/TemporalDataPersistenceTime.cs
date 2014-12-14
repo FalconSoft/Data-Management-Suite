@@ -22,14 +22,14 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public TemporalDataPersistenceTime(LiveDataMongoCollections mongoCollections, MetaDataMongoCollections metaMongoCollections, string dbName, DataSourceInfo dataSourceInfo, string userId, string param)
         {
-            _dataSourceProviderString = dataSourceInfo.DataSourcePath;
+            _dataSourceProviderString = dataSourceInfo.Urn;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
 
             _mongoCollections = mongoCollections;
             _metaMongoCollections = metaMongoCollections;
 
-            _historyCollection = _mongoCollections.GetHistoryDataCollection(_dataSourceProviderString);            
+            _historyCollection = _mongoCollections.GetHistoryDataCollection( _dataSourceProviderString);            
         }
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(string recordKey)

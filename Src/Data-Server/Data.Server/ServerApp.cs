@@ -259,7 +259,7 @@ namespace FalconSoft.Data.Server
             {
                 // TODO : this has to move to separate method and user should be able to specify specific connection string for each dataprovider or use default one 
                 return _liveDataPersistenceFactory ??
-                       (_liveDataPersistenceFactory = s => new LiveDataPersistence(LiveDataMongoCollections, s, Logger));
+                       (_liveDataPersistenceFactory = (dsPath) => new LiveDataPersistence(LiveDataMongoCollections, dsPath, Logger));
             }
         }
 

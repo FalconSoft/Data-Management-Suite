@@ -6,6 +6,7 @@ using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Builders;
 
 namespace FalconSoft.Data.Server.Persistence
 {
@@ -79,6 +80,9 @@ namespace FalconSoft.Data.Server.Persistence
             return pipeline;
         }
 
-
+        public static bool Exists<T>(this MongoCollection<T> collection, string field, BsonValue value)
+        {
+            return collection.Find(Query.EQ(field, value)).SetFields(Fields.Include("_id")).SetLimit(1).FirstOrDefault() != null;
+        }
     }
 }

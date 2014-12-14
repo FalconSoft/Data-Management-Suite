@@ -29,15 +29,18 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
         {
             var collection = _dbCollections.TableInfos;
             var oldDs =
-                collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", Utils.GetNamePart(oldDataSourceProviderString)),
+                collection.FindOneAs<DataSourceInfo>(
+                    Query.And(
+                    Query.EQ("CompanyId", dataSource.CompanyId),
+                    Query.EQ("Name", Utils.GetNamePart(oldDataSourceProviderString)),
                                                                Query.EQ("Category", Utils.GetCategoryPart(oldDataSourceProviderString))));
-            if (dataSource.DataSourcePath != oldDs.DataSourcePath)
+            if (dataSource.Urn != oldDs.Urn)
             {
-                _dbCollections.RenameDataCollection(oldDs.DataSourcePath, dataSource.DataSourcePath);
-                _dbCollections.RenameHistoryDataCollection(oldDs.DataSourcePath, dataSource.DataSourcePath);
+                _dbCollections.RenameDataCollection(oldDs.Urn, dataSource.Urn);
+                _dbCollections.RenameHistoryDataCollection(oldDs.Urn, dataSource.Urn);
             }
-            var dataCollection = _dbCollections.GetDataCollection(dataSource.DataSourcePath);
-            var historyCollection = _dbCollections.GetHistoryDataCollection(dataSource.DataSourcePath);
+            var dataCollection = _dbCollections.GetDataCollection(dataSource.CompanyId, dataSource.Urn);
+            var historyCollection = _dbCollections.GetHistoryDataCollection(dataSource.CompanyId, dataSource.Urn);
 
             //IF NEW FIELDS ADDED  (ONLY)  
             var addedfields = dataSource.Fields.Keys.Except(oldDs.Fields.Keys)
@@ -70,22 +73,28 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
         {
             var collection = _dbCollections.TableInfos;
             dataSource.Id = ObjectId.GenerateNewId().ToString();
+            
             collection.Insert(dataSource);
-
-            var ds = collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", Utils.GetNamePart(dataSource.DataSourcePath)),
-                                                                  Query.EQ("Category", Utils.GetCategoryPart(dataSource.DataSourcePath))));
+            
+            var ds = collection.FindOneAs<DataSourceInfo>(Query.And(
+                Query.EQ("CompanyId", dataSource.CompanyId),
+                Query.EQ("Name", Utils.GetNamePart(dataSource.Urn)),
+                                                                  Query.EQ("Category", Utils.GetCategoryPart(dataSource.Urn))));
             return ds.ResolveDataSourceParents(collection.FindAll().ToArray());
         }
 
-        public void DeleteDataSourceInfo(string dataSourceProviderString, string userId)
+        public void DeleteDataSourceInfo(DataSourceInfo dsInfo, string userId)
         {
-            _dbCollections.GetDataCollection(dataSourceProviderString)
+            string dataSourceProviderString = dsInfo.Urn;
+            _dbCollections.GetDataCollection(dsInfo.CompanyId, dataSourceProviderString)
                           .Drop();
-            _dbCollections.GetHistoryDataCollection(dataSourceProviderString)
+            _dbCollections.GetHistoryDataCollection(dsInfo.CompanyId, dataSourceProviderString)
                           .Drop();
             _dbCollections.TableInfos
-                          .Remove(Query.And(Query.EQ("Name", Utils.GetNamePart(dataSourceProviderString)),
-                                            Query.EQ("Category", Utils.GetCategoryPart(dataSourceProviderString))));
+                          .Remove(Query.And(
+                              Query.EQ("CompanyId", dsInfo.CompanyId),
+                              Query.EQ("Name", Utils.GetNamePart(dataSourceProviderString)),
+                              Query.EQ("Category", Utils.GetCategoryPart(dataSourceProviderString))));
         }
 
         public Action<DataSourceInfo> OnDataSourceInfoChanged { get; set; }

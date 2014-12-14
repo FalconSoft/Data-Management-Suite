@@ -17,10 +17,10 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         private readonly MongoCollection<BsonDocument> _collection;
         private readonly ILogger _logger;
 
-        public LiveDataPersistence(LiveDataMongoCollections mongoCollections, string collectionName, ILogger logger)
+        public LiveDataPersistence(LiveDataMongoCollections mongoCollections, string dataSourceUrn, ILogger logger)
         {
             _logger = logger;
-            _collection = mongoCollections.GetDataCollection(collectionName);
+            _collection = mongoCollections.GetDataCollection(dataSourceUrn);
             _collection.CreateIndex("RecordKey");
         }
 

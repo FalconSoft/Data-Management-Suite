@@ -39,7 +39,7 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
             var rFunctions = new MockReactiveFunctions(engine);
             var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID");
             Assert.AreEqual("#Loading!", obs.ToString());
-            Assert.AreEqual("Invalid DataSourcePath", engine.ResultValue);
+            Assert.AreEqual("Invalid Urn", engine.ResultValue);
             engine.AddDsForRegister(OrdersDataSourceInfoJsonClean, @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
                                                             10788	TRAIH	1	22/12/1997	Trail's Head Gourmet Provisioners	Helvetius Nagy	Sales Associate");
             Assert.AreEqual(engine.LocalDb.Count,1);

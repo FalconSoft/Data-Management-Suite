@@ -24,7 +24,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         {
             _mongoCollections = mongoCollections;
             _metaMongoCollections = metaMongoCollections;
-            _dataSourceProviderString = dataSourceInfo.DataSourcePath;
+            _dataSourceProviderString = dataSourceInfo.Urn;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
 
