@@ -39,12 +39,8 @@ namespace FalconSoft.Data.Server.SampleDataSources
                     Category = category
                 };
 
-            dsInfo.Urn = dsInfo.CreateUrn();
+            dsInfo.SynchronizeUrns();
 
-            foreach (var fieldInfo in dsInfo.Fields)
-            {
-                fieldInfo.Value.DataSourceUrn = dsInfo.Urn;
-            }
             return dsInfo;
         }
 
