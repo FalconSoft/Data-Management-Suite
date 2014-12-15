@@ -16,8 +16,8 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
         private readonly string _databaseName;
         private readonly Lazy<MongoClient> _mongoClient;
         private readonly Lazy<MongoDatabase> _database;
-        private const string DataSuffixFormat = "{0}_{1}_Data";
-        private const string HistoryDataSuffixFormat = "{0}_{1}_History";
+        private const string DataSuffixFormat = "{0}_Data";
+        private const string HistoryDataSuffixFormat = "{0}_History";
         private const string TableInfo = "TableInfos";
 
         public MongoDbCollections(string connectionString)
@@ -51,12 +51,12 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
         public MongoCollection<BsonDocument> GetDataCollection(string companyId, string dataSourceFullPath)
         {
-            return GetMongoDatabase().GetCollection(string.Format(DataSuffixFormat, companyId, EscapeDataPath(dataSourceFullPath)));
+            return GetMongoDatabase().GetCollection(string.Format(DataSuffixFormat, EscapeDataPath(dataSourceFullPath)));
         }
 
         public MongoCollection<BsonDocument> GetHistoryDataCollection(string companyId, string dataSourceFullPath)
         {
-            return GetMongoDatabase().GetCollection(string.Format(HistoryDataSuffixFormat, companyId, EscapeDataPath(dataSourceFullPath)));
+            return GetMongoDatabase().GetCollection(string.Format(HistoryDataSuffixFormat, EscapeDataPath(dataSourceFullPath)));
         }
 
         public void RenameHistoryDataCollection(string olddataSourceFullPath, string newdataSourceFullPath)
