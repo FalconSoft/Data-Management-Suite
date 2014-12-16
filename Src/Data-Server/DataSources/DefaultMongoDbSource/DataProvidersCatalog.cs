@@ -25,13 +25,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
             foreach (var dataSource in collectionDs)
             {
-                IDataProvider dataProvider;
-                if (string.IsNullOrEmpty(dataSource.Description))
-                    dataProvider = new DataProvider(_mongoCollections, dataSource);
-                else
-                {
-                    dataProvider = new PythonDataProvider(dataSource);
-                }
+                var dataProvider = new DataProvider(_mongoCollections, dataSource);
 
                 var dataProviderContext = new DataProvidersContext
                     {

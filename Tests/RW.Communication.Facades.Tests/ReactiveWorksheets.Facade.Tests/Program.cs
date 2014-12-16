@@ -6,7 +6,6 @@ using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
 using FalconSoft.Data.Management.Common.Security;
-using FalconSoft.Data.Management.InProcessServer.Client;
 
 namespace ReactiveWorksheets.Facade.Tests
 {
@@ -174,16 +173,6 @@ namespace ReactiveWorksheets.Facade.Tests
             if (facadeType.Equals("RabbitMQ"))
             {
                 //return new RabbitMQFacadeFactory();
-            }
-            if (facadeType.Equals("InProcess", StringComparison.OrdinalIgnoreCase))
-            {
-                // this is hardcode for testing only
-                const string metaDataPersistenceConnectionString = "mongodb://localhost/rw_metadata";
-                const string persistenceDataConnectionString = "mongodb://localhost/rw_data";
-                const string mongoDataConnectionString = "mongodb://localhost/MongoData";
-                const string connectionString = @"http://localhost:8081/";
-                const string dataSources = @"..\..\..\DataSources\SampleDataSources\bin\Debug\;..\..\..\DataSources\DefaultMongoDbSource\bin\Debug\;..\..\..\DataSources\EDI\bin\Debug\;";
-                return new InProcessServerFacadesFactory(metaDataPersistenceConnectionString, persistenceDataConnectionString, mongoDataConnectionString, connectionString, dataSources);
             }
             throw new ConfigurationErrorsException("Unsupported facade type - >" + facadeType);
         }

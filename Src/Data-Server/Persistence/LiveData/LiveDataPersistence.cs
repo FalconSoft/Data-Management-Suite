@@ -34,7 +34,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         {
             try
             {
-                var query =  CreateFilterRuleQuery(filterRules!=null?filterRules.ToList(): null);
+                var query =  CreateFilterRuleQuery(filterRules != null? filterRules.ToList() : null);
                 MongoCursor<LiveDataObject> cursor;
                 if (!string.IsNullOrEmpty(query))
                 {
@@ -48,7 +48,8 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 {
                     var mongoQuery = "{ }, " + CreateSelectedFieldsQuery(fields);
                     var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(mongoQuery));
-                    cursor = _collection.FindAs<LiveDataObject>(qwraper).SetFields(Fields.Include(fields.Select(f => string.Format("RecordValues.{0}", f)).ToArray()));
+                    cursor = _collection.FindAs<LiveDataObject>(qwraper)
+                        .SetFields(Fields.Include(fields.Select(f => string.Format("RecordValues.{0}", f)).ToArray()));
                     return cursor;
                 }
                 cursor = _collection.FindAllAs<LiveDataObject>();

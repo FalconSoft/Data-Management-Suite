@@ -60,7 +60,6 @@
     <Compile Include="MetaDataProvider.cs" />
     <Compile Include="MongoDbCollections.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PythonDataProvider.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -72,10 +71,6 @@
     <ProjectReference Include="..\..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
       <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
       <Name>FalconSoft.Data.Management.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\FalconSoft.PythonEngine\FalconSoft.PythonEngine.csproj">
-      <Project>{62C5F485-45DA-45CD-935A-365E4AFCB932}</Project>
-      <Name>FalconSoft.PythonEngine</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
