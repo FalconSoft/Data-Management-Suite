@@ -86,7 +86,7 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             catch (Exception ex)
             {
                 _logger.Error("SaveNewUser failed ", ex);
-                return new HttpResponseMessage(HttpStatusCode.BadRequest);
+                return new HttpResponseMessage(HttpStatusCode.NotAcceptable);
             }
         }
 

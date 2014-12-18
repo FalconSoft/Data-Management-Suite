@@ -52,11 +52,15 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public string SaveNewUser(User user, UserRole userRole, string userToken)
         {
-            return PostWebApiCallMessage("SaveNewUser", user, new Dictionary<string, object>
-            {
-                {"userRole", userRole},
-                {"userToken", userToken}
-            }).Result.Content.ReadAsStringAsync().Result;
+            var taskResult = PostWebApiCallMessage("SaveNewUser", user, new Dictionary<string, object>
+                {
+                    {"userRole", userRole},
+                    {"userToken", userToken}
+                })
+                .Result;
+            taskResult.EnsureSuccessStatusCode();
+            var result = taskResult.Content.ReadAsStringAsync().Result;
+            return result;
         }
 
         public void UpdateUser(User user, UserRole userRole, string userToken)

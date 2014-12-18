@@ -24,19 +24,19 @@ namespace FalconSoft.Data.Server.Persistence.Security
 
         private void CreatePowerAdmin(string companyId, string userName, string password)
         {
-            var id = ObjectId.GenerateNewId().ToString();
-            _metaDbMongoCollections.Users.Insert(new User
-            {
-                Id = id,
-                LoginName = userName,
-                Password = password,
-                CompanyId = companyId
-            });
+
+            var user = new User
+                {
+                    LoginName = userName,
+                    Password = password,
+                    CompanyId = companyId
+                };
+            user.Id = CreateNewUser(user);
 
             _metaDbMongoCollections.Permissions.Insert(new Permission
             {
                 Id = ObjectId.GenerateNewId().ToString(),
-                UserId = id,
+                UserId = user.Id,
                 UserRole = UserRole.Administrator,
                 DataSourceAccessPermissions = new Dictionary<string, DataSourceAccessPermission>()
             });
@@ -102,6 +102,27 @@ namespace FalconSoft.Data.Server.Persistence.Security
 
         public string SaveNewUser(User user, UserRole userRole, string userToken)
         {
+            return CreateNewUser(user);
+        }
+
+        private string CreateNewUser(User user)
+        {
+            user.Id = ObjectId.GenerateNewId()
+                              .ToString();
+
+            if (string.IsNullOrWhiteSpace(user.CompanyId))
+                throw new ArgumentException("CompanyId can't be empty");
+
+            if (string.IsNullOrWhiteSpace(user.LoginName))
+                throw new ArgumentException("Login can't be empty");
+
+            if (string.IsNullOrWhiteSpace(user.Password))
+                throw new ArgumentException("Empty password is not allowed");
+
+            if (_metaDbMongoCollections.Users.Exists("CompanyId", user.CompanyId, "LoginName", user.LoginName))
+                 throw new ArgumentException(string.Format("User {0}\\{1} already exists", user.CompanyId, user.LoginName));
+            
+
             _metaDbMongoCollections.Users.Insert(user);
             return user.Id;
         }
