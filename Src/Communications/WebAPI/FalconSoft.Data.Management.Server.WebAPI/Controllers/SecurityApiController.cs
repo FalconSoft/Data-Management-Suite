@@ -20,6 +20,24 @@ namespace FalconSoft.Data.Management.Server.WebAPI.Controllers
             _logger = FacadesFactory.Logger;
         }
 
+        [HttpPost]
+        public HttpResponseMessage AuthenticationPost([FromBody]Tuple<string, string, string> authenticationRequest)
+        {
+            _logger.Debug("Call AuthenticationPost");
+            try
+            {
+                var content = Authenticate(authenticationRequest.Item1, authenticationRequest.Item2,
+                                           authenticationRequest.Item3);
+                return Request.CreateResponse(HttpStatusCode.OK, content);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("AuthenticationPost failed ", ex);
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Authentication Failed");
+            }
+
+        }
+
         [HttpGet]
         public AuthenticationResult Authenticate([FromUri]string companyName, [FromUri]string userName, [FromUri]string password)
         {

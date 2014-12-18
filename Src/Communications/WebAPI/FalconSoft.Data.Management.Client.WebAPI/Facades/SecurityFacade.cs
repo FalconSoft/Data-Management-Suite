@@ -18,12 +18,9 @@ namespace FalconSoft.Data.Management.Client.WebAPI.Facades
 
         public AuthenticationResult Authenticate(string companyName, string userName, string password)
         {
-            return GetWebApiCall<AuthenticationResult>("Authenticate", new Dictionary<string, object>
-            {
-                {"companyName", companyName},
-                {"userName", userName},
-                {"password", password}
-            });
+            var authResult = PostWithResultWebApiCall<Tuple<string, string, string>, AuthenticationResult>("AuthenticationPost", Tuple.Create(companyName, userName, password));
+
+            return authResult;
         }
 
         public User[] GetUsers(string userToken)

@@ -94,8 +94,21 @@ namespace FalconSoft.Data.Management.Client.WebAPI
             DateTime startTime = DateTime.Now;
             var response = _client.PostAsJsonAsync(request.ToString(), bodyElenment).Result;
             response.EnsureSuccessStatusCode();
-
             _log.DebugFormat("WebApi post [{0}] in {1}", request, DateTime.Now - startTime);
+        }
+
+        protected TOutT PostWithResultWebApiCall<TInT, TOutT>(string methodName, TInT bodyElenment)
+        {
+            var request = new StringBuilder(string.Format("api/{0}/{1}/", _apiControllerName, methodName));
+
+            DateTime startTime = DateTime.Now;
+            var response = _client.PostAsJsonAsync(request.ToString(), bodyElenment).Result;
+            response.EnsureSuccessStatusCode();
+
+            var result = response.Content.ReadAsAsync<TOutT>().Result;
+            _log.DebugFormat("WebApi post with result [{0}] in {1}", request, DateTime.Now - startTime);
+
+            return result;
         }
 
         protected void PostWebApiCall(string methodName, Dictionary<string, object> uriParams)
