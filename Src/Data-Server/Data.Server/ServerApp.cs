@@ -9,10 +9,10 @@ using FalconSoft.Data.Management.Components.CommandsAggregator;
 using FalconSoft.Data.Management.Components.Facades;
 using FalconSoft.Data.Management.Components.ReactiveEngine;
 using FalconSoft.Data.Server.DefaultMongoDbSource;
-using FalconSoft.Data.Server.Persistence;
 using FalconSoft.Data.Server.Persistence.ErrorData;
 using FalconSoft.Data.Server.Persistence.LiveData;
 using FalconSoft.Data.Server.Persistence.MetaData;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using FalconSoft.Data.Server.Persistence.SearchIndexes;
 using FalconSoft.Data.Server.Persistence.Security;
 using FalconSoft.Data.Server.Persistence.TemporalData;
@@ -22,30 +22,9 @@ namespace FalconSoft.Data.Server
     public static class ServerApp
     {
         private static string _metaDataPersistenceConnectionString;
-        private static string _persistenceDataConnectionString;
-        private static string _mongoDataConnectionString;
+        private static string _liveDataConnectionString;
+        private static string _defaultMongoDataSourceConnectionString;
         private static string _dataSourcesPath;
-
-        internal static void SetConfiguration(string metaDataPersistenceConnectionString, string persistenceDataConnectionString,
-                        string mongoDataConnectionString, string dataSourcesPath, string version, string url, DateTime dateTime)
-        {
-            _metaDataPersistenceConnectionString = metaDataPersistenceConnectionString;
-            _persistenceDataConnectionString = persistenceDataConnectionString;
-            _mongoDataConnectionString = mongoDataConnectionString;
-            _dataSourcesPath = dataSourcesPath;
-
-            _serverInfo = new ServerInfo
-            {
-                StartTime = dateTime,
-                Url = url,
-                Version = version
-            };
-        }
-
-        internal static void SetServerInfo(ServerInfo serverInfo)
-        {
-            _serverInfo = serverInfo;
-        }
 
         private static ICommandsAggregator _commandAggregator;
 
@@ -95,19 +74,41 @@ namespace FalconSoft.Data.Server
 
         private static ServerInfo _serverInfo;
 
-        public static IMessageBus MessageBus
+        private static MetaDataMongoCollections _metaDbMongoCollections;
+
+        private static LiveDataMongoCollections _mongoCollections;
+
+        private static LiveDataMongoCollections LiveDataMongoCollections
         {
             get
             {
-                return _messageBus ?? (_messageBus = new ReactiveBus());
+                return _mongoCollections ??
+                       (_mongoCollections = new LiveDataMongoCollections(_liveDataConnectionString));
             }
+        }
+
+        private static MetaDataMongoCollections MetaDbMongoCollections
+        {
+            get
+            {
+                return _metaDbMongoCollections ??
+                       (_metaDbMongoCollections = new MetaDataMongoCollections(_metaDataPersistenceConnectionString));
+            }
+        }
+
+        public static IMessageBus MessageBus
+        {
+            get { return _messageBus ?? (_messageBus = new ReactiveBus()); }
         }
 
         public static IMetaDataAdminFacade MetaDataFacade
         {
             get
             {
-                return _metaDataFacade ?? (_metaDataFacade = new MetaDataFacade(ProvidersRegistry, WorksheetsPersistence, MetaDataPersistence, DataSwitMembershipProvider, ServerInfo));
+                return _metaDataFacade ??
+                       (_metaDataFacade =
+                        new MetaDataFacade(ProvidersRegistry, WorksheetsPersistence, MetaDataPersistence,
+                                           DataSwitMembershipProvider, ServerInfo));
             }
         }
 
@@ -115,7 +116,10 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _dataQueryFacade ?? (_dataQueryFacade = new ReactiveDataFacade(MessageBus, LiveDataPersistenceFactory, ProvidersRegistry, ReactiveEngine, DataSwitMembershipProvider));
+                return _dataQueryFacade ??
+                       (_dataQueryFacade =
+                        new ReactiveDataFacade(MessageBus, LiveDataPersistenceFactory, ProvidersRegistry, ReactiveEngine,
+                                               DataSwitMembershipProvider));
             }
         }
 
@@ -124,7 +128,8 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _temporalQueryFacade ??
-                       (_temporalQueryFacade = new TemporalDataQueryFacade(MessageBus, TemporalDataPersistenseFactory, ProvidersRegistry));
+                       (_temporalQueryFacade =
+                        new TemporalDataQueryFacade(MessageBus, TemporalDataPersistenseFactory, ProvidersRegistry));
             }
         }
 
@@ -132,7 +137,8 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _commandFacade ?? (_commandFacade = new CommandFacade(CommandAggregator, DataSwitMembershipProvider));
+                return _commandFacade ??
+                       (_commandFacade = new CommandFacade(CommandAggregator, DataSwitMembershipProvider));
             }
         }
 
@@ -140,7 +146,9 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _searchFacade ?? (_searchFacade = new SearchFacade(MessageBus, SearchIndexPersistence, MetaDataFacade, LiveDataPersistenceFactory));
+                return _searchFacade ??
+                       (_searchFacade =
+                        new SearchFacade(MessageBus, SearchIndexPersistence, MetaDataFacade, LiveDataPersistenceFactory));
             }
         }
 
@@ -148,7 +156,8 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _securityFacade ?? (_securityFacade = new SecurityFacade(SecurityPersistence, DataSwitMembershipProvider));
+                return _securityFacade ??
+                       (_securityFacade = new SecurityFacade(SecurityPersistence, DataSwitMembershipProvider));
             }
         }
 
@@ -167,20 +176,31 @@ namespace FalconSoft.Data.Server
             {
                 if (_dataProvidersCatalogs != null) return _dataProvidersCatalogs;
                 AppDomainAssemblyTypeScanner.SetLogger(Logger);
-                _dataProvidersCatalogs = AppDomainAssemblyTypeScanner.TypesOfWithAssembly(typeof(IDataProvidersCatalog), _dataSourcesPath).Select(
-                            x =>
-                            {
-                                Logger.InfoFormat("-> Load {0} dll with provider Catalogs", x.Value.FullName);
-                                try
-                                {
-                                    return (IDataProvidersCatalog)Activator.CreateInstance(x.Key);
-                                }
-                                catch (MissingMethodException)
-                                {
-                                    return (IDataProvidersCatalog)Activator.CreateInstance(x.Key, new [] { _mongoDataConnectionString });
-                                }
-
-                            }).ToArray();
+                _dataProvidersCatalogs =
+                    AppDomainAssemblyTypeScanner.TypesOfWithAssembly(typeof (IDataProvidersCatalog), _dataSourcesPath)
+                                                .Select(
+                                                    x =>
+                                                        {
+                                                            Logger.InfoFormat("-> Load {0} dll with provider Catalogs",
+                                                                              x.Value.FullName);
+                                                            try
+                                                            {
+                                                                return
+                                                                    (IDataProvidersCatalog)
+                                                                    Activator.CreateInstance(x.Key);
+                                                            }
+                                                            catch (MissingMethodException)
+                                                            {
+                                                                return
+                                                                    (IDataProvidersCatalog)
+                                                                    Activator.CreateInstance(x.Key,
+                                                                                             new[]
+                                                                                                 {
+                                                                                                     _defaultMongoDataSourceConnectionString
+                                                                                                 });
+                                                            }
+                                                        })
+                                                .ToArray();
                 Logger.Info("");
                 return _dataProvidersCatalogs;
             }
@@ -190,7 +210,10 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _reactiveEngine ?? (_reactiveEngine = new ReactiveEngine(MetaDataFacade, LiveDataPersistenceFactory, ProvidersRegistry, new DenormalizedBusPublisher(MessageBus), Logger));
+                return _reactiveEngine ??
+                       (_reactiveEngine =
+                        new ReactiveEngine(MetaDataFacade, LiveDataPersistenceFactory, ProvidersRegistry,
+                                           new DenormalizedBusPublisher(MessageBus), Logger));
             }
         }
 
@@ -198,7 +221,12 @@ namespace FalconSoft.Data.Server
         {
             get
             {
-                return _providersRegistry ?? (_providersRegistry = new ProvidersRegistry { DataProvidersCatalog = DataProvidersCatalogs.First(x => x is DataProvidersCatalog) });
+                return _providersRegistry ??
+                       (_providersRegistry =
+                        new ProvidersRegistry
+                            {
+                                DataProvidersCatalog = DataProvidersCatalogs.First(x => x is DataProvidersCatalog)
+                            });
             }
         }
 
@@ -210,7 +238,9 @@ namespace FalconSoft.Data.Server
                        (_commandAggregator = new CommandAggregator(ProvidersRegistry, LiveDataPersistenceFactory,
                                                                    TemporalDataPersistenseFactory,
                                                                    ErrorDataPersistence,
-                                                                   DataProvidersCatalogs, ReactiveEngine, MetaDataPersistence, DefaultMetaDataProvider, Logger, SecurityPersistence));
+                                                                   DataProvidersCatalogs, ReactiveEngine,
+                                                                   MetaDataPersistence, DefaultMetaDataProvider, Logger,
+                                                                   SecurityPersistence));
             }
         }
 
@@ -219,7 +249,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _worksheetsPersistence ??
-                       (_worksheetsPersistence = new WorksheetPersistence(_metaDataPersistenceConnectionString));
+                       (_worksheetsPersistence = new WorksheetPersistence(MetaDbMongoCollections));
             }
         }
 
@@ -228,7 +258,8 @@ namespace FalconSoft.Data.Server
             get
             {
                 // TODO : this has to move to separate method and user should be able to specify specific connection string for each dataprovider or use default one 
-                return _liveDataPersistenceFactory ?? (_liveDataPersistenceFactory = s => new LiveDataPersistence(_persistenceDataConnectionString, s.GetName(),Logger));
+                return _liveDataPersistenceFactory ??
+                       (_liveDataPersistenceFactory = (dsPath) => new LiveDataPersistence(LiveDataMongoCollections, dsPath, Logger));
             }
         }
 
@@ -237,29 +268,31 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _temporalDataPersistenseFactory ?? (_temporalDataPersistenseFactory = s =>
-                {
-                    switch (s.HistoryStorageType)
                     {
-                        case HistoryStorageType.Buffer:
-                            {
-                                return
-                                    new TemporalDataPersistenceBuffer(_persistenceDataConnectionString, s, "0",
-                                        string.IsNullOrEmpty(s.HistoryStorageTypeParam) ? 100 : int.Parse(s.HistoryStorageTypeParam));
-                            }
-                        case HistoryStorageType.Event:
-                            {
-                                return new TemporalDataPersistence(_persistenceDataConnectionString, s, "0");
-                            }
-                        case HistoryStorageType.Time:
-                            {
-                                //TODO will be soon 
-                                return null;
-                            }
-                    }
-                    //DEFAULT RETURN
-                    return new TemporalDataPersistenceBuffer(_persistenceDataConnectionString, s, "0", 100);
-                });
-
+                        switch (s.HistoryStorageType)
+                        {
+                            case HistoryStorageType.Buffer:
+                                {
+                                    return
+                                        new TemporalDataPersistenceBuffer(LiveDataMongoCollections, s, "0",
+                                                                          string.IsNullOrEmpty(s.HistoryStorageTypeParam)
+                                                                              ? 100
+                                                                              : int.Parse(s.HistoryStorageTypeParam));
+                                }
+                            case HistoryStorageType.Event:
+                                {
+                                    return new TemporalDataPersistence(LiveDataMongoCollections, MetaDbMongoCollections, s,
+                                                                       "0");
+                                }
+                            case HistoryStorageType.Time:
+                                {
+                                    //TODO will be soon 
+                                    return null;
+                                }
+                        }
+                        //DEFAULT RETURN
+                        return new TemporalDataPersistenceBuffer(LiveDataMongoCollections, s, "0", 100);
+                    });
             }
         }
 
@@ -268,7 +301,9 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _searchIndexPersistence ??
-                       (_searchIndexPersistence = new SearchIndexPersistence(_persistenceDataConnectionString, _metaDataPersistenceConnectionString));
+                       (_searchIndexPersistence =
+                        new SearchIndexPersistence(_liveDataConnectionString,
+                                                   _metaDataPersistenceConnectionString));
             }
         }
 
@@ -277,7 +312,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _errorDataPersistence ??
-                       (_errorDataPersistence = new ErrorDataPersistence(_persistenceDataConnectionString));
+                       (_errorDataPersistence = new ErrorDataPersistence(LiveDataMongoCollections));
             }
         }
 
@@ -286,7 +321,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _securityPersistence ??
-                       (_securityPersistence = new SecurityPersistence(_persistenceDataConnectionString));
+                       (_securityPersistence = new SecurityPersistence(MetaDbMongoCollections, Logger));
             }
         }
 
@@ -295,7 +330,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _permissionSecurityPersistance ??
-                       (_permissionSecurityPersistance = new PermissionSecurityPersistance(_persistenceDataConnectionString));
+                       (_permissionSecurityPersistance = new PermissionSecurityPersistance(MetaDbMongoCollections));
             }
         }
 
@@ -304,7 +339,8 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _dataSwitMembershipProvider ??
-                       (_dataSwitMembershipProvider = new DataSwitMembershipProvider(PermissionSecurityPersistance, MetaDataPersistence));
+                       (_dataSwitMembershipProvider =
+                        new DataSwitMembershipProvider(PermissionSecurityPersistance, MetaDataPersistence));
             }
         }
 
@@ -313,7 +349,7 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _metaDataPersistence ??
-                       (_metaDataPersistence = new MetaDataPersistence(_metaDataPersistenceConnectionString));
+                       (_metaDataPersistence = new MetaDataPersistence(MetaDbMongoCollections, LiveDataMongoCollections));
             }
         }
 
@@ -322,21 +358,41 @@ namespace FalconSoft.Data.Server
             get
             {
                 return _metaDataProvider ??
-                       (_metaDataProvider = new MetaDataProvider(_mongoDataConnectionString));
+                       (_metaDataProvider = new MetaDataProvider(new MongoDbCollections(_defaultMongoDataSourceConnectionString)));
             }
         }
 
         public static ILogger Logger
         {
-            get
-            {
-                return _logger ?? (_logger = new Logger());
-            }
+            get { return _logger ?? (_logger = new Logger()); }
         }
 
         public static ServerInfo ServerInfo
         {
             get { return _serverInfo ?? (_serverInfo = new ServerInfo()); }
+        }
+
+        internal static void SetConfiguration(string metaDataPersistenceConnectionString,
+                                              string persistenceDataConnectionString,
+                                              string mongoDataConnectionString, string dataSourcesPath, string version,
+                                              string url, DateTime dateTime)
+        {
+            _metaDataPersistenceConnectionString = metaDataPersistenceConnectionString;
+            _liveDataConnectionString = persistenceDataConnectionString;
+            _defaultMongoDataSourceConnectionString = mongoDataConnectionString;
+            _dataSourcesPath = dataSourcesPath;
+
+            _serverInfo = new ServerInfo
+                {
+                    StartTime = dateTime,
+                    Url = url,
+                    Version = version
+                };
+        }
+
+        internal static void SetServerInfo(ServerInfo serverInfo)
+        {
+            _serverInfo = serverInfo;
         }
     }
 }

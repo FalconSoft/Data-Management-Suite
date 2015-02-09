@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Security;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -11,55 +12,18 @@ namespace FalconSoft.Data.Server.Persistence.Security
 {
     public class PermissionSecurityPersistance : IPermissionSecurityPersistance
     {
-        private readonly string _connectionString;
-        private const string PermissionsCollectionName = "Permissions";
-        private MongoDatabase _mongoDatabase;
+        private readonly MetaDataMongoCollections _metaMongoCollections;
 
-        public PermissionSecurityPersistance(string connectionString)
+        public PermissionSecurityPersistance(MetaDataMongoCollections metaMongoCollections)
         {
-            _connectionString = connectionString;
-            ConnectToDb();
-            if (_mongoDatabase.CollectionExists(PermissionsCollectionName)) return;
-            _mongoDatabase.CreateCollection(PermissionsCollectionName);
-
-            CreatePowerAdmin("Admin", "Admin");
-            CreatePowerAdmin("consoleClient", "console");
-            CreatePowerAdmin("ExcelClient", "ExcelClient");
+            _metaMongoCollections = metaMongoCollections;
         }
 
-        private void CreatePowerAdmin(string userName, string password)
-        {
-            var id = ObjectId.GenerateNewId().ToString();
-            _mongoDatabase.GetCollection<User>("Users").Insert(new User
-            {
-                Id = id,
-                LoginName = userName,
-                Password = password
-            });
-
-            var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
-            collection.Insert(new Permission
-            {
-                Id = ObjectId.GenerateNewId().ToString(),
-                UserId = id,
-                UserRole = UserRole.Administrator,
-                DataSourceAccessPermissions = new Dictionary<string, DataSourceAccessPermission>()
-            });
-        }
         
-        private void ConnectToDb()
-        {
-            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
-            {
-                _mongoDatabase = MongoDatabase.Create(_connectionString);
-            }
-        }
-
       
         public Permission GetUserPermissions(string userToken)
         {
-            var collection = _mongoDatabase.GetCollection(typeof (Permission), PermissionsCollectionName);
-            return collection.FindAllAs<Permission>().FirstOrDefault(p => p.UserId == userToken);
+            return _metaMongoCollections.Permissions.FindAllAs<Permission>().FirstOrDefault(p => p.UserId == userToken);
         }
 
         public void SaveUserPermissions(Dictionary<string, AccessLevel> permissions, string targetUserToken,
@@ -67,7 +31,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
         {
             try
             {
-                var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
+                var collection = _metaMongoCollections.Permissions;
                 var permission = collection.FindOneAs<Permission>(Query<Permission>.EQ(p => p.UserId, targetUserToken));
                 if (permission != null)
                 {
@@ -135,7 +99,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
 
         public void ChangeUserRole(string userToken, UserRole userRole, string grantedByUserToken)
         {
-            var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
+            var collection = _metaMongoCollections.Permissions;
             var permission = collection.FindOneAs<Permission>(Query<Permission>.EQ(p => p.UserId, userToken));
             if (permission != null)
             {
@@ -171,7 +135,7 @@ namespace FalconSoft.Data.Server.Persistence.Security
 
         public void NotifyAdministrators(Dictionary<string, AccessLevel> permissions)
         {
-            var collection = _mongoDatabase.GetCollection<Permission>(PermissionsCollectionName);
+            var collection = _metaMongoCollections.Permissions;
             var administartorPermissions =
                 collection.FindAs<Permission>(Query<Permission>.EQ(p => p.UserRole, UserRole.Administrator));
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
@@ -12,12 +13,17 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 {
     public class TemporalDataPersistenceBuffer : ITemporalDataPersistense
     {
-        private readonly string _connectionString;
+
+        private const string BsonTimeStamp = "@TimeStamp";
+        private const string BsonUserId = "@UserId";
+        private const string BsonRevisionId = "@RevisionId";
+        private const string BsonId = "_id";
+        private const string BsonLoginName = "@LoginName";
+
         private readonly string _dataSourceProviderString;
         private readonly string _userId;
-        private readonly string[] _dbfields = { "RecordKey", "TimeStamp", "UserId", "_id", "RevisionId" };
+        private readonly string[] _dbfields = { "RecordKey", BsonTimeStamp, BsonUserId, BsonId, BsonRevisionId };
         private readonly DataSourceInfo _dataSourceInfo;
-        private MongoDatabase _mongoDatabase;
         private MongoCollection<BsonDocument> _collection;
         private MongoCollection<BsonDocument> _collectionRevision; 
         //BUFFER
@@ -25,12 +31,12 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
         //ROLLOVER
         private readonly bool _rollover = false;
 
+        private readonly LiveDataMongoCollections _mongoCollections;
 
-
-        public TemporalDataPersistenceBuffer(string connectionString, DataSourceInfo dataSourceInfo, string userId, int buffer, bool rollover = false)
+        public TemporalDataPersistenceBuffer(LiveDataMongoCollections mongoCollections, DataSourceInfo dataSourceInfo, string userId, int buffer, bool rollover = false)
         {
-            _connectionString = connectionString;
-            _dataSourceProviderString = dataSourceInfo.DataSourcePath;
+            _mongoCollections = mongoCollections;
+            _dataSourceProviderString = dataSourceInfo.Urn;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
             _buffer = buffer - 1; 
@@ -40,24 +46,11 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         private void ConnectToDb()
         {
-            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
-            {
-                _mongoDatabase = MongoDatabase.Create(_connectionString);
-            }
-            if (_mongoDatabase.CollectionExists(_dataSourceProviderString.ToValidDbString() + "_History"))
-            {
-                _collection = _mongoDatabase.GetCollection(_dataSourceProviderString.ToValidDbString() + "_History");
-                _collectionRevision = _mongoDatabase.GetCollection("Revisions"); 
-                _collectionRevision.CreateIndex(new[] { "_id" });
-            }
-            else
-            {
-                _mongoDatabase.CreateCollection(_dataSourceProviderString.ToValidDbString() + "_History");
-                _collection = _mongoDatabase.GetCollection(_dataSourceProviderString.ToValidDbString() + "_History");
-                _collection.CreateIndex("RecordKey", "Current");
-                _collectionRevision = _mongoDatabase.GetCollection("Revisions");
-                _collectionRevision.CreateIndex(new[] { "_id" });
-            }
+            _collection = _mongoCollections.GetHistoryDataCollection(_dataSourceProviderString);
+            _collectionRevision = _mongoCollections.Revisions;
+
+            _collectionRevision.CreateIndex(new[] { BsonId });
+            _collection.CreateIndex("RecordKey", "Current");
         }
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(string recordKey)
@@ -69,11 +62,11 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             {
                 foreach (var bsondocument in cdata["Data"].AsBsonArray.Where(w => w.ToString() != "{ }"))
                 {
-                    var loginname = bsondocument["UserId"].ToString() == string.Empty ? _dataSourceProviderString : bsondocument["UserId"].ToString();
+                    var loginname = bsondocument[BsonUserId].ToString() == string.Empty ? _dataSourceProviderString : bsondocument[BsonUserId].ToString();
                     var dict = new Dictionary<string, object>
                     {
-                        {"LoginName", loginname},
-                        {"TimeStamp", bsondocument["TimeStamp"].ToNullableUniversalTime()}
+                        {BsonLoginName, loginname},
+                        {BsonTimeStamp, bsondocument[BsonTimeStamp].ToNullableUniversalTime()}
                     };
                     foreach (var data in bsondocument.ToBsonDocument())
                     {
@@ -86,19 +79,19 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                     list.Add(dict);
                 }
             }
-            return list.OrderByDescending(h => h["TimeStamp"]);
+            return list.OrderByDescending(h => h[BsonTimeStamp]);
 
         }
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(DateTime timeStamp, string dataSourcePath)
         {
-            var cursorData = _mongoDatabase.GetCollection(dataSourcePath.ToValidDbString() + "_History").FindAllAs<BsonDocument>();
+            var cursorData = _mongoCollections.GetHistoryDataCollection(dataSourcePath).FindAllAs<BsonDocument>();
             var list = new List<Dictionary<string, object>>();
             foreach (var cdata in cursorData)
             {
                 foreach (var bsondocument in cdata["Data"].AsBsonArray.Where(w => w.ToString() != "{ }"))
                 {
-                    if (bsondocument["TimeStamp"].ToNullableUniversalTime() > timeStamp) continue;
+                    if (bsondocument[BsonTimeStamp].ToNullableUniversalTime() > timeStamp) continue;
                     var dict = bsondocument.ToBsonDocument().Where(data => _dbfields.All(a => a != data.Name)).ToDictionary(data => data.Name, data => BsonSerializer.Deserialize<object>(data.Value.ToJson()));
                     list.Add(dict);
                 }
@@ -108,16 +101,16 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetDataByLTEDate(DateTime timeStamp, string dataSourcePath)
         {
-            var cursorData = _mongoDatabase.GetCollection(dataSourcePath.ToValidDbString() + "_History").FindAllAs<BsonDocument>();
+            var cursorData = _mongoCollections.GetHistoryDataCollection(dataSourcePath).FindAllAs<BsonDocument>();
             var resultData = new List<Dictionary<string, object>>();
             foreach (var cdata in cursorData)
             {
                 var timeData = cdata["Data"].AsBsonArray
                     .Where(w => w.ToString() != "{ }")
-                    .Where(bson => bson["TimeStamp"].ToNullableUniversalTime() <= timeStamp).ToArray();
-                var maxTimeStamp = timeData.Select(s => s["TimeStamp"].ToNullableUniversalTime()).Max();
+                    .Where(bson => bson[BsonTimeStamp].ToNullableUniversalTime() <= timeStamp).ToArray();
+                var maxTimeStamp = timeData.Select(s => s[BsonTimeStamp].ToNullableUniversalTime()).Max();
                 if (maxTimeStamp == null) continue;
-                var result = timeData.First(w => w["TimeStamp"].ToNullableUniversalTime() == maxTimeStamp).ToBsonDocument().Where(data => _dbfields.All(a => a != data.Name))
+                var result = timeData.First(w => w[BsonTimeStamp].ToNullableUniversalTime() == maxTimeStamp).ToBsonDocument().Where(data => _dbfields.All(a => a != data.Name))
                                                                .ToDictionary(data => data.Name, data => BsonSerializer.Deserialize<object>(data.Value.ToJson()));
                 resultData.Add(result);
 
@@ -161,7 +154,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             {
                 foreach (var element in revision["Data"].AsBsonArray.Where(w => w.ToString() != "{ }"))
                 {
-                    if (element["RevisionId"].ToString() == revisionId.ToString())
+                    if (element[BsonRevisionId].ToString() == revisionId.ToString())
                     {
                         var dict = element.ToBsonDocument().Where(data => _dbfields.All(a => a != data.Name)).Where(data => _dataSourceInfo.Fields.ContainsKey(data.Name)).ToDictionary(data => data.Name, data => BsonSerializer.Deserialize<object>(data.Value.ToJson()));
                         resultData.Add(dict);
@@ -174,21 +167,21 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetRevisions()
         {
-            var query = Query.EQ("Urn", _dataSourceInfo.DataSourcePath);
-            var collectionRevision = _mongoDatabase.GetCollection("Revisions");
+            var query = Query.EQ("Urn", _dataSourceInfo.Urn);
+            var collectionRevision = _mongoCollections.Revisions;
             var revisions = collectionRevision.FindAs<BsonDocument>(query).SetFields(Fields.Exclude("Urn")); //"_id", "RevisionId" 
             return revisions.Select(revision => revision.ToDictionary(k => k.Name, v => (object) v.Value.ToString())).ToList();
         }
 
         public object AddRevision(string urn,string userId)
         {
-            var revisions = _mongoDatabase.GetCollection("Revisions");
+            var revisions = _mongoCollections.Revisions;
             var revisionId = ObjectId.GenerateNewId();
             var bson = new BsonDocument
             {
-                {"_id", revisionId},
-                {"LoginName", string.IsNullOrEmpty(userId) ? urn : userId},
-                {"TimeStamp", DateTime.Now},
+                {BsonId, revisionId},
+                {BsonLoginName, string.IsNullOrEmpty(userId) ? urn : userId},
+                {BsonTimeStamp, DateTime.Now},
                 {"Urn",urn}
             };
             revisions.Insert(bson);
@@ -223,7 +216,7 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                             if (cursor["Current"].AsInt32 == _buffer && _rollover == true)//ROLLOVER ON
                             {
                                 var doc = cursor["Data"].AsBsonArray.Last();
-                                doc["TimeStamp"] = DateTime.Now;
+                                doc[BsonTimeStamp] = DateTime.Now;
                                 _collection.Update(query, Update.Set(string.Format("Data.{0}", cursor["Current"].AsInt32), doc));
                                 CreateNewDoucument(_collection, recordChangedParam, (ObjectId)revisionId);
                                 break;
@@ -265,21 +258,21 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public void SaveTagInfo(TagInfo tagInfo)
         {
-            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
+            var collection = _mongoCollections.TagInfos;
             collection.Insert(tagInfo);
         }
 
         public void RemoveTagInfo(TagInfo tagInfo)
         {
-            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
+            var collection = _mongoCollections.TagInfos;
             var query = Query<TagInfo>.EQ(t => t.TagName, tagInfo.TagName);
             collection.Remove(query);
         }
 
         public IEnumerable<TagInfo> GeTagInfos()
         {
-            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
-            return collection.FindAll().SetFields(Fields.Exclude("_id")).ToList();
+            var collection = _mongoCollections.TagInfos;
+            return collection.FindAll().SetFields(Fields.Exclude(BsonId)).ToList();
         }
 
         private void CreateNewDoucument(MongoCollection<BsonDocument> collection, RecordChangedParam recordChangedParam, ObjectId revisionId)
@@ -305,10 +298,10 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         void AddStructureFields(ref Dictionary<string, object> bsonDocument, RecordChangedParam recordChangedParam, ObjectId revisionId)
         {
-            bsonDocument.Add("RevisionId", revisionId);
-            bsonDocument.Add("_id", ObjectId.GenerateNewId());
-            bsonDocument.Add("TimeStamp", DateTime.Now);
-            bsonDocument.Add("UserId", string.IsNullOrEmpty(recordChangedParam.UserToken) ? string.Empty : recordChangedParam.UserToken);
+            bsonDocument.Add(BsonRevisionId, revisionId);
+            bsonDocument.Add(BsonId, ObjectId.GenerateNewId());
+            bsonDocument.Add(BsonTimeStamp, DateTime.Now);
+            bsonDocument.Add(BsonUserId, string.IsNullOrEmpty(recordChangedParam.UserToken) ? string.Empty : recordChangedParam.UserToken);
         }
 
         private Dictionary<string, object> GetDataForHistory(RecordChangedParam recordChangedParam)
@@ -340,8 +333,8 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
             if (obj == null) return;
             try
             {
-                var revisionId = obj.First()["Data"].AsBsonArray[index]["RevisionId"].AsObjectId;
-                var queryRev = Query.EQ("_id", revisionId);
+                var revisionId = obj.First()["Data"].AsBsonArray[index][BsonRevisionId].AsObjectId;
+                var queryRev = Query.EQ(BsonId, revisionId);
                 _collectionRevision.Remove(queryRev);
             }
             catch (Exception)

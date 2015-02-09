@@ -292,7 +292,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    _logger.Debug("GetAggregatedData failed", ex);
+                    _logger.Debug("GetDataByKey failed", ex);
                     throw;
                 }
             }, _cts.Token);

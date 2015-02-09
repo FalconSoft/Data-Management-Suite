@@ -10,7 +10,14 @@ namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
 {
     public class BigDataSource : IDataProvider
     {
+        private readonly string _dataSourcesUrn;
+        public BigDataSource(string dataSourceUrn)
+        {
+            _dataSourcesUrn = dataSourceUrn;
+        }
+
         public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
+
         public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
             if (!File.Exists(@"..\..\..\DataSources\SampleDataSources\Samples\300000x200.csv"))
@@ -56,12 +63,10 @@ namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
             }
         }
 
-
         public RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange, IEnumerable<string> recordsToDelete, string comment = null)
         {
             throw new NotImplementedException();
         }
-
 
         private static object TryConvert(string value, DataTypes type = DataTypes.Null)
         {

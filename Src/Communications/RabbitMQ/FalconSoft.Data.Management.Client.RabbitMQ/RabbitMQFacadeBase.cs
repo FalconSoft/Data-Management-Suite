@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -88,7 +87,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
         private readonly object _lockThis = new object();
 
         protected IEnumerable<T> RPCServerTaskExecuteEnumerable<T>(IConnection connection,
-          string commandQueueName, string methodName, string userToken, object[] methodArgs) where  T : class 
+          string commandQueueName, string methodName, string userToken, object[] methodArgs) where T : class
         {
             try
             {
@@ -262,19 +261,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                     }
                     catch (Exception ex)
                     {
-                        if (ex is AlreadyClosedException || ex is NotSupportedException)
-                            RestoreConnection();
-
-                        if (ex is NullReferenceException || ex is TimeoutException || ex is AlreadyClosedException || ex is NotSupportedException)
-                        {
-                            ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
-                        }
-                        else
-                        {
-                            dispoce.Dispose();
-
-                            throw;
-                        }
+                        if (ServerErrorHandler != null)
+                         ServerErrorHandler(this, new ServerErrorEvArgs("Connection to server has been lost!", ex));
                     }
                 });
 
@@ -312,7 +300,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                                 break;
                             }
 
-                            var list = (List<T>) responce.Data;
+                            var list = (List<T>)responce.Data;
                             foreach (var dictionary in list)
                             {
                                 subject.OnNext(dictionary);
@@ -385,8 +373,8 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
                 return Disposable.Create(() =>
                 {
-
-                    CommandChannel.QueueUnbind(queueName, exchangeName, routingKey, null);
+                    if (CommandChannel.IsOpen)
+                        CommandChannel.QueueUnbind(queueName, exchangeName, routingKey, null);
                     con.OnCancel();
                     dispoce.Dispose();
                     taskComplete = false;
@@ -452,6 +440,11 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             IModel channel = null;
             try
             {
+                if (!_connection.IsOpen)
+                {
+                    RestoreConnection();
+                }
+
                 channel = _connection.CreateModel();
                 if (channel != null)
                 {
@@ -534,7 +527,7 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
                 var binForm = new BinaryFormatter();
                 memStream.Write(byteArray, 0, byteArray.Length);
                 memStream.Seek(0, SeekOrigin.Begin);
-                return (T) binForm.Deserialize(memStream);
+                return (T)binForm.Deserialize(memStream);
             }
         }
     }

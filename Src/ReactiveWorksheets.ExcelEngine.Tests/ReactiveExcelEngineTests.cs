@@ -20,7 +20,8 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         [Test]
         public void CorrectInputDataTest()
         {
-            var engine = new MockExcelEngine(null);
+            var serverMsg = new Subject<RecordChangedParam[]>();
+            var engine = new MockExcelEngine(serverMsg);
             var rFunctions = new MockReactiveFunctions(engine);
             var result1 = (string)rFunctions.RDP(string.Empty, "10788", "CustomerID");
             Assert.AreEqual("Invalid Input Parameters",result1);
@@ -33,13 +34,12 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         [Test]
         public void RegisterSourceTest()
         {
-            var serverObs = new Subject<RecordChangedParam[]>();
-            var engine = new MockExcelEngine(serverObs);
+            var serverMsg = new Subject<RecordChangedParam[]>();
+            var engine = new MockExcelEngine(serverMsg);
             var rFunctions = new MockReactiveFunctions(engine);
-            var listener = new MockLiteSubject();
-            var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID") as LiteSubject;
-            obs.Subscribe(listener);
-            Assert.AreEqual("Invalid DataSourcePath", listener.Result);
+            var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID");
+            Assert.AreEqual("#Loading!", obs.ToString());
+            Assert.AreEqual("Invalid Urn", engine.ResultValue);
             engine.AddDsForRegister(OrdersDataSourceInfoJsonClean, @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
                                                             10788	TRAIH	1	22/12/1997	Trail's Head Gourmet Provisioners	Helvetius Nagy	Sales Associate");
             Assert.AreEqual(engine.LocalDb.Count,1);
@@ -52,36 +52,16 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
         [Test]
         public void RegisterSubjectTest()
         {
-            var serverObs = new Subject<RecordChangedParam[]>();
-            var engine = new MockExcelEngine(serverObs);
+            var serverMsg = new Subject<RecordChangedParam[]>();
+            var engine = new MockExcelEngine(serverMsg);
             var rFunctions = new MockReactiveFunctions(engine);
-            var listener = new LiteSubject(new ExcelPoint(@"Test\Orders", "10788", "CustomerID"));
             engine.AddDsForRegister(OrdersDataSourceInfoJsonClean, @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
                                                             10788	TRAIH	1	22/12/1997	Trail's Head Gourmet Provisioners	Helvetius Nagy	Sales Associate");
-            var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID") as LiteSubject;
-            Assert.AreNotEqual(null, obs);
-            obs.Subscribe(listener);
-            Assert.AreEqual(engine.IsRdpSubcribed, true);
+            var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID");
+            Assert.AreEqual("#Loading!", obs.ToString());
+            Assert.AreEqual("TRAIH", engine.ResultValue);
         }
 
-        [Test]
-        public void ExcelSubmitDataTest()
-        {
-            var serverObs = new Subject<RecordChangedParam[]>();
-            var engine = new MockExcelEngine(serverObs);
-            var rFunctions = new MockReactiveFunctions(engine);
-            var listener = new MockLiteSubject();
-            engine.AddDsForRegister(OrdersDataSourceInfoJsonClean, @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
-                                                            10788	TRAIH	1	22/12/1997	Trail's Head Gourmet Provisioners	Helvetius Nagy	Sales Associate");
-            var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID") as LiteSubject;
-            obs.Subscribe(listener);
-            Assert.AreEqual(listener.Result, "TRAIH");
-            var data = new Dictionary<string, object> {{"OrderID",10788},{"CustomerID","FalconSoft"}};
-            engine.SubmitData(@"Test\Orders",new []{data},null);
-            Assert.AreEqual(engine.SubmitedData.Count(),1);
-            Assert.AreEqual(engine.SubmitedData.First().Count, 7);
-            Assert.AreEqual(engine.SubmitedData.First()["CustomerID"], "FalconSoft");
-        }
 
         [Test]
         public void ExcelEngineFunctionalityTest()
@@ -89,13 +69,11 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
             var serverMsg = new Subject<RecordChangedParam[]>();
             var engine = new MockExcelEngine(serverMsg);
             var rFunctions = new MockReactiveFunctions(engine);
-            var listener = new MockLiteSubject();
             engine.AddDsForRegister(OrdersDataSourceInfoJsonClean, @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
                                                             10788	TRAIH	1	22/12/1997	Trail's Head Gourmet Provisioners	Helvetius Nagy	Sales Associate");
             engine.IsRdpSubcribed = false;
-            var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID") as LiteSubject;
-            obs.Subscribe(listener);
-            Assert.AreEqual(listener.Result, "TRAIH");
+            var obs = rFunctions.RDP(@"Test\Orders", "10788", "CustomerID");
+            Assert.AreEqual("TRAIH", engine.ResultValue);
             var ds = MockRepository.GetDataSourceFromJSON(OrdersDataSourceInfoJsonClean);
             var data = RecordHelpers.TsvToDictionary(ds,
                 @"OrderID	CustomerID	EmployeeID	OrderDate	CustomerCompany	CustomerContact	CustomerContactTitle
@@ -110,10 +88,10 @@ namespace ReactiveWorksheets.ExcelEngine.Tests
                 ProviderString = @"Test\Orders",
                 OriginalRecordKey = "|10788",
                 RecordKey = "|10788",
-                ChangedPropertyNames = new []{"CustomerID"},
+                ChangedPropertyNames = new[] { "CustomerID" },
                 RecordValues = data
             };
-            serverMsg.OnNext(new []{rcp});
+            serverMsg.OnNext(new[] { rcp });
             Assert.AreEqual(engine.LocalDb[@"Test\Orders"]["|10788"]["CustomerID"], "FalconSoft");
             //on Add
             var data2 = RecordHelpers.TsvToDictionary(ds,

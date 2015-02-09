@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -11,35 +12,30 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 {
     public class TemporalDataPersistence : ITemporalDataPersistense
     {
-        private readonly string _connectionString;
         private readonly string _dataSourceProviderString;
         private readonly string _userId;
         private readonly string[] _dbfields = { "RecordKey", "ValidFrom", "ValidTo", "UserId", "_id" };
         private readonly DataSourceInfo _dataSourceInfo;
-        private MongoDatabase _mongoDatabase;
+        private readonly LiveDataMongoCollections _mongoCollections;
+        private readonly MetaDataMongoCollections _metaMongoCollections;
+        private readonly MongoCollection<BsonDocument> _historyCollection; 
 
-        public TemporalDataPersistence(string connectionString, DataSourceInfo dataSourceInfo, string userId)
+        public TemporalDataPersistence(LiveDataMongoCollections mongoCollections, MetaDataMongoCollections metaMongoCollections, DataSourceInfo dataSourceInfo, string userId)
         {
-            _connectionString = connectionString;
-            _dataSourceProviderString = dataSourceInfo.DataSourcePath;
+            _mongoCollections = mongoCollections;
+            _metaMongoCollections = metaMongoCollections;
+            _dataSourceProviderString = dataSourceInfo.Urn;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
+
+            _historyCollection = _mongoCollections.GetHistoryDataCollection(_dataSourceProviderString);            
         }
 
-        private void ConnectToDb()
-        {
-            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
-            {
-                _mongoDatabase = MongoDatabase.Create(_connectionString);
-            }
-        }
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(string recordKey)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
-            var users = _mongoDatabase.GetCollection<BsonDocument>("Users");
-            var cursorData = collection.FindAllAs<BsonDocument>();
+            var users = _metaMongoCollections.Users;
+            var cursorData = _historyCollection.FindAllAs<BsonDocument>();
             var cursorUser = users.FindAllAs<BsonDocument>();
 
             var list = new List<Dictionary<string, object>>();
@@ -64,10 +60,8 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(DateTime timeStamp, string urn)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
-            var users = _mongoDatabase.GetCollection<BsonDocument>("Users");
-            var cursorData = collection.FindAllAs<BsonDocument>();
+            var users = _metaMongoCollections.Users;
+            var cursorData = _historyCollection.FindAllAs<BsonDocument>();
             var cursorUser = users.FindAllAs<BsonDocument>();
             var list = new List<Dictionary<string, object>>();
 
@@ -129,8 +123,6 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public void SaveTempotalData(RecordChangedParam recordChangedParam, object revisionId)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<BsonDocument>(recordChangedParam.ProviderString.ToValidDbString() + "_History");
             switch (recordChangedParam.ChangedAction)
             {
                 case RecordChangedAction.AddedOrUpdated:
@@ -142,23 +134,23 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
                         {
                             var query = Query.And(Query.EQ("RecordKey", recordChangedParam.RecordKey),
                                 Query.EQ("ValidTo", BsonNull.Value));
-                            var oldrecord = collection.FindOne(query);
+                            var oldrecord = _historyCollection.FindOne(query);
                             if (oldrecord == null)
                             {
-                                collection.Insert(bsDoc);
+                                _historyCollection.Insert(bsDoc);
                                 break;
                             }
                             oldrecord["ValidTo"] = bsDoc["ValidFrom"];
-                            collection.Save(oldrecord);
+                            _historyCollection.Save(oldrecord);
                         }
-                        collection.Insert(bsDoc);
+                        _historyCollection.Insert(bsDoc);
                         break;
                     }
 
                 case RecordChangedAction.Removed:
                     {
                         var query = Query.And(Query.EQ("RecordKey", recordChangedParam.OriginalRecordKey), Query.EQ("ValidTo", BsonNull.Value));
-                        collection.Update(query, Update.Set("ValidTo", DateTime.Now));
+                        _historyCollection.Update(query, Update.Set("ValidTo", DateTime.Now));
                     }
                     break;
             }
@@ -171,24 +163,18 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public void SaveTagInfo(TagInfo tagInfo)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
-            collection.Insert(tagInfo);
+            _mongoCollections.TagInfos.Insert(tagInfo);
         }
 
         public void RemoveTagInfo(TagInfo tagInfo)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
             var query = Query<TagInfo>.EQ(t => t.TagName, tagInfo.TagName);
-            collection.Remove(query);
+            _mongoCollections.TagInfos.Remove(query);
         }
 
         public IEnumerable<TagInfo> GeTagInfos()
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<TagInfo>("TagInfo");
-            return collection.FindAll().SetFields(Fields.Exclude("_id")).ToList();
+            return _mongoCollections.TagInfos.FindAll().SetFields(Fields.Exclude("_id")).ToList();
         }
 
         void AddSystemFields(ref BsonDocument bsonDocument, string recordKey, string userToken)

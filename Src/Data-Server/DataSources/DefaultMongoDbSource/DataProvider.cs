@@ -13,11 +13,11 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 {
     public class DataProvider : IDataProvider
     {
-        private readonly string _connectionString;
+        private readonly MongoDbCollections _mongoCollections;
 
-        public DataProvider(string dataConnectionString, DataSourceInfo datasourceInfo)
+        public DataProvider(MongoDbCollections mongoCollections, DataSourceInfo datasourceInfo)
         {
-            _connectionString = dataConnectionString;
+            _mongoCollections = mongoCollections;
             DataSourceInfo = datasourceInfo;
         }
 
@@ -25,7 +25,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
         public IEnumerable<Dictionary<string, object>> GetData(string[] fields = null, FilterRule[] filterRules = null, Action<string, string> onError = null)
         {
-            var collection = GetCollection(DataSourceInfo.DataSourcePath.ToValidDbString() + "_Data");
+            var collection = _mongoCollections.GetDataCollection(DataSourceInfo.CompanyId, DataSourceInfo.Urn);
             MongoCursor<BsonDocument> cursor;
             var query = CreateFilterRuleQuery(filterRules);
             if (string.IsNullOrEmpty(query))
@@ -45,7 +45,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 
         public RevisionInfo SubmitChanges(IEnumerable<Dictionary<string, object>> recordsToChange, IEnumerable<string> recordsToDelete, string comment = null)
         {
-            return SubmitChangesHelper(recordsToChange, recordsToDelete, DataSourceInfo.DataSourcePath,
+            return SubmitChangesHelper(recordsToChange, recordsToDelete, DataSourceInfo.Urn,
                  comment);
         }
 
@@ -67,7 +67,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
         private RevisionInfo SubmitChangesHelper(IEnumerable<Dictionary<string, object>> recordsToChange,
             IEnumerable<string> recordsToDelete, string providerString, string comment = null)
         {
-            var collection = GetCollection(providerString.ToValidDbString() + "_Data");
+            var collection = GetDataCollection(providerString);
             var isDeleted = DeleteRecords(recordsToDelete, collection);
             var isUpdated = UpdateRecords(recordsToChange, collection);
             return new RevisionInfo
@@ -200,10 +200,9 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             return isSuccessful;
         }
 
-        private MongoCollection<BsonDocument> GetCollection(string name)
+        private MongoCollection<BsonDocument> GetDataCollection(string urn)
         {
-            var db = MongoDatabase.Create(_connectionString);
-            var collection = db.GetCollection(name);
+            var collection = _mongoCollections.GetDataCollection(DataSourceInfo.CompanyId, urn);
             foreach (var keyField in DataSourceInfo.GetAllIndexFieldsNames())
             {
                 collection.CreateIndex(keyField);    

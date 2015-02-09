@@ -9,6 +9,12 @@ namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
 {
     public class YahooEquityRefDataProvider : IDataProvider
     {
+        private readonly string _dataSourceUrn;
+        public YahooEquityRefDataProvider(string dataSourceUrn)
+        {
+            _dataSourceUrn = dataSourceUrn;
+        }
+
         /*
 Profile Page -> http://uk.finance.yahoo.com/q/pr?s=UBS
 Index Membership -> /html[1]/body[1]/div[4]/div[4]/table[2]/tr[2]/td[1]/table[2]/tr[1]/td[1]/table[1]/tr[1]/td[2]/#text[1]
@@ -190,7 +196,7 @@ Div & Yield        -> /html[1]/body[1]/div[4]/div[1]/div[3]/div[3]/div[1]/div[1]
             {
                 RecordChangedEvent(this, new ValueChangedEventArgs
                 {
-                    DataSourceUrn = @"ExternalDataSource\YahooEquityRefData",
+                    DataSourceUrn = _dataSourceUrn,
                     Value = yahooObj,
                     ChangedPropertyNames = dict.Keys.ToArray()
                 });

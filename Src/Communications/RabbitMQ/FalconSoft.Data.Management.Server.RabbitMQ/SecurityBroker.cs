@@ -295,7 +295,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    _logger.Debug("SaveNewUser failed", ex);
+                    _logger.Debug("UpdateUser failed", ex);
                     throw;
                 }
             }, _cts.Token);
@@ -321,7 +321,7 @@ namespace FalconSoft.Data.Management.Server.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    _logger.Debug("SaveNewUser failed", ex);
+                    _logger.Debug("RemoveUser failed", ex);
                     throw;
                 }
             }, _cts.Token);

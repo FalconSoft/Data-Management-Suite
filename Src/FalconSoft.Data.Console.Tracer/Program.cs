@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Web.Script.Serialization;
-using FalconSoft.Data.Management.Client.RabbitMQ;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;

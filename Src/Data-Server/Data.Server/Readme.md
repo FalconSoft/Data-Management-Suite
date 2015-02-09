@@ -21,6 +21,10 @@ Find the section <appSettings>
    
    `CatalogDlls` - path to directory with your own dataSources. If you want to have an relative path you have to start path with `.\`. If you need to have more than one path you can separate if with `;` symbol;
 
+   ```
+   netsh http add urlacl url=http://+:8080/ user=machine\username
+   ```
+
 ### After Configuring the config file you can run your server as:
 
 1. A Console Application.

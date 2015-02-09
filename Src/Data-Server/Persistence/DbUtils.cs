@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common.Facades;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Management.Common.Security;
 using MongoDB.Bson;
+using MongoDB.Driver;
+using MongoDB.Driver.Builders;
 
 namespace FalconSoft.Data.Server.Persistence
 {
-    public static class MongoDBExtention
+
+    public static class DbUtils
     {
         private static BsonElement ConvertAggregateFunc(string header, string fieldName, AggregatedFunction function)
         {
@@ -53,7 +57,7 @@ namespace FalconSoft.Data.Server.Persistence
             return new BsonDocument(fieldNames.Select(x => new BsonElement(x, 1)));
         }
 
-        public static BsonDocument[] GetPipeline(this AggregatedWorksheetInfo aggregatedWorksheet)
+        public static BsonDocument[] GetPipeline(AggregatedWorksheetInfo aggregatedWorksheet)
         {
             var agregations = new BsonDocument
             {
@@ -72,8 +76,19 @@ namespace FalconSoft.Data.Server.Persistence
                     "$sort", CreateSortStatement(aggregatedWorksheet.GroupByColumns.Select(x => x.Header))
                 }
             };
-            var pipeline = new[] {group, sort};
+            var pipeline = new[] { group, sort };
             return pipeline;
         }
+
+        public static bool Exists<T>(this MongoCollection<T> collection, string field, BsonValue value)
+        {
+            return collection.Find(Query.EQ(field, value)).SetFields(Fields.Include("_id")).SetLimit(1).FirstOrDefault() != null;
+        }
+
+        public static bool Exists<T>(this MongoCollection<T> collection, string field1, BsonValue value1, string field2, BsonValue value2)
+        {
+            return collection.Find(Query.And(Query.EQ(field1, value1), Query.EQ(field2, value2))).SetFields(Fields.Include("_id")).SetLimit(1).FirstOrDefault() != null;
+        }
+
     }
 }

@@ -12,14 +12,15 @@ namespace FalconSoft.Data.Server.SampleDataSources
         public static DataSourceInfo CreateDefaultDataSource(string[] keyFields, Type pocoType)
         {
             var fields = new List<FieldInfo>();
+            const string companyId = "Shared";
+            const string category = "ExternalDataSource";
 
             EnumerateProperties((p, t, o) =>
             {
                 var fieldInfo = new FieldInfo
                 {
-                    Name = p,
+                    Name = p,                     
                     DataType = ToDataType(t),
-                    DataSourceProviderString = string.Format(@"{0}\{1}", "ExternalDataSource", pocoType.Name),
                     IsNullable = true
                 };
                 if (keyFields.Contains(fieldInfo.Name))
@@ -30,7 +31,17 @@ namespace FalconSoft.Data.Server.SampleDataSources
                 fields.Add(fieldInfo);
             },
                 pocoType.GetProperties(), string.Empty);
-            return new DataSourceInfo(fields, true) { Name = pocoType.Name, Id = "-1", Category = "ExternalDataSource" };
+            var dsInfo = new DataSourceInfo(fields, true)
+                {
+                    CompanyId = companyId,
+                    Name = pocoType.Name, 
+                    Id = "-1", 
+                    Category = category
+                };
+
+            dsInfo.SynchronizeUrns();
+
+            return dsInfo;
         }
 
         private static void EnumerateProperties(Action<string, Type, object> setPropertyNameAction,

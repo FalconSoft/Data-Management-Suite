@@ -10,8 +10,9 @@ namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
     {
         private readonly Dictionary<object, QuotesFeed> _quotesFeedData = new Dictionary<object, QuotesFeed>();
 
-        public QuotesFeedDataProvider()
+        public QuotesFeedDataProvider(string dataSourcesUrn)
         {
+            _dataSourcesUrn = dataSourcesUrn;
             var rand = new Random();
             for (int i = 1; i < 10; i++)
             {
@@ -36,7 +37,7 @@ namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
                 if (RecordChangedEvent != null)
                     RecordChangedEvent(this, new ValueChangedEventArgs
                     {
-                        DataSourceUrn = @"ExternalDataSource\QuotesFeed",
+                        DataSourceUrn = _dataSourcesUrn,
                         Value = quotesFeed,
                         ChangedPropertyNames = new[] { "Quote" }
                     });
@@ -95,6 +96,8 @@ namespace FalconSoft.Data.Server.SampleDataSources.ExternalSources
         }
 
         public event EventHandler<ValueChangedEventArgs> RecordChangedEvent;
+        
+        private readonly string _dataSourcesUrn;
 
     }
 

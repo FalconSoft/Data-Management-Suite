@@ -62,10 +62,10 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             }, _cts.Token);
         }
 
-        public KeyValuePair<bool, string> Authenticate(string userName, string password)
+        public User Authenticate(string companyName, string userName, string password)
         {
-            return RPCServerTaskExecute<KeyValuePair<bool, string>>(Connection, SecurityFacadeQueueName, "Authenticate",
-                null, new object[] { userName, password });
+            return RPCServerTaskExecute<User>(Connection, SecurityFacadeQueueName, "Authenticate",
+                null, new object[] { companyName, userName, password });
         }
 
         public List<User> GetUsers(string userToken)
@@ -114,5 +114,9 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
             base.Close();
         }
 
+        public Dictionary<string, string> GetUserSettings(string userToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

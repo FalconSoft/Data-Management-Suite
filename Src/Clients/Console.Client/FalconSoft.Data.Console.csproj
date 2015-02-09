@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FalconSoft.Data.Console</RootNamespace>
     <AssemblyName>FalconSoft.Data.Console</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
@@ -39,6 +39,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -48,14 +49,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FalconSoft.Data.Management.Common">
-      <HintPath>..\..\packages\FalconSoft.Data.Management.Common.1.0.8\lib\net40\FalconSoft.Data.Management.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="FalconSoft.Data.Management.Components">
-      <HintPath>..\..\packages\FalconSoft.Data.Management.Components.1.0.8\lib\net40\FalconSoft.Data.Management.Components.dll</HintPath>
-    </Reference>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
@@ -63,23 +59,22 @@
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Newtonsoft.Json.6.0.5\lib\net40\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>..\..\packages\Newtonsoft.Json.6.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Rx-Core.2.2.5\lib\net40\System.Reactive.Core.dll</HintPath>
+      <HintPath>..\..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
     </Reference>
     <Reference Include="System.Reactive.Interfaces, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Rx-Interfaces.2.2.5\lib\net40\System.Reactive.Interfaces.dll</HintPath>
+      <HintPath>..\..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
     </Reference>
     <Reference Include="System.Reactive.Linq, Version=2.2.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Rx-Linq.2.2.5\lib\net40\System.Reactive.Linq.dll</HintPath>
+      <HintPath>..\..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
@@ -104,9 +99,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Communications\RabbitMQ\FalconSoft.Data.Management.Client.RabbitMQ\FalconSoft.Data.Management.Client.RabbitMQ.csproj">
-      <Project>{e5f3dec3-b616-4a4e-bfe4-266ea569291c}</Project>
-      <Name>FalconSoft.Data.Management.Client.RabbitMQ</Name>
+    <ProjectReference Include="..\..\..\..\Data-Management-Suite-Private\Src\Server\Data.Server.Common\FalconSoft.Data.Management.Common.csproj">
+      <Project>{322cb0ec-5c6c-400c-9315-2a679da9cda9}</Project>
+      <Name>FalconSoft.Data.Management.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Communications\WebAPI\FalconSoft.Data.Management.Client.WebAPI\FalconSoft.Data.Management.Client.WebAPI.csproj">
+      <Project>{aa726bdd-b9df-448b-ab9a-5d084704cfe9}</Project>
+      <Name>FalconSoft.Data.Management.Client.WebAPI</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

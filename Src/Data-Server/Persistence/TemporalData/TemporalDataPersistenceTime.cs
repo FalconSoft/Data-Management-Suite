@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -11,34 +12,30 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 {
     public class TemporalDataPersistenceTime : ITemporalDataPersistense
     {
-        private readonly string _connectionString;
-        private readonly string _dbName;
         private readonly string _dataSourceProviderString;
         private readonly string _userId;
         private readonly string[] _dbfields = { "RecordKey", "TimeStamp", "UserId", "_id" };
         private readonly DataSourceInfo _dataSourceInfo;
+        private readonly LiveDataMongoCollections _mongoCollections;
+        private readonly MetaDataMongoCollections _metaMongoCollections;
+        private readonly MongoCollection<BsonDocument> _historyCollection; 
 
-        //PARAM
-        private string _param;
-
-        public TemporalDataPersistenceTime(string connectionString, string dbName, DataSourceInfo dataSourceInfo, string userId, string param)
+        public TemporalDataPersistenceTime(LiveDataMongoCollections mongoCollections, MetaDataMongoCollections metaMongoCollections, string dbName, DataSourceInfo dataSourceInfo, string userId, string param)
         {
-            _connectionString = connectionString;
-            _dbName = dbName;
-            _dataSourceProviderString = dataSourceInfo.DataSourcePath;
+            _dataSourceProviderString = dataSourceInfo.Urn;
             _userId = userId;
             _dataSourceInfo = dataSourceInfo;
+
+            _mongoCollections = mongoCollections;
+            _metaMongoCollections = metaMongoCollections;
+
+            _historyCollection = _mongoCollections.GetHistoryDataCollection( _dataSourceProviderString);            
         }
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(string recordKey)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-
-            var collection = db.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
-            var users = db.GetCollection<BsonDocument>("Users");
-            var cursorData = collection.Find(Query.EQ("RecordKey", recordKey));
+            var users = _metaMongoCollections.Users;
+            var cursorData = _historyCollection.Find(Query.EQ("RecordKey", recordKey));
             var cursorUser = users.FindAllAs<BsonDocument>();
 
             var list = new List<Dictionary<string, object>>();
@@ -67,13 +64,8 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public IEnumerable<Dictionary<string, object>> GetTemporalData(DateTime timeStamp, string urn)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-
-            var collection = db.GetCollection<BsonDocument>(_dataSourceProviderString.ToValidDbString() + "_History");
-            var users = db.GetCollection<BsonDocument>("Users");
-            var cursorData = collection.FindAllAs<BsonDocument>();
+            var users = _metaMongoCollections.Users;
+            var cursorData = _historyCollection.FindAllAs<BsonDocument>();
             var cursorUser = users.FindAllAs<BsonDocument>();
             var list = new List<Dictionary<string, object>>();
 
@@ -217,30 +209,18 @@ namespace FalconSoft.Data.Server.Persistence.TemporalData
 
         public void SaveTagInfo(TagInfo tagInfo)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            var collection = db.GetCollection<TagInfo>("TagInfo");
-            collection.Insert(tagInfo);
+            _mongoCollections.TagInfos.Insert(tagInfo);
         }
 
         public void RemoveTagInfo(TagInfo tagInfo)
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            var collection = db.GetCollection<TagInfo>("TagInfo");
             var query = Query<TagInfo>.EQ(t => t.TagName, tagInfo.TagName);
-            collection.Remove(query);
+            _mongoCollections.TagInfos.Remove(query);
         }
 
         public IEnumerable<TagInfo> GeTagInfos()
         {
-            var client = new MongoClient(_connectionString);
-            var mongoServer = client.GetServer();
-            var db = mongoServer.GetDatabase(_dbName);
-            var collection = db.GetCollection<TagInfo>("TagInfo");
-            return collection.FindAll().SetFields(Fields.Exclude("_id")).ToList();
+            return _mongoCollections.TagInfos.FindAll().SetFields(Fields.Exclude("_id")).ToList();
         }
 
         void AddStructureFields(ref BsonDocument bsonDocument, string userToken)

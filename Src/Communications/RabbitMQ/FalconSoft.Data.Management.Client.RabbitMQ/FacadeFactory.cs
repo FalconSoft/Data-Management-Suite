@@ -111,5 +111,15 @@ namespace FalconSoft.Data.Management.Client.RabbitMQ
 
             if (_securityFacade != null) _securityFacade.Close();
         }
+
+        public bool Authenticate(string url, string groupName, string userName, string password, out string userTocken, out System.Collections.Generic.Dictionary<string, string> userSettings)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Common.Security.User Authenticate(string url, string companyName, string userName, string password)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

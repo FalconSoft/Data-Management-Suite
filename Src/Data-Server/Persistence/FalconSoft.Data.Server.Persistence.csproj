@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FalconSoft.Data.Server.Persistence</RootNamespace>
     <AssemblyName>FalconSoft.Data.Server.Persistence</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
@@ -23,6 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,6 +32,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FalconSoft.Data.Management.Common">
@@ -54,7 +56,10 @@
     </Compile>
     <Compile Include="ErrorData\ErrorDataPersistence.cs" />
     <Compile Include="MetaData\MetadataPersistence.cs" />
-    <Compile Include="MongoDBExtention.cs" />
+    <Compile Include="DbUtils.cs" />
+    <Compile Include="MongoCollections\BaseMongoCollections.cs" />
+    <Compile Include="MongoCollections\LiveDataMongoCollections.cs" />
+    <Compile Include="MongoCollections\MetaDataMongoCollections.cs" />
     <Compile Include="SearchIndexes\SearchIndexPersistence.cs" />
     <Compile Include="Security\PermissionSecurityPersistance.cs" />
     <Compile Include="Security\SecurityPersistence.cs" />
@@ -64,11 +69,9 @@
     <Compile Include="TemporalData\TemporalDataPersistenceBuffer.cs" />
     <Compile Include="TemporalData\TemporalDataPersistenceTime.cs" />
     <Compile Include="TemporalData\TemporalDataPersistense.cs" />
-    <Compile Include="WorksheetPersistence.cs" />
+    <Compile Include="MetaData\WorksheetPersistence.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="EventsStore\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>

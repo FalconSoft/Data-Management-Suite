@@ -12,7 +12,7 @@ namespace ReactiveWorksheets.Facade.Tests
         {
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = true,
@@ -28,7 +28,7 @@ namespace ReactiveWorksheets.Facade.Tests
             },
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,
@@ -44,7 +44,7 @@ namespace ReactiveWorksheets.Facade.Tests
             },
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,
@@ -60,7 +60,7 @@ namespace ReactiveWorksheets.Facade.Tests
             },
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,
@@ -76,7 +76,7 @@ namespace ReactiveWorksheets.Facade.Tests
             },
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,
@@ -92,7 +92,7 @@ namespace ReactiveWorksheets.Facade.Tests
             },
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,
@@ -108,7 +108,7 @@ namespace ReactiveWorksheets.Facade.Tests
             },
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,
@@ -124,7 +124,7 @@ namespace ReactiveWorksheets.Facade.Tests
             },
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,
@@ -140,7 +140,7 @@ namespace ReactiveWorksheets.Facade.Tests
             },
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,
@@ -156,7 +156,7 @@ namespace ReactiveWorksheets.Facade.Tests
             },
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,
@@ -173,7 +173,7 @@ namespace ReactiveWorksheets.Facade.Tests
             ,
             new FieldInfo
             {
-                DataSourceProviderString = "Customers\\Northwind",
+                DataSourceUrn = "Customers\\Northwind",
                 DataType = DataTypes.String,
                 DefaultValue = null,
                 IsKey = false,

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FalconSoft.Data.Management.Common;
 using FalconSoft.Data.Management.Common.Metadata;
+using FalconSoft.Data.Server.Persistence.MongoCollections;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
@@ -16,20 +17,11 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         private readonly MongoCollection<BsonDocument> _collection;
         private readonly ILogger _logger;
 
-        public LiveDataPersistence(string connectionString, string collectionName, ILogger logger)
+        public LiveDataPersistence(LiveDataMongoCollections mongoCollections, string dataSourceUrn, ILogger logger)
         {
             _logger = logger;
-            var database = MongoDatabase.Create(connectionString);
-            if (database.CollectionExists(collectionName))
-            {
-                _collection = database.GetCollection(collectionName);
-            }
-            else
-            {
-                database.CreateCollection(collectionName);
-                _collection = database.GetCollection(collectionName);
-                _collection.CreateIndex("RecordKey");
-            }
+            _collection = mongoCollections.GetDataCollection(dataSourceUrn);
+            _collection.CreateIndex("RecordKey");
         }
 
         /// <summary>
@@ -42,7 +34,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
         {
             try
             {
-                var query =  CreateFilterRuleQuery(filterRules!=null?filterRules.ToList(): null);
+                var query =  CreateFilterRuleQuery(filterRules != null? filterRules.ToList() : null);
                 MongoCursor<LiveDataObject> cursor;
                 if (!string.IsNullOrEmpty(query))
                 {
@@ -56,7 +48,8 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
                 {
                     var mongoQuery = "{ }, " + CreateSelectedFieldsQuery(fields);
                     var qwraper = new QueryDocument(BsonSerializer.Deserialize<BsonDocument>(mongoQuery));
-                    cursor = _collection.FindAs<LiveDataObject>(qwraper).SetFields(Fields.Include(fields.Select(f => string.Format("RecordValues.{0}", f)).ToArray()));
+                    cursor = _collection.FindAs<LiveDataObject>(qwraper)
+                        .SetFields(Fields.Include(fields.Select(f => string.Format("RecordValues.{0}", f)).ToArray()));
                     return cursor;
                 }
                 cursor = _collection.FindAllAs<LiveDataObject>();
@@ -142,7 +135,7 @@ namespace FalconSoft.Data.Server.Persistence.LiveData
             {
                 var keyCols = aggregatedWorksheet.GroupByColumns.Select(x => x.Header).ToArray();
                 var result = new List<LiveDataObject>();
-                var collection = _collection.Aggregate(aggregatedWorksheet.GetPipeline()).ResultDocuments;
+                var collection = _collection.Aggregate(DbUtils.GetPipeline(aggregatedWorksheet)).ResultDocuments;
 
                 foreach (var row in collection)
                 {

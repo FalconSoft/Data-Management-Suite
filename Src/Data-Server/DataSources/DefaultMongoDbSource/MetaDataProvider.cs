@@ -11,44 +11,37 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
 {
     public class MetaDataProvider : IMetaDataProvider
     {
-        private const string DataSourceCollectionName = "DataSourceInfo";
+        private readonly MongoDbCollections _dbCollections;
 
-        private readonly string _connectionString;
-        
-        private MongoDatabase _mongoDatabase;
-
-        public MetaDataProvider(string connectionString)
+        public MetaDataProvider(MongoDbCollections dbCollections)
         {
-            _connectionString = connectionString;
+            _dbCollections = dbCollections;
         }
 
         public DataSourceInfo[] GetAvailableDataSources(string userId, AccessLevel minAccessLevel = AccessLevel.Read)
         {
-            ConnectToDb();
-            return _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName)
+            return _dbCollections.TableInfos
                                  .FindAll()
                                  .ToArray();
         }
 
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceProviderString, string userId)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName);
+            var collection = _dbCollections.TableInfos;
             var oldDs =
-                collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", oldDataSourceProviderString.GetName()),
-                                                               Query.EQ("Category", oldDataSourceProviderString.GetCategory())));
-            if (dataSource.DataSourcePath != oldDs.DataSourcePath)
+                collection.FindOneAs<DataSourceInfo>(
+                    Query.And(
+                    Query.EQ("CompanyId", dataSource.CompanyId),
+                    Query.EQ("Name", Utils.GetNamePart(oldDataSourceProviderString)),
+                                                               Query.EQ("Category", Utils.GetCategoryPart(oldDataSourceProviderString))));
+            if (dataSource.Urn != oldDs.Urn)
             {
-                var oldCollName_Data = oldDs.DataSourcePath.ToValidDbString() + "_Data";
-                var oldCollName_History = oldDs.DataSourcePath.ToValidDbString() + "_History";
-                _mongoDatabase.RenameCollection(oldCollName_Data, dataSource.DataSourcePath.ToValidDbString() + "_Data");
-                _mongoDatabase.RenameCollection(oldCollName_History,
-                                                dataSource.DataSourcePath.ToValidDbString() + "_History");
+                _dbCollections.RenameDataCollection(oldDs.Urn, dataSource.Urn);
+                _dbCollections.RenameHistoryDataCollection(oldDs.Urn, dataSource.Urn);
             }
-            var dataCollection =
-                _mongoDatabase.GetCollection(dataSource.DataSourcePath.ToValidDbString() + "_Data");
-            var historyCollection =
-                _mongoDatabase.GetCollection(dataSource.DataSourcePath.ToValidDbString() + "_History");
+            var dataCollection = _dbCollections.GetDataCollection(dataSource.CompanyId, dataSource.Urn);
+            var historyCollection = _dbCollections.GetHistoryDataCollection(dataSource.CompanyId, dataSource.Urn);
+
             //IF NEW FIELDS ADDED  (ONLY)  
             var addedfields = dataSource.Fields.Keys.Except(oldDs.Fields.Keys)
                                                  .ToList();
@@ -73,48 +66,38 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             if (OnDataSourceInfoChanged != null)
             {
                 OnDataSourceInfoChanged(dataSource);    
-            }
-            
+            }            
         }
 
         public DataSourceInfo CreateDataSourceInfo(DataSourceInfo dataSource, string userId)
         {
-            ConnectToDb();
-            var collection = _mongoDatabase.GetCollection<DataSourceInfo>(DataSourceCollectionName);
+            var collection = _dbCollections.TableInfos;
             dataSource.Id = ObjectId.GenerateNewId().ToString();
+            
             collection.Insert(dataSource);
-            var dataCollectionName = dataSource.DataSourcePath.ToValidDbString() + "_Data";
-            if (!_mongoDatabase.CollectionExists(dataCollectionName))
-                _mongoDatabase.CreateCollection(dataCollectionName);
-
-            var historyCollectionName = dataSource.DataSourcePath.ToValidDbString() + "_History";
-            if (!_mongoDatabase.CollectionExists(historyCollectionName))
-                _mongoDatabase.CreateCollection(historyCollectionName);
-
-            var ds = collection.FindOneAs<DataSourceInfo>(Query.And(Query.EQ("Name", dataSource.DataSourcePath.GetName()),
-                                                                  Query.EQ("Category", dataSource.DataSourcePath.GetCategory())));
+            
+            var ds = collection.FindOneAs<DataSourceInfo>(Query.And(
+                Query.EQ("CompanyId", dataSource.CompanyId),
+                Query.EQ("Name", Utils.GetNamePart(dataSource.Urn)),
+                                                                  Query.EQ("Category", Utils.GetCategoryPart(dataSource.Urn))));
             return ds.ResolveDataSourceParents(collection.FindAll().ToArray());
         }
 
-        public void DeleteDataSourceInfo(string dataSourceProviderString, string userId)
+        public void DeleteDataSourceInfo(DataSourceInfo dsInfo, string userId)
         {
-            ConnectToDb();
-            _mongoDatabase.GetCollection(dataSourceProviderString.ToValidDbString() + "_Data").Drop();
-            _mongoDatabase.GetCollection(dataSourceProviderString.ToValidDbString() + "_History").Drop();
-            _mongoDatabase.GetCollection(DataSourceCollectionName)
-                          .Remove(Query.And(Query.EQ("Name", dataSourceProviderString.GetName()),
-                                            Query.EQ("Category", dataSourceProviderString.GetCategory())));
+            string dataSourceProviderString = dsInfo.Urn;
+            _dbCollections.GetDataCollection(dsInfo.CompanyId, dataSourceProviderString)
+                          .Drop();
+            _dbCollections.GetHistoryDataCollection(dsInfo.CompanyId, dataSourceProviderString)
+                          .Drop();
+            _dbCollections.TableInfos
+                          .Remove(Query.And(
+                              Query.EQ("CompanyId", dsInfo.CompanyId),
+                              Query.EQ("Name", Utils.GetNamePart(dataSourceProviderString)),
+                              Query.EQ("Category", Utils.GetCategoryPart(dataSourceProviderString))));
         }
 
         public Action<DataSourceInfo> OnDataSourceInfoChanged { get; set; }
-
-        private void ConnectToDb()
-        {
-            if (_mongoDatabase == null || _mongoDatabase.Server.State != MongoServerState.Connected)
-            {
-                _mongoDatabase = MongoDatabase.Create(_connectionString);
-            }
-        }
 
         private void ChooseHistoryStorageType(MongoCollection<BsonDocument> collection,HistoryStorageType storageType,string field)
         {
