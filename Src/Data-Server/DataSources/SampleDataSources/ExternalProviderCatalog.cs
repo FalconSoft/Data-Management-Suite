@@ -39,24 +39,24 @@ namespace FalconSoft.Data.Server.SampleDataSources
                   DataProvider = new CalculatorDataProvider(),
                   ProviderInfo = calcultor
               };
-              // YAHOO
-              var yahoo = ExternalExtensions.CreateDefaultDataSource(new[] { "Symbol" }, typeof(YahooEquityRefData));
-              var yahooContext = new DataProvidersContext
-              {
-                  Urn = yahoo.Urn,
-                  DataProvider = new YahooEquityRefDataProvider(yahoo.Urn),
-                  ProviderInfo = yahoo
-              };
-              // BigData
-              var bigData = ExternalExtensions.CreateDefaultDataSource(new[] { "ID" }, typeof(BigData));
-              var bigDataContext = new DataProvidersContext
-              {
-                  Urn = bigData.Urn,
-                  DataProvider = new BigDataSource(bigData.Urn),
-                  ProviderInfo = bigData
-              };
+              //// YAHOO
+              //var yahoo = ExternalExtensions.CreateDefaultDataSource(new[] { "Symbol" }, typeof(YahooEquityRefData));
+              //var yahooContext = new DataProvidersContext
+              //{
+              //    Urn = yahoo.Urn,
+              //    DataProvider = new YahooEquityRefDataProvider(yahoo.Urn),
+              //    ProviderInfo = yahoo
+              //};
+              //// BigData
+              //var bigData = ExternalExtensions.CreateDefaultDataSource(new[] { "ID" }, typeof(BigData));
+              //var bigDataContext = new DataProvidersContext
+              //{
+              //    Urn = bigData.Urn,
+              //    DataProvider = new BigDataSource(bigData.Urn),
+              //    ProviderInfo = bigData
+              //};
 
-              return new[] { quoteContext, testContext, calcContext, yahooContext, bigDataContext };
+              return new[] { quoteContext, testContext, calcContext/*, yahooContext, bigDataContext */};
         }
 
         public DataSourceInfo CreateDataSource(DataSourceInfo dataSource, string userId)

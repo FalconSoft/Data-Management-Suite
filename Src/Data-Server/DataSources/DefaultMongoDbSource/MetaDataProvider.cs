@@ -28,12 +28,10 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
         public void UpdateDataSourceInfo(DataSourceInfo dataSource, string oldDataSourceProviderString, string userId)
         {
             var collection = _dbCollections.TableInfos;
+         
             var oldDs =
-                collection.FindOneAs<DataSourceInfo>(
-                    Query.And(
-                    Query.EQ("CompanyId", dataSource.CompanyId),
-                    Query.EQ("Name", Utils.GetNamePart(oldDataSourceProviderString)),
-                                                               Query.EQ("Category", Utils.GetCategoryPart(oldDataSourceProviderString))));
+                collection.FindOneAs<DataSourceInfo>(Query.EQ("Urn", oldDataSourceProviderString));
+
             if (dataSource.Urn != oldDs.Urn)
             {
                 _dbCollections.RenameDataCollection(oldDs.Urn, dataSource.Urn);
@@ -75,11 +73,10 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             dataSource.Id = ObjectId.GenerateNewId().ToString();
             
             collection.Insert(dataSource);
-            
-            var ds = collection.FindOneAs<DataSourceInfo>(Query.And(
-                Query.EQ("CompanyId", dataSource.CompanyId),
-                Query.EQ("Name", Utils.GetNamePart(dataSource.Urn)),
-                                                                  Query.EQ("Category", Utils.GetCategoryPart(dataSource.Urn))));
+
+
+            var ds = collection.FindOneAs<DataSourceInfo>(Query.EQ("Urn", dataSource.Urn));
+
             return ds.ResolveDataSourceParents(collection.FindAll().ToArray());
         }
 
@@ -91,10 +88,7 @@ namespace FalconSoft.Data.Server.DefaultMongoDbSource
             _dbCollections.GetHistoryDataCollection(dsInfo.CompanyId, dataSourceProviderString)
                           .Drop();
             _dbCollections.TableInfos
-                          .Remove(Query.And(
-                              Query.EQ("CompanyId", dsInfo.CompanyId),
-                              Query.EQ("Name", Utils.GetNamePart(dataSourceProviderString)),
-                              Query.EQ("Category", Utils.GetCategoryPart(dataSourceProviderString))));
+                          .Remove(Query.EQ("Urn", dataSourceProviderString));
         }
 
         public Action<DataSourceInfo> OnDataSourceInfoChanged { get; set; }

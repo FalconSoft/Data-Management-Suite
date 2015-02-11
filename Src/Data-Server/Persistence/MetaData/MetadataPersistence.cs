@@ -36,8 +36,11 @@ namespace FalconSoft.Data.Server.Persistence.MetaData
             {
                 var companyId = _metaMongoCollections.GetCompanyId(userId);
                 return
-                    _metaMongoCollections.DataSources.FindAs<DataSourceInfo>(Query<DataSourceInfo>.EQ(d => d.CompanyId,
-                                                                                                      companyId))
+                    _metaMongoCollections.DataSources.FindAs<DataSourceInfo>(Query<DataSourceInfo>.In(
+                            d => d.CompanyId, new[]{companyId, "Shared"}
+                        )
+                    
+                    )
                                          .ToArray();
             }
             else // serverAgent is a special user for initializing server components
